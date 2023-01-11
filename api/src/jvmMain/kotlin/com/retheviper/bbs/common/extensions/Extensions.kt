@@ -1,7 +1,7 @@
 package com.retheviper.bbs.common.extensions
 
 import com.retheviper.bbs.common.vo.JwtConfigs
-import io.ktor.server.application.Application
+import io.ktor.server.application.*
 
 fun Application.getEnvironmentVariable(key: String): String =
     environment.config.property(key).getString()

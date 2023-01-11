@@ -1,15 +1,19 @@
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val ktorVersion: String by project
 val kotlinVersion: String by project
 val logbackVersion: String by project
 val exposedVersion: String by project
 val koinVersion: String by project
 val h2Version: String by project
-val javaVersion = JavaVersion.VERSION_11
 
 plugins {
-    kotlin("jvm") version "1.8.0"
-    id("io.ktor.plugin") version "2.2.2"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
+    application
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
+    id("org.jetbrains.compose")
+    id("io.ktor.plugin")
 }
 
 group = "com.retheviper"
@@ -23,48 +27,118 @@ application {
 }
 
 repositories {
+    google()
     mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
 
-dependencies {
-    // Kotlin
-    implementation(kotlin("stdlib-jdk8"))
+kotlin {
+    js(IR) {
+        browser()
+        binaries.executable()
+    }
+    jvm {
+        withJava()
+    }
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation(compose.web.core)
+                implementation(compose.runtime)
+                implementation("io.ktor:ktor-client-js:$ktorVersion")
+                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+            }
+        }
+        val jsTest by getting {
+            dependencies {
+                implementation(kotlin("test-js"))
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                // Kotlin
+                implementation(kotlin("stdlib-jdk8"))
 
-    // Ktor
-    implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-auth-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
-    implementation("ch.qos.logback:logback-classic:$logbackVersion")
-    implementation("io.ktor:ktor-server-config-yaml:$ktorVersion")
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+                // Ktor
+                implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-auth-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
+                implementation("ch.qos.logback:logback-classic:$logbackVersion")
+                implementation("io.ktor:ktor-server-config-yaml:$ktorVersion")
+                implementation("ch.qos.logback:logback-classic:$logbackVersion")
+                implementation(compose.runtime)
 
-    // Koin
-    implementation("io.insert-koin:koin-ktor:$koinVersion")
-    implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")
+                // Koin
+                implementation("io.insert-koin:koin-ktor:$koinVersion")
+                implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")
 
-    // Exposed
-    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+                // Exposed
+                implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
 
-    // H2
-    implementation("com.h2database:h2:$h2Version")
+                // H2
+                implementation("com.h2database:h2:$h2Version")
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
+                implementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+            }
+        }
+    }
 }
 
 tasks {
-    compileKotlin {
+    withType<KotlinCompile> {
         kotlinOptions {
-            jvmTarget = javaVersion.toString()
+            jvmTarget = "11"
+            freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
         }
     }
 
-    compileTestKotlin {
-        kotlinOptions {
-            jvmTarget = javaVersion.toString()
+    getByName<JavaExec>("run") {
+        classpath(getByName<Jar>("jvmJar")) // so that the JS artifacts generated by `jvmJar` can be found and served
+    }
+
+    // include JS artifacts in any JAR when generate
+    getByName<Jar>("jvmJar") {
+        val taskName = if (project.hasProperty("isProduction")
+            || project.gradle.startParameter.taskNames.contains("installDist")
+        ) {
+            "jsBrowserProductionWebpack"
+        } else {
+            "jsBrowserDevelopmentWebpack"
+        }
+        val webpackTask = getByName<KotlinWebpack>(taskName)
+        dependsOn(webpackTask) // make sure JS gets compiled first
+        from(File(webpackTask.destinationDirectory, webpackTask.outputFileName)) // bring output file along into the JAR
+    }
+}
+
+distributions {
+    main {
+        contents {
+            from("$buildDir/libs") {
+                rename("${rootProject.name}-jvm", rootProject.name)
+                into("lib")
+            }
         }
     }
 }
