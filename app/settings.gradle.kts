@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "bbs"
+rootProject.name = "bbs-app"
 include(":androidApp")
 include(":shared")
