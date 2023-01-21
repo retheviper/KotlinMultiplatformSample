@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.retheviper.bbs.Greeting
-import com.retheviper.bbs.infrastructure.client.Client
+import com.retheviper.bbs.infrastructure.client.ApiCaller
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -22,6 +22,7 @@ class MainActivity : ComponentActivity() {
 
                 var count by remember { mutableStateOf(0) }
                 val coroutineScope = rememberCoroutineScope()
+                val apiCaller = ApiCaller()
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     count--
                                     coroutineScope.launch {
-                                        Client.postCount(count)
+                                        apiCaller.postCount(count)
                                     }
                                 }) {
                                 Text("-")
@@ -56,7 +57,7 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     count++
                                     coroutineScope.launch {
-                                        Client.postCount(count)
+                                        apiCaller.postCount(count)
                                     }
                                 }) {
                                 Text("+")
