@@ -44,7 +44,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
             }
         }
         val commonTest by getting {
@@ -58,7 +57,6 @@ kotlin {
                 implementation(compose.runtime)
                 implementation("io.ktor:ktor-client-js:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
             }
         }
         val jsTest by getting {
@@ -77,11 +75,8 @@ kotlin {
                 implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktorVersion")
                 implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
                 implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
                 implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
                 implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
-                implementation("ch.qos.logback:logback-classic:$logbackVersion")
-                implementation("io.ktor:ktor-server-config-yaml:$ktorVersion")
                 implementation("ch.qos.logback:logback-classic:$logbackVersion")
                 implementation(compose.runtime)
 
@@ -108,7 +103,7 @@ kotlin {
 tasks {
     withType<KotlinCompile> {
         kotlinOptions {
-            jvmTarget = "11"
+            jvmTarget = JavaVersion.VERSION_17.toString()
             freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
         }
     }
