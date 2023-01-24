@@ -10,8 +10,10 @@ class ApiCaller {
 
     private val client = getHttpClient()
 
+    private val platform = getPlatform()
+
     private val apiUrl: String
-        get() = when (getPlatform().name) {
+        get() = when (platform.name) {
             PlatformName.ANDROID -> "http://10.0.2.2:8080/api/v1"
             PlatformName.IOS -> "http://0.0.0.0:8080/api/v1"
             else -> ""
@@ -19,7 +21,12 @@ class ApiCaller {
 
     suspend fun postCount(number: Int) {
         client.post("$apiUrl/count") {
-            setBody(Count(number))
+            setBody(
+                Count(
+                    platform = platform.name.value,
+                    number = number
+                )
+            )
         }
     }
 }

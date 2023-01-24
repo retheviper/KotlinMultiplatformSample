@@ -18,12 +18,10 @@ val API_URL = "${window.location.origin}$API_BASE_PATH"
 
 val jsonClient = HttpClient {
     install(ContentNegotiation) {
-        json(
-            Json {
-                prettyPrint = true
-                isLenient = true
-            }
-        )
+        json(Json {
+            prettyPrint = true
+            isLenient = true
+        })
     }
     defaultRequest {
         contentType(ContentType.Application.Json)
@@ -32,6 +30,10 @@ val jsonClient = HttpClient {
 
 suspend fun postCount(number: Int) {
     jsonClient.post("$API_URL$COUNT") {
-        setBody(Count(number))
+        setBody(
+            Count(
+                platform = "Web", number = number
+            )
+        )
     }
 }

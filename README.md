@@ -4,6 +4,10 @@
 
 Web / Desktop / Mobile BBS Application sample by Kotlin. (And Swift)
 
+## Diagram
+
+![diagram](./concept.svg)
+
 ## Used
 
 - [Compose Multiplatform](https://www.jetbrains.com/lp/compose-mpp/) for Desktop / Web

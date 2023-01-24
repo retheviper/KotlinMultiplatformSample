@@ -32,7 +32,7 @@ fun Application.configureRouting() {
         route(API_BASE_PATH) {
             post(COUNT) {
                 val request = call.receive<Count>()
-                call.application.environment.log.info("current count: ${request.number}")
+                call.application.environment.log.info("Current count from ${request.platform} is: ${request.number}")
                 call.respond(HttpStatusCode.Accepted)
             }
         }
