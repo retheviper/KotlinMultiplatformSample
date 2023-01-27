@@ -18,4 +18,4 @@ Web / Desktop / Mobile BBS Application sample by Kotlin. (And Swift)
 - [Koin](https://insert-koin.io/) for DI
 - [Exposed](https://github.com/JetBrains/Exposed) for ORM
 
-end etc.
+and etc.

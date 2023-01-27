@@ -6,6 +6,7 @@ struct ContentView: View {
     
 	let greet = Greeting().greet()
     let apiCaller = ApiCaller()
+    @State private var text: String = ""
 
 	var body: some View {
         VStack(spacing: 20) {
@@ -32,6 +33,10 @@ struct ContentView: View {
                     Text("+")
                 }
             }
+            
+            TextEditor(text: $text)
+            
+            Text(text)
         }
 	}
 }

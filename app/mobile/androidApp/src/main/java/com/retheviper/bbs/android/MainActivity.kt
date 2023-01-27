@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
                 var count by remember { mutableStateOf(0) }
                 val coroutineScope = rememberCoroutineScope()
                 val apiCaller = ApiCaller()
+                val (text, textOnChange) = remember { mutableStateOf("") }
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -63,6 +64,13 @@ class MainActivity : ComponentActivity() {
                                 Text("+")
                             }
                         }
+
+                        TextField(
+                            value = text,
+                            onValueChange = textOnChange
+                        )
+
+                        Text(text)
                     }
                 }
             }
