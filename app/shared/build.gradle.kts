@@ -6,7 +6,7 @@ plugins {
 
 kotlin {
     android()
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -17,7 +17,7 @@ kotlin {
         }
     }
 
-    val ktorVersion = "2.1.2"
+    val ktorVersion: String by project
 
     sourceSets {
         val commonMain by getting {
