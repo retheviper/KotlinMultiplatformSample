@@ -1,6 +1,6 @@
 package com.retheviper.bbs.user.domain.model
 
-import com.retheviper.bbs.user.web.model.request.CreateUserRequest
+import com.retheviper.bbs.model.request.CreateUserRequest
 
 data class UserDto(
     val id: Int? = null,

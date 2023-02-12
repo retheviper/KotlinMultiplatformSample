@@ -13,7 +13,7 @@ fun Application.configureSecurity() {
     val jwtConfigs by inject<JwtConfigs>()
 
     authentication {
-        jwt {
+        jwt("auth-jwt") {
             realm = jwtConfigs.realm
             verifier(
                 JWT.require(Algorithm.HMAC256(jwtConfigs.secret))

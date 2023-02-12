@@ -1,9 +1,9 @@
-package com.retheviper.bbs.model
+package com.retheviper.bbs.model.request
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Count(
+data class CountRequest(
     val platform: String = "Web",
     val number: Int
 )

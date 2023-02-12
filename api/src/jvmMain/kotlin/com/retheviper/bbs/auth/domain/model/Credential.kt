@@ -1,9 +1,17 @@
 package com.retheviper.bbs.auth.domain.model
 
-import kotlinx.serialization.Serializable
+import com.retheviper.bbs.model.request.LoginRequest
 
-@Serializable
 data class Credential(
     val username: String,
     val password: String
-)
+) {
+    companion object {
+        fun from(request: LoginRequest): Credential {
+            return Credential(
+                username = request.username,
+                password = request.password
+            )
+        }
+    }
+}
