@@ -44,6 +44,7 @@ class UserRepository {
     private fun ResultRow.toDto() = UserDto(
         id = this[User.id].value,
         username = this[User.username],
+        password = this[User.password],
         name = this[User.name],
         mail = this[User.mail]
     )

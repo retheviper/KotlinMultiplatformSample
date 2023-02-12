@@ -4,7 +4,7 @@ import com.retheviper.bbs.auth.web.routeAuth
 import com.retheviper.bbs.constant.API_BASE_PATH
 import com.retheviper.bbs.constant.COUNT
 import com.retheviper.bbs.model.Count
-import com.retheviper.bbs.user.web.user
+import com.retheviper.bbs.user.web.route.user
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call

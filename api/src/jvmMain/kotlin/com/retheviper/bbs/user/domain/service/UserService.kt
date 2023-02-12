@@ -13,8 +13,6 @@ class UserService(private val repository: UserRepository) {
     }
 
     fun createUser(dto: UserDto): UserDto? {
-        requireNotNull(dto.password) { "password is null" }
-
         return transaction {
             if (repository.find(dto.username) != null) {
                 throw IllegalArgumentException("User already exists.")
