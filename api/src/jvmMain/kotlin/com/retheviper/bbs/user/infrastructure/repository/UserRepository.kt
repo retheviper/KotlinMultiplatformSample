@@ -1,7 +1,7 @@
 package com.retheviper.bbs.user.infrastructure.repository
 
-import com.retheviper.bbs.common.infrastructure.table.User
-import com.retheviper.bbs.user.domain.model.UserDto
+import com.retheviper.bbs.common.infrastructure.table.Users
+import com.retheviper.bbs.user.domain.model.User
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
@@ -12,21 +12,21 @@ import java.time.LocalDateTime
 
 class UserRepository {
 
-    fun find(id: Int): UserDto? {
-        return find { User.id eq id }
+    fun find(id: Int): User? {
+        return find { Users.id eq id }
     }
 
-    fun find(username: String): UserDto? {
-        return find { User.username eq username }
+    fun find(username: String): User? {
+        return find { Users.username eq username }
     }
 
-    private fun find(operation: SqlExpressionBuilder.() -> Op<Boolean>): UserDto? =
-        User.select { operation(this) and (User.deleted eq false) }
+    private fun find(operation: SqlExpressionBuilder.() -> Op<Boolean>): User? =
+        Users.select { operation(this) and (Users.deleted eq false) }
             .firstOrNull()
             ?.toDto()
 
-    fun create(dto: UserDto): UserDto? {
-        val id = User.insertAndGetId {
+    fun create(dto: User): User? {
+        val id = Users.insertAndGetId {
             it[username] = dto.username
             it[password] = requireNotNull(dto.password)
             it[name] = dto.name
@@ -38,14 +38,14 @@ class UserRepository {
             it[deleted] = false
         }
 
-        return find { User.id eq id }
+        return find { Users.id eq id }
     }
 
-    private fun ResultRow.toDto() = UserDto(
-        id = this[User.id].value,
-        username = this[User.username],
-        password = this[User.password],
-        name = this[User.name],
-        mail = this[User.mail]
+    private fun ResultRow.toDto() = User(
+        id = this[Users.id].value,
+        username = this[Users.username],
+        password = this[Users.password],
+        name = this[Users.name],
+        mail = this[Users.mail]
     )
 }

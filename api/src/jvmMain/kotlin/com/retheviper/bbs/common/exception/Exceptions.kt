@@ -8,3 +8,5 @@ class UserAlreadyExistsException(message: String) : BadRequestException(message,
 class PasswordNotMatchException(message: String) : BadRequestException(message, ErrorCode.USER_PASSWORD_NOT_MATCH)
 
 class InvalidTokenException(message: String) : BadRequestException(message, ErrorCode.INVALID_TOKEN)
+
+class BoardNotFoundException(message: String) : BadRequestException(message, ErrorCode.BOARD_NOT_FOUND)

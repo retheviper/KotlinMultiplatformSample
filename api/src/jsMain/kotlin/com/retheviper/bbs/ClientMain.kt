@@ -3,10 +3,12 @@ package com.retheviper.bbs
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.retheviper.bbs.client.getRefresh
 import com.retheviper.bbs.client.postCount
 import com.retheviper.bbs.client.postLogin
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.padding
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
@@ -60,6 +62,22 @@ fun main() {
                 }
             }) {
                 Text("Login")
+            }
+        }
+
+        Div {
+            Button(attrs = {
+                if (token.isEmpty()) {
+                    disabled()
+                }
+                onClick {
+                    scope.launch {
+                        token = getRefresh(token) ?: ""
+                        println(token)
+                    }
+                }
+            }) {
+                Text("Refresh")
             }
         }
     }

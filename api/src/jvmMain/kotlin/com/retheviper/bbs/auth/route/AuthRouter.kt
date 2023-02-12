@@ -3,13 +3,10 @@ package com.retheviper.bbs.auth.route
 import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.auth.domain.service.JwtService
 import com.retheviper.bbs.common.exception.BadRequestException
-import com.retheviper.bbs.common.extension.default
-import com.retheviper.bbs.common.extension.from
+import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.constant.AUTH
 import com.retheviper.bbs.constant.LOGIN
 import com.retheviper.bbs.constant.REFRESH
-import com.retheviper.bbs.model.response.ExceptionResponse
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.application.log
 import io.ktor.server.request.header
@@ -33,18 +30,8 @@ fun Route.routeAuth() {
             val token = try {
                 service.createToken(credential)
             } catch (e: BadRequestException) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = ExceptionResponse.from(e)
-                )
+                call.respondBadRequest(e)
                 call.application.log.error("${e.message}: ${credential.username}")
-                return@post
-            } catch (e: Exception) {
-                call.respond(
-                    status = HttpStatusCode.InternalServerError,
-                    message = ExceptionResponse.default()
-                )
-                call.application.log.error("Internal server error: ${e.message}")
                 return@post
             }
 

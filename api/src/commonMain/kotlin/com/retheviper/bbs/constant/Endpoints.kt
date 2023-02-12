@@ -1,6 +1,6 @@
 package com.retheviper.bbs.constant
 
-const val BBS = "/bbs"
+const val BOARD = "/board"
 const val COUNT = "/count"
 const val USER = "/user"
 

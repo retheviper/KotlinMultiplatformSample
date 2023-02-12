@@ -1,16 +1,13 @@
 package com.retheviper.bbs.user.route
 
 import com.retheviper.bbs.common.exception.BadRequestException
-import com.retheviper.bbs.common.extension.default
 import com.retheviper.bbs.common.extension.from
-import com.retheviper.bbs.constant.ErrorCode
+import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.constant.USER
 import com.retheviper.bbs.model.request.CreateUserRequest
-import com.retheviper.bbs.model.response.ExceptionResponse
 import com.retheviper.bbs.model.response.GetUserResponse
-import com.retheviper.bbs.user.domain.model.UserDto
+import com.retheviper.bbs.user.domain.model.User
 import com.retheviper.bbs.user.domain.service.UserService
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.application.log
 import io.ktor.server.request.receive
@@ -30,31 +27,15 @@ fun Route.routeUser() {
             val id = call.parameters["id"]?.toInt()
 
             if (id == null) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = ExceptionResponse(
-                        code = ErrorCode.INVALID_PARAMETER.value,
-                        message = "Invalid ID"
-                    )
-                )
+                call.respondBadRequest("Invalid ID")
                 return@get
             }
 
             val user = try {
                 service.getUser(id)
             } catch (e: BadRequestException) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = ExceptionResponse.from(e)
-                )
+                call.respondBadRequest(e)
                 call.application.log.error("${e.message}: $id")
-                return@get
-            } catch (e: Exception) {
-                call.respond(
-                    status = HttpStatusCode.InternalServerError,
-                    message = ExceptionResponse.default()
-                )
-                call.application.log.error("Internal server error: ${e.message}")
                 return@get
             }
 
@@ -65,20 +46,10 @@ fun Route.routeUser() {
             val request = call.receive<CreateUserRequest>()
 
             val user = try {
-                service.createUser(UserDto.from(request))
+                service.createUser(User.from(request))
             } catch (e: BadRequestException) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = ExceptionResponse.from(e)
-                )
+                call.respondBadRequest(e)
                 call.application.log.error("${e.message}: ${request.username}")
-                return@post
-            } catch (e: Exception) {
-                call.respond(
-                    status = HttpStatusCode.InternalServerError,
-                    message = ExceptionResponse.default()
-                )
-                call.application.log.error("Internal server error: ${e.message}")
                 return@post
             }
 
