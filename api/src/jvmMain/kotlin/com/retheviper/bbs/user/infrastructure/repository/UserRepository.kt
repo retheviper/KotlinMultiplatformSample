@@ -26,12 +26,6 @@ class UserRepository {
             ?.toDto()
 
     fun create(dto: UserDto): UserDto? {
-        val existing = find(dto.username)
-
-        if (existing != null) {
-            throw IllegalArgumentException("User already exists.")
-        }
-
         val id = User.insertAndGetId {
             it[username] = dto.username
             it[password] = requireNotNull(dto.password)

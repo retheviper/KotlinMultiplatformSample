@@ -11,4 +11,18 @@ class UserService(private val repository: UserRepository) {
             repository.find(id)
         }
     }
+
+    fun createUser(dto: UserDto): UserDto? {
+        if (dto.password == null) {
+            throw IllegalArgumentException("password is null")
+        }
+
+        return transaction {
+            if (repository.find(dto.username) != null) {
+                throw IllegalArgumentException("User already exists.")
+            }
+
+            repository.create(dto.copy(password = dto.password.reversed())) // TODO encrypt
+        }
+    }
 }

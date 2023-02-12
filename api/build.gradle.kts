@@ -7,6 +7,7 @@ val logbackVersion: String by project
 val exposedVersion: String by project
 val koinVersion: String by project
 val h2Version: String by project
+val kotestVersion: String by project
 
 plugins {
     application
@@ -96,7 +97,7 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
-                implementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+                implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
             }
         }
     }
