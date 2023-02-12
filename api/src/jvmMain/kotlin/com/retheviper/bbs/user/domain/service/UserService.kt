@@ -13,9 +13,7 @@ class UserService(private val repository: UserRepository) {
     }
 
     fun createUser(dto: UserDto): UserDto? {
-        if (dto.password == null) {
-            throw IllegalArgumentException("password is null")
-        }
+        requireNotNull(dto.password) { "password is null" }
 
         return transaction {
             if (repository.find(dto.username) != null) {
