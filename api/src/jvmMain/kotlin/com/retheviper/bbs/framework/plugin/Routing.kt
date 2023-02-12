@@ -1,9 +1,10 @@
-package com.retheviper.bbs.framework.plugins
+package com.retheviper.bbs.framework.plugin
 
+import com.retheviper.bbs.auth.web.routeAuth
 import com.retheviper.bbs.constant.API_BASE_PATH
 import com.retheviper.bbs.constant.COUNT
 import com.retheviper.bbs.model.Count
-import com.retheviper.bbs.user.web.authentication
+import com.retheviper.bbs.user.web.user
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -37,6 +38,7 @@ fun Application.configureRouting() {
             }
         }
 
-        authentication(this@configureRouting)
+        routeAuth(this@configureRouting)
+        user()
     }
 }

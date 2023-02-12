@@ -1,8 +1,8 @@
-package com.retheviper.bbs.framework.plugins
+package com.retheviper.bbs.framework.plugin
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.retheviper.bbs.common.extensions.getJwtConfigs
+import com.retheviper.bbs.common.extension.getJwtConfigs
 import io.ktor.server.application.Application
 import io.ktor.server.auth.authentication
 import io.ktor.server.auth.jwt.JWTPrincipal

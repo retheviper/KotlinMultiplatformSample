@@ -1,4 +1,4 @@
-package com.retheviper.bbs.framework.plugins
+package com.retheviper.bbs.framework.plugin
 
 import io.ktor.server.application.Application
 import io.ktor.server.application.install

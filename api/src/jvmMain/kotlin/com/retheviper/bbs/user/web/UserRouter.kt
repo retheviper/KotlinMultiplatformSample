@@ -1,39 +1,36 @@
 package com.retheviper.bbs.user.web
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
-import com.retheviper.bbs.common.extensions.getJwtConfigs
-import io.ktor.server.application.Application
+import com.retheviper.bbs.user.domain.service.UserService
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
-import io.ktor.server.routing.post
-import java.util.Date
+import io.ktor.server.routing.get
+import org.koin.ktor.ext.inject
 
-data class User(
-    val username: String,
-    val password: String
-)
+fun Routing.user() {
 
-private const val ONE_HOUR = 1000 * 60 * 60
+    val service by inject<UserService>()
 
-fun Routing.authentication(application: Application) {
-    post("/login") {
-        val user = call.receive<User>()
+    get("/user/{id}") {
+        val id = call.parameters["id"]?.toInt()
 
-        // Check username and password
-        // ...
+        if (id == null) {
+            call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "Invalid id"
+            )
+            return@get
+        }
 
-        val jwtConfigs = application.getJwtConfigs()
-
-        val token = JWT.create()
-            .withAudience(jwtConfigs.audience)
-            .withIssuer(jwtConfigs.issuer)
-            .withClaim("username", user.username)
-            .withExpiresAt(Date(System.currentTimeMillis() + ONE_HOUR))
-            .sign(Algorithm.HMAC256(jwtConfigs.secret))
-
-        call.respond(mapOf("token" to token))
+        val user = service.getUser(id)
+        user?.let {
+            call.respond(it)
+        } ?: run {
+            call.respond(
+                status = HttpStatusCode.NotFound,
+                message = "User not found"
+            )
+        }
     }
 }

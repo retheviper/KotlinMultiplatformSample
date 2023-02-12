@@ -1,4 +1,4 @@
-package com.retheviper.bbs.common.vo
+package com.retheviper.bbs.common.property
 
 data class JwtConfigs(
     val secret: String,
