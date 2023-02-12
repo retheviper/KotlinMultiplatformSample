@@ -5,6 +5,7 @@ import com.retheviper.bbs.user.domain.service.UserService
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
@@ -13,15 +14,18 @@ fun Application.configureDependencyInjection() {
     install(Koin) {
         slf4jLogger()
         modules(
-            module {
-                single { JwtService() }
-                userModules()
-            }
+            authModules(), userModules()
         )
     }
 }
 
-private fun org.koin.core.module.Module.userModules() {
-    single { UserService(get()) }
-    single { UserRepository() }
+private fun authModules(): Module {
+    val service = module { single { JwtService() } }
+    return module { includes(service) }
+}
+
+private fun userModules(): Module {
+    val service = module { single { UserService(get()) } }
+    val repository = module { single { UserRepository() } }
+    return module { includes(service, repository) }
 }
