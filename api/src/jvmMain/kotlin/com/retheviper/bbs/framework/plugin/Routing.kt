@@ -4,10 +4,11 @@ import com.retheviper.bbs.auth.web.routeAuth
 import com.retheviper.bbs.constant.API_BASE_PATH
 import com.retheviper.bbs.constant.COUNT
 import com.retheviper.bbs.model.Count
-import com.retheviper.bbs.user.web.route.user
+import com.retheviper.bbs.user.web.route.routeUser
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
+import io.ktor.server.application.log
 import io.ktor.server.http.content.resources
 import io.ktor.server.http.content.static
 import io.ktor.server.request.receive
@@ -33,12 +34,12 @@ fun Application.configureRouting() {
         route(API_BASE_PATH) {
             post(COUNT) {
                 val request = call.receive<Count>()
-                call.application.environment.log.info("Current count from ${request.platform} is: ${request.number}")
+                call.application.log.info("Current count from ${request.platform} is: ${request.number}")
                 call.respond(HttpStatusCode.Accepted)
             }
         }
 
-        routeAuth(this@configureRouting)
-        user()
+        routeAuth()
+        routeUser()
     }
 }

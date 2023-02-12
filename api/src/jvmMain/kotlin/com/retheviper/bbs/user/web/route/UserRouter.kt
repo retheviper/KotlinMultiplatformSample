@@ -5,18 +5,17 @@ import com.retheviper.bbs.user.domain.service.UserService
 import com.retheviper.bbs.user.web.model.request.CreateUserRequest
 import com.retheviper.bbs.user.web.model.response.GetUserResponse
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.application.log
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.ktor.util.pipeline.PipelineContext
 import org.koin.ktor.ext.inject
 
-fun Routing.user() {
+fun Routing.routeUser() {
 
     val service by inject<UserService>()
 
@@ -40,7 +39,7 @@ fun Routing.user() {
                     status = HttpStatusCode.NotFound,
                     message = "User not found"
                 )
-                call.application.environment.log.info("User not found: $id")
+                call.application.log.info("User not found: $id")
             }
         }
 
@@ -54,7 +53,7 @@ fun Routing.user() {
                     status = HttpStatusCode.BadRequest,
                     message = e.message.toString()
                 )
-                call.application.environment.log.error("${e.message}: ${request.username}")
+                call.application.log.error("${e.message}: ${request.username}")
                 return@post
             } catch (e: Exception) {
                 call.respond(
@@ -65,7 +64,7 @@ fun Routing.user() {
             }
 
             user?.let {
-                call.application.environment.log.info("User created: ${user.username}")
+                call.application.log.info("User created: ${user.username}")
                 call.respond(GetUserResponse.from(it))
             }
         }

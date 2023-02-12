@@ -1,6 +1,7 @@
 package com.retheviper.bbs.framework.plugin
 
 import com.retheviper.bbs.auth.domain.service.JwtService
+import com.retheviper.bbs.common.extension.getJwtConfigs
 import com.retheviper.bbs.user.domain.service.UserService
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.ktor.server.application.Application
@@ -14,14 +15,16 @@ fun Application.configureDependencyInjection() {
     install(Koin) {
         slf4jLogger()
         modules(
-            authModules(), userModules()
+            authModules(),
+            userModules()
         )
     }
 }
 
-private fun authModules(): Module {
-    val service = module { single { JwtService() } }
-    return module { includes(service) }
+private fun Application.authModules(): Module {
+    val config = module { single { getJwtConfigs() } }
+    val service = module { single { JwtService(get()) } }
+    return module { includes(config, service) }
 }
 
 private fun userModules(): Module {
