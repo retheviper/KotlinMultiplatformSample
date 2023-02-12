@@ -52,15 +52,16 @@ fun Routing.user() {
                     message = e.message.toString()
                 )
                 return@post
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "Internal server error"
+                )
+                return@post
             }
 
             user?.let {
                 call.respond(GetUserResponse.from(it))
-            } ?: run {
-                call.respond(
-                    status = HttpStatusCode.InternalServerError,
-                    message = "Cannot create user"
-                )
             }
         }
     }
