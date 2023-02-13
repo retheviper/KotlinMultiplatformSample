@@ -7,7 +7,9 @@ import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.common.exception.InvalidTokenException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.exception.UserNotFoundException
+import com.retheviper.bbs.common.extension.verifyWith
 import com.retheviper.bbs.common.property.JwtConfigs
+import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.Date
 
@@ -19,14 +21,14 @@ class JwtService(
     private val algorithm = Algorithm.HMAC256(jwtConfigs.secret)
 
     fun createToken(credential: Credential): String {
-        val user = transaction { repository.find(credential.username) }
+        val exist = transaction { repository.find(credential.username) }
             ?: throw UserNotFoundException("User not found.")
 
-        if (user.password != credential.password) {
-            throw PasswordNotMatchException("Invalid password.")
+        if (credential.password verifyWith exist.password) {
+            throw PasswordNotMatchException("Invalid password.", ErrorCode.USER_PASSWORD_NOT_MATCH)
         }
 
-        return createToken(user.username)
+        return createToken(exist.username)
     }
 
     fun refreshToken(token: String): String {

@@ -92,6 +92,9 @@ kotlin {
 
                 // H2
                 implementation("com.h2database:h2:$h2Version")
+
+                // Hash
+                implementation("com.amdelamar:jhash:2.2.0")
             }
         }
         val jvmTest by getting {

@@ -5,6 +5,8 @@ import com.retheviper.bbs.board.infrastructure.ArticleRepository
 import com.retheviper.bbs.common.exception.ArticleNotFoundException
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
+import com.retheviper.bbs.common.extension.toHashedString
+import com.retheviper.bbs.common.extension.verifyWith
 import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -27,6 +29,7 @@ class ArticleService(private val repository: ArticleRepository) {
         }
     }
 
+    @Throws(BadRequestException::class)
     fun find(id: Int): Article {
         return transaction {
             repository.find(id)
@@ -35,17 +38,18 @@ class ArticleService(private val repository: ArticleRepository) {
 
     fun create(article: Article) {
         transaction {
-            repository.create(article) // TODO Encrypt
+            repository.create(article.copy(password = article.password.toHashedString()))
         }
     }
 
+    @Throws(BadRequestException::class)
     fun update(article: Article) {
         transaction {
             val id = article.id ?: throw BadRequestException("Article id is null.")
             val exist =
                 repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: ${article.id}.")
 
-            if (exist.password != article.password) { // TODO Encrypt
+            if (article.password verifyWith exist.password) {
                 throw PasswordNotMatchException(
                     "Article not found with id: ${article.id}.",
                     ErrorCode.ARTICLE_PASSWORD_NOT_MATCH
@@ -56,11 +60,12 @@ class ArticleService(private val repository: ArticleRepository) {
         }
     }
 
+    @Throws(BadRequestException::class)
     fun delete(id: Int, password: String) {
         transaction {
             val exist = repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: $id.")
 
-            if (exist.password != password) { // TODO Encrypt
+            if (password verifyWith exist.password) {
                 throw PasswordNotMatchException("Article not found with id: $id", ErrorCode.ARTICLE_PASSWORD_NOT_MATCH)
             }
 

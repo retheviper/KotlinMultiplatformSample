@@ -3,6 +3,7 @@ package com.retheviper.bbs.board.route
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
+import com.retheviper.bbs.common.extension.getIdFromParameter
 import com.retheviper.bbs.common.extension.getPaginationProperties
 import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.constant.ARTICLE
@@ -51,14 +52,15 @@ fun Route.routeArticle() {
         }
 
         get("/{id}") {
-            val id = call.parameters["id"]?.toInt()
-
-            if (id == null) {
-                call.respondBadRequest("Invalid ID")
+            val id = try {
+                call.getIdFromParameter()
+            } catch (e: BadRequestException) {
+                call.respondBadRequest(e)
+                call.application.log.error(e.message)
                 return@get
             }
 
-            val dto = try {
+            val article = try {
                 service.find(id)
             } catch (e: BadRequestException) {
                 call.respondBadRequest(e)
@@ -66,7 +68,7 @@ fun Route.routeArticle() {
                 return@get
             }
 
-            call.respond(GetArticleResponse.from(dto))
+            call.respond(GetArticleResponse.from(article))
             call.application.log.info("Board returned with id: $id.")
         }
     }

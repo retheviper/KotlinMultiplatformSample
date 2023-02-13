@@ -2,6 +2,7 @@ package com.retheviper.bbs.user.route
 
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
+import com.retheviper.bbs.common.extension.getIdFromParameter
 import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.constant.USER
 import com.retheviper.bbs.model.request.CreateUserRequest
@@ -24,10 +25,11 @@ fun Route.routeUser() {
 
     route(USER) {
         get("/{id}") {
-            val id = call.parameters["id"]?.toInt()
-
-            if (id == null) {
-                call.respondBadRequest("Invalid ID")
+            val id = try {
+                call.getIdFromParameter()
+            } catch (e: BadRequestException) {
+                call.respondBadRequest(e)
+                call.application.log.error(e.message)
                 return@get
             }
 
