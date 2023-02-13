@@ -1,6 +1,6 @@
 package com.retheviper.bbs.board.domain.model
 
-data class Board(
+data class Article(
     val id: Int? = null,
     val title: String,
     val content: String,

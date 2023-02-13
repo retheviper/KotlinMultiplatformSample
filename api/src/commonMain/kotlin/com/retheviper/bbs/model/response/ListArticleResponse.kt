@@ -3,14 +3,14 @@ package com.retheviper.bbs.model.response
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ListBoardResponse(
+data class ListArticleResponse(
     val page: Int,
     val limit: Int,
     val pageSize: Int,
-    val boardInfos: List<BoardInfo>
+    val articleSummaries: List<ArticleSummary>
 ) {
     @Serializable
-    data class BoardInfo(
+    data class ArticleSummary(
         val id: Int,
         val title: String,
         val authorName: String,

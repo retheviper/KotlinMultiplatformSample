@@ -1,6 +1,6 @@
 package com.retheviper.bbs.common.infrastructure.table
 
-object Boards : Audit() {
+object Articles : Audit() {
     val title = varchar("title", 255)
     val content = text("content")
     val password = varchar("password", 255)

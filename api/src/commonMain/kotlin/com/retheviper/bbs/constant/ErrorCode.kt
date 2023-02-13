@@ -21,7 +21,8 @@ enum class ErrorCode(val value: String) {
 
     // Comment
     COMMENT_NOT_FOUND("C001"),
-    COMMENT_ALREADY_EXISTS("C002");
+    COMMENT_ALREADY_EXISTS("C002"),
+    COMMENT_PASSWORD_NOT_MATCH("C003");
 
     fun from(value: String): ErrorCode {
         return values().firstOrNull { it.value == value } ?: UNKNOWN_ERROR

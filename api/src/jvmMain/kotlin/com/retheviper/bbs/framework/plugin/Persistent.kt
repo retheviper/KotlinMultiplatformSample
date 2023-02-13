@@ -1,10 +1,10 @@
 package com.retheviper.bbs.framework.plugin
 
-import com.retheviper.bbs.board.domain.model.Board
+import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Comment
-import com.retheviper.bbs.board.infrastructure.BoardRepository
+import com.retheviper.bbs.board.infrastructure.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.CommentRepository
-import com.retheviper.bbs.common.infrastructure.table.Boards
+import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Comments
 import com.retheviper.bbs.common.infrastructure.table.Users
 import com.retheviper.bbs.user.domain.model.User
@@ -22,11 +22,11 @@ fun Application.configurePersistent() {
     )
 
     val userRepository by inject<UserRepository>()
-    val boardRepository by inject<BoardRepository>()
+    val articleRepository by inject<ArticleRepository>()
     val commentRepository by inject<CommentRepository>()
 
     transaction {
-        SchemaUtils.create(Users, Boards, Comments)
+        SchemaUtils.create(Users, Articles, Comments)
 
         userRepository.create(
             User(
@@ -37,19 +37,19 @@ fun Application.configurePersistent() {
             )
         )
 
-        repeat(100) { boardId ->
-            boardRepository.create(
-                Board(
-                    title = "test title $boardId",
-                    content = "test content $boardId",
+        repeat(100) { articleId ->
+            articleRepository.create(
+                Article(
+                    title = "test title $articleId",
+                    content = "test content $articleId",
                     password = "1234",
                     authorId = 1
                 )
             )
-            repeat(boardId) {
+            repeat(articleId) {
                 commentRepository.create(
                     Comment(
-                        boardId = boardId,
+                        boardId = articleId,
                         content = "test comment $it",
                         password = "1234",
                         authorId = 1
