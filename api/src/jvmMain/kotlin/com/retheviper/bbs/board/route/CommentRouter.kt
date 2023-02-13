@@ -1,7 +1,9 @@
 package com.retheviper.bbs.board.route
 
 import com.retheviper.bbs.board.domain.service.CommentService
+import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
+import com.retheviper.bbs.common.extension.getPaginationProperties
 import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.constant.COMMENT
 import com.retheviper.bbs.model.response.ListCommentResponse
@@ -24,9 +26,13 @@ fun Route.routeComment() {
                 return@get
             }
 
-            val page = call.request.queryParameters["page"]?.toInt() ?: 1
-            val pageSize = call.request.queryParameters["pageSize"]?.toInt() ?: 10
-            val limit = call.request.queryParameters["limit"]?.toInt() ?: 100
+            val (page, pageSize, limit) = try {
+                call.getPaginationProperties()
+            } catch (e: BadRequestException) {
+                call.respondBadRequest(e)
+                call.application.log.error(e.message)
+                return@get
+            }
 
             val dtos = service.findAll(
                 authorId = authorId,

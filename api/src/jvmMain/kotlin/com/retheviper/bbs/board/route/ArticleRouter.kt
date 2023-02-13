@@ -3,6 +3,7 @@ package com.retheviper.bbs.board.route
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
+import com.retheviper.bbs.common.extension.getPaginationProperties
 import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.constant.ARTICLE
 import com.retheviper.bbs.model.response.GetArticleResponse
@@ -19,41 +20,24 @@ fun Route.routeArticle() {
     route(ARTICLE) {
         val service by inject<ArticleService>()
         get {
-            val page = call.request.queryParameters["page"]?.toInt() ?: 1
-            val pageSize = call.request.queryParameters["pageSize"]?.toInt() ?: 10
-            val limit = call.request.queryParameters["limit"]?.toInt() ?: 100
-
-            if (page < 1 || pageSize < 1 || limit < 1) {
-                call.respondBadRequest("Invalid page, pageSize or limit.")
-                return@get
-            }
-
-            if (pageSize > limit) {
-                call.respondBadRequest("pageSize must be less than or equal to limit.")
-                return@get
-            }
-
-            if (page > limit / pageSize) {
-                call.respondBadRequest("page must be less than or equal to limit / pageSize.")
+            val (page, pageSize, limit) = try {
+                call.getPaginationProperties()
+            } catch (e: BadRequestException) {
+                call.respondBadRequest(e)
+                call.application.log.error(e.message)
                 return@get
             }
 
             val authorId = call.request.queryParameters["authorId"]?.toInt()
 
-            val dtos = if (authorId == null) {
-                service.findAll(
-                    page = page,
-                    pageSize = pageSize,
-                    limit = limit
-                )
-            } else {
-                service.findAll(
-                    authorId = authorId,
-                    page = page,
-                    pageSize = pageSize,
-                    limit = limit
-                )
-            }
+            call.application.log.info("authorId: $authorId, page: $page, pageSize: $pageSize, limit: $limit.")
+
+            val dtos = service.findAll(
+                authorId = authorId,
+                page = page,
+                pageSize = pageSize,
+                limit = limit
+            )
 
             call.respond(
                 ListArticleResponse.from(

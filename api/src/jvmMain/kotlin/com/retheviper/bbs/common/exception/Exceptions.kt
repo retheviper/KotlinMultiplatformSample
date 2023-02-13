@@ -2,7 +2,8 @@ package com.retheviper.bbs.common.exception
 
 import com.retheviper.bbs.constant.ErrorCode
 
-open class BadRequestException(message: String, val code: ErrorCode) : RuntimeException(message)
+open class BadRequestException(message: String, val code: ErrorCode = ErrorCode.INVALID_PARAMETER) :
+    RuntimeException(message)
 
 class UserNotFoundException(message: String) : BadRequestException(message, ErrorCode.USER_NOT_FOUND)
 

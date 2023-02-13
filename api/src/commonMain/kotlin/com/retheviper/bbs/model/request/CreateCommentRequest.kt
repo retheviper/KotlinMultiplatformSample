@@ -1,5 +1,8 @@
 package com.retheviper.bbs.model.request
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 class CreateCommentRequest(
     val content: String,
     val authorId: Int,

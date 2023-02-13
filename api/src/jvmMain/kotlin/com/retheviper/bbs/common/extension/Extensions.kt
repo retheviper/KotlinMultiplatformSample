@@ -28,6 +28,26 @@ fun Application.getJwtConfigs(): JwtConfigs {
     return JwtConfigs(secret, issuer, audience, realm)
 }
 
+fun ApplicationCall.getPaginationProperties(): Triple<Int, Int, Int> {
+    val page = request.queryParameters["page"]?.toInt() ?: 1
+    val pageSize = request.queryParameters["pageSize"]?.toInt() ?: 10
+    val limit = request.queryParameters["limit"]?.toInt() ?: 100
+
+    if (page < 1 || pageSize < 1 || limit < 1) {
+        throw BadRequestException("Invalid page, pageSize or limit.")
+    }
+
+    if (pageSize > limit) {
+        throw BadRequestException("pageSize must be less than or equal to limit.")
+    }
+
+    if (page > limit / pageSize) {
+        throw BadRequestException("page must be less than or equal to limit / pageSize.")
+    }
+
+    return Triple(page, pageSize, limit)
+}
+
 suspend fun ApplicationCall.respondBadRequest(message: String) {
     respond(
         status = HttpStatusCode.BadRequest,
@@ -76,7 +96,8 @@ fun ListArticleResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dto
             ListArticleResponse.ArticleSummary(
                 id = checkNotNull(it.id),
                 title = it.title,
-                authorName = checkNotNull(it.authorName)
+                authorName = checkNotNull(it.authorName),
+                comments = it.comments?.size ?: 0
             )
         }
     )

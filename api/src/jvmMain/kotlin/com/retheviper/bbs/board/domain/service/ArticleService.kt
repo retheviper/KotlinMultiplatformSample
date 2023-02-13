@@ -13,17 +13,7 @@ class ArticleService(private val repository: ArticleRepository) {
         }
     }
 
-    fun findAll(page: Int, pageSize: Int, limit: Int): List<Article> {
-        return transaction {
-            repository.findAll(
-                page = page,
-                pageSize = pageSize,
-                limit = limit
-            )
-        }
-    }
-
-    fun findAll(authorId: Int, page: Int, pageSize: Int, limit: Int): List<Article> {
+    fun findAll(authorId: Int?, page: Int, pageSize: Int, limit: Int): List<Article> {
         return transaction {
             repository.findAll(
                 authorId = authorId,

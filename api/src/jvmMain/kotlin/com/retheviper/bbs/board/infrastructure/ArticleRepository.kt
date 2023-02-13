@@ -18,42 +18,28 @@ import java.time.LocalDateTime
 class ArticleRepository {
 
     fun count(authorId: Int?): Long {
+        val op = if (authorId != null) {
+            (Articles.authorId eq authorId) and (Articles.deleted eq false)
+        } else {
+            Articles.deleted eq false
+        }
+        
         return Articles
-            .select {
-                (Articles.deleted eq false).apply {
-                    if (authorId != null) {
-                        and(Articles.authorId eq authorId)
-                    }
-                }
-            }
+            .select(op)
             .count()
     }
 
-    fun findAll(page: Int, pageSize: Int, limit: Int): List<Article> {
-        return Articles
-            .leftJoin(Users, { authorId }, { Users.id })
-            .slice(Articles.columns + Users.name)
-            .select(Articles.deleted eq false)
-            .limit(limit)
-            .limit(pageSize, ((page - 1) * pageSize).toLong())
-            .orderBy(Articles.id, SortOrder.ASC)
-            .map {
-                Article(
-                    id = it[Articles.id].value,
-                    title = it[Articles.title],
-                    content = it[Articles.content],
-                    password = it[Articles.password],
-                    authorId = it[authorId].value,
-                    authorName = it[Users.name]
-                )
-            }
-    }
+    fun findAll(authorId: Int?, page: Int, pageSize: Int, limit: Int): List<Article> {
+        val op = if (authorId != null) {
+            (Articles.authorId eq authorId) and (Articles.deleted eq false)
+        } else {
+            Articles.deleted eq false
+        }
 
-    fun findAll(authorId: Int, page: Int, pageSize: Int, limit: Int): List<Article> {
         return Articles
             .leftJoin(Users, { Articles.authorId }, { Users.id })
             .slice(Articles.columns + Users.name)
-            .select { (Articles.authorId eq authorId) and (Articles.deleted eq false) }
+            .select(op)
             .limit(limit)
             .limit(pageSize, ((page - 1) * pageSize).toLong())
             .orderBy(Articles.id, SortOrder.ASC)
@@ -64,7 +50,21 @@ class ArticleRepository {
                     content = it[Articles.content],
                     password = it[Articles.password],
                     authorId = it[Articles.authorId].value,
-                    authorName = it[Users.name]
+                    authorName = it[Users.name],
+                    comments = Comments
+                        .leftJoin(Users, { Comments.authorId }, { Users.id })
+                        .slice(Comments.columns + Users.name + Users.id)
+                        .select { (Comments.articleId eq it[Articles.id]) and (Comments.deleted eq false) }
+                        .map { comment ->
+                            Comment(
+                                boardId = it[Articles.id].value,
+                                id = comment[Comments.id].value,
+                                content = comment[Comments.content],
+                                password = comment[Comments.password],
+                                authorId = comment[Users.id].value,
+                                authorName = comment[Users.name]
+                            )
+                        }
                 )
             }
     }
