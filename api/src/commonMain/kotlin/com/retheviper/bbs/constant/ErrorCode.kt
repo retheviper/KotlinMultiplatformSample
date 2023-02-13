@@ -18,6 +18,7 @@ enum class ErrorCode(val value: String) {
     // Article
     ARTICLE_NOT_FOUND("A001"),
     ARTICLE_ALREADY_EXISTS("A002"),
+    ARTICLE_PASSWORD_NOT_MATCH("A003"),
 
     // Comment
     COMMENT_NOT_FOUND("C001"),

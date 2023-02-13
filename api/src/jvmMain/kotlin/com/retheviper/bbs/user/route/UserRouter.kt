@@ -32,7 +32,7 @@ fun Route.routeUser() {
             }
 
             val user = try {
-                service.getUser(id)
+                service.find(id)
             } catch (e: BadRequestException) {
                 call.respondBadRequest(e)
                 call.application.log.error("${e.message}: $id")
@@ -46,7 +46,7 @@ fun Route.routeUser() {
             val request = call.receive<CreateUserRequest>()
 
             val user = try {
-                service.createUser(User.from(request))
+                service.create(User.from(request))
             } catch (e: BadRequestException) {
                 call.respondBadRequest(e)
                 call.application.log.error("${e.message}: ${request.username}")
