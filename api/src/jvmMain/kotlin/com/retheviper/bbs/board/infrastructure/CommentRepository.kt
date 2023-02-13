@@ -1,12 +1,13 @@
 package com.retheviper.bbs.board.infrastructure
 
 import com.retheviper.bbs.board.domain.model.Comment
+import com.retheviper.bbs.common.extension.insertAuditInfos
+import com.retheviper.bbs.common.extension.updateAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Comments
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
-import java.time.LocalDateTime
 
 class CommentRepository {
 
@@ -49,11 +50,7 @@ class CommentRepository {
             it[password] = comment.password
             it[authorId] = comment.authorId
             it[articleId] = comment.boardId
-            it[createdBy] = comment.authorName ?: ""
-            it[createdDate] = LocalDateTime.now()
-            it[lastModifiedBy] = comment.authorName ?: ""
-            it[lastModifiedDate] = LocalDateTime.now()
-            it[deleted] = false
+            insertAuditInfos(it, comment.authorName ?: "")
         }
     }
 
@@ -61,10 +58,7 @@ class CommentRepository {
         Comments.update({ Comments.id eq comment.id!! }) {
             it[content] = comment.content
             it[password] = comment.password
-            it[authorId] = comment.authorId
-            it[articleId] = comment.boardId
-            it[lastModifiedBy] = comment.authorName ?: ""
-            it[lastModifiedDate] = LocalDateTime.now()
+            updateAuditInfos(it, comment.authorName ?: "")
         }
     }
 

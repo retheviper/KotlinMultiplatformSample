@@ -1,5 +1,6 @@
 package com.retheviper.bbs.user.infrastructure.repository
 
+import com.retheviper.bbs.common.extension.insertAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Users
 import com.retheviper.bbs.user.domain.model.User
 import org.jetbrains.exposed.sql.Op
@@ -8,7 +9,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
-import java.time.LocalDateTime
 
 class UserRepository {
 
@@ -31,11 +31,7 @@ class UserRepository {
             it[password] = requireNotNull(dto.password)
             it[name] = dto.name
             it[mail] = dto.mail
-            it[createdBy] = dto.username
-            it[createdDate] = LocalDateTime.now()
-            it[lastModifiedBy] = dto.username
-            it[lastModifiedDate] = LocalDateTime.now()
-            it[deleted] = false
+            insertAuditInfos(it, dto.username)
         }
 
         return find { Users.id eq id }

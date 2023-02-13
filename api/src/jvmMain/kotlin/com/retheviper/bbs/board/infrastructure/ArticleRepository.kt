@@ -2,6 +2,8 @@ package com.retheviper.bbs.board.infrastructure
 
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Comment
+import com.retheviper.bbs.common.extension.insertAuditInfos
+import com.retheviper.bbs.common.extension.updateAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Articles.authorId
 import com.retheviper.bbs.common.infrastructure.table.Comments
@@ -13,7 +15,6 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.leftJoin
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
-import java.time.LocalDateTime
 
 class ArticleRepository {
 
@@ -23,7 +24,7 @@ class ArticleRepository {
         } else {
             Articles.deleted eq false
         }
-        
+
         return Articles
             .select(op)
             .count()
@@ -106,11 +107,7 @@ class ArticleRepository {
             it[content] = article.content
             it[password] = article.password
             it[authorId] = article.authorId
-            it[createdBy] = article.authorName ?: ""
-            it[createdDate] = LocalDateTime.now()
-            it[lastModifiedBy] = article.authorName ?: ""
-            it[lastModifiedDate] = LocalDateTime.now()
-            it[deleted] = false
+            insertAuditInfos(it, article.authorName ?: "")
         }
     }
 
@@ -119,9 +116,7 @@ class ArticleRepository {
             it[title] = article.title
             it[content] = article.content
             it[password] = article.password
-            it[authorId] = article.authorId
-            it[lastModifiedBy] = article.authorName ?: ""
-            it[lastModifiedDate] = LocalDateTime.now()
+            updateAuditInfos(it, article.authorName ?: "")
         }
     }
 

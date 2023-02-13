@@ -51,7 +51,7 @@ class ArticleService(private val repository: ArticleRepository) {
 
             if (article.password verifyWith exist.password) {
                 throw PasswordNotMatchException(
-                    "Article not found with id: ${article.id}.",
+                    "Article's password not match with id: ${article.id}.",
                     ErrorCode.ARTICLE_PASSWORD_NOT_MATCH
                 )
             }
@@ -66,7 +66,10 @@ class ArticleService(private val repository: ArticleRepository) {
             val exist = repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: $id.")
 
             if (password verifyWith exist.password) {
-                throw PasswordNotMatchException("Article not found with id: $id", ErrorCode.ARTICLE_PASSWORD_NOT_MATCH)
+                throw PasswordNotMatchException(
+                    "Article's password not match with id: ${id}.",
+                    ErrorCode.ARTICLE_PASSWORD_NOT_MATCH
+                )
             }
 
             repository.delete(id)

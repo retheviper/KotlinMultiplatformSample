@@ -38,7 +38,7 @@ class CommentService(private val repository: CommentRepository) {
 
             if (comment.password verifyWith exist.password) {
                 throw PasswordNotMatchException(
-                    "Comment not found with id: ${comment.id}.",
+                    "Comment's password not match with id: ${comment.id}.",
                     ErrorCode.COMMENT_PASSWORD_NOT_MATCH
                 )
             }
