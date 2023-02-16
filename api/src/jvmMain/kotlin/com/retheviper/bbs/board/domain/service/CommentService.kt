@@ -35,7 +35,9 @@ class CommentService(private val repository: CommentRepository) {
                 page = page,
                 pageSize = pageSize,
                 limit = limit
-            )
+            ).map {
+                Comment.from(it)
+            }
         }
     }
 

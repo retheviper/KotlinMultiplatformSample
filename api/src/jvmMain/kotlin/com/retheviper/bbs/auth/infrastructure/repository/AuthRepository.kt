@@ -8,7 +8,8 @@ import org.jetbrains.exposed.sql.select
 class AuthRepository {
 
     fun find(username: String): Credential? =
-        Users.select { (Users.username eq username) and (Users.deleted eq false) }
+        Users.slice(Users.username, Users.password)
+            .select { (Users.username eq username) and (Users.deleted eq false) }
             .firstOrNull()
             ?.let {
                 Credential(

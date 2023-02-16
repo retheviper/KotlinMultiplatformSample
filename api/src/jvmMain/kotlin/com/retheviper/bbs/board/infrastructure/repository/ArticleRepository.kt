@@ -7,6 +7,7 @@ import com.retheviper.bbs.common.extension.updateAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Articles.authorId
 import com.retheviper.bbs.common.infrastructure.table.Users
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
@@ -18,41 +19,21 @@ import org.jetbrains.exposed.sql.update
 class ArticleRepository {
 
     fun count(authorId: Int?): Long {
-        val op = if (authorId != null) {
-            (Articles.authorId eq authorId) and (Articles.deleted eq false)
-        } else {
-            Articles.deleted eq false
-        }
-
         return Articles
-            .select(op)
+            .slice(Articles.id)
+            .select(selectOperator(authorId))
             .count()
     }
 
     fun findAll(authorId: Int?, page: Int, pageSize: Int, limit: Int): List<ArticleRecord> {
-        val op = if (authorId != null) {
-            (Articles.authorId eq authorId) and (Articles.deleted eq false)
-        } else {
-            Articles.deleted eq false
-        }
-
         return Articles
             .leftJoin(Users, { Articles.authorId }, { Users.id })
             .slice(Articles.columns + Users.name)
-            .select(op)
+            .select(selectOperator(authorId))
             .limit(limit)
             .limit(pageSize, ((page - 1) * pageSize).toLong())
             .orderBy(Articles.id, SortOrder.ASC)
-            .map {
-                ArticleRecord(
-                    id = it[Articles.id].value,
-                    title = it[Articles.title],
-                    content = it[Articles.content],
-                    password = it[Articles.password],
-                    authorId = it[Articles.authorId].value,
-                    authorName = it[Users.name]
-                )
-            }
+            .map { it.toRecord() }
     }
 
     fun find(id: Int): ArticleRecord? {
@@ -60,16 +41,8 @@ class ArticleRepository {
             .leftJoin(Users, { authorId }, { Users.id })
             .slice(Articles.columns + Users.name)
             .select { (Articles.id eq id) and (Articles.deleted eq false) }
-            .map {
-                ArticleRecord(
-                    id = it[Articles.id].value,
-                    title = it[Articles.title],
-                    content = it[Articles.content],
-                    password = it[Articles.password],
-                    authorId = it[authorId].value,
-                    authorName = it[Users.name]
-                )
-            }.firstOrNull()
+            .map { it.toRecord() }
+            .firstOrNull()
     }
 
     fun create(article: Article) {
@@ -96,4 +69,20 @@ class ArticleRepository {
             it[deleted] = true
         }
     }
+
+
+    private fun selectOperator(authorId: Int?) = if (authorId != null) {
+        (Articles.authorId eq authorId) and (Articles.deleted eq false)
+    } else {
+        Articles.deleted eq false
+    }
+
+    private fun ResultRow.toRecord() = ArticleRecord(
+        id = this[Articles.id].value,
+        title = this[Articles.title],
+        content = this[Articles.content],
+        password = this[Articles.password],
+        authorId = this[authorId].value,
+        authorName = this[Users.name]
+    )
 }
