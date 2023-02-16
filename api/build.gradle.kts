@@ -40,6 +40,9 @@ kotlin {
     }
     jvm {
         withJava()
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
     }
     sourceSets {
         val commonMain by getting {
@@ -101,6 +104,8 @@ kotlin {
             dependencies {
                 implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
                 implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+                implementation(kotlin("test"))
+                implementation("io.mockk:mockk:1.13.4")
             }
         }
     }

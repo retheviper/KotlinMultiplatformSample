@@ -42,13 +42,21 @@ class JwtService(
     }
 
     private fun createToken(username: String): String {
-        return JWT.create().withAudience(jwtConfigs.audience).withIssuer(jwtConfigs.issuer)
-            .withClaim("username", username).withExpiresAt(Date(System.currentTimeMillis() + oneHour)).sign(algorithm)
+        return JWT.create()
+            .withAudience(jwtConfigs.audience)
+            .withIssuer(jwtConfigs.issuer)
+            .withClaim("username", username)
+            .withExpiresAt(Date(System.currentTimeMillis() + oneHour))
+            .sign(algorithm)
     }
 
     private fun isValidToken(token: String): Boolean {
         return try {
-            JWT.require(algorithm).withAudience(jwtConfigs.audience).withIssuer(jwtConfigs.issuer).build().verify(token)
+            JWT.require(algorithm)
+                .withAudience(jwtConfigs.audience)
+                .withIssuer(jwtConfigs.issuer)
+                .build()
+                .verify(token)
             true
         } catch (e: Exception) {
             false
