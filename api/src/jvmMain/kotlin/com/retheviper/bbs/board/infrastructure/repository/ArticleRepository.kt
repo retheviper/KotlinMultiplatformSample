@@ -1,12 +1,11 @@
-package com.retheviper.bbs.board.infrastructure
+package com.retheviper.bbs.board.infrastructure.repository
 
 import com.retheviper.bbs.board.domain.model.Article
-import com.retheviper.bbs.board.domain.model.Comment
+import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.common.extension.insertAuditInfos
 import com.retheviper.bbs.common.extension.updateAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Articles.authorId
-import com.retheviper.bbs.common.infrastructure.table.Comments
 import com.retheviper.bbs.common.infrastructure.table.Users
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -30,7 +29,7 @@ class ArticleRepository {
             .count()
     }
 
-    fun findAll(authorId: Int?, page: Int, pageSize: Int, limit: Int): List<Article> {
+    fun findAll(authorId: Int?, page: Int, pageSize: Int, limit: Int): List<ArticleRecord> {
         val op = if (authorId != null) {
             (Articles.authorId eq authorId) and (Articles.deleted eq false)
         } else {
@@ -45,58 +44,30 @@ class ArticleRepository {
             .limit(pageSize, ((page - 1) * pageSize).toLong())
             .orderBy(Articles.id, SortOrder.ASC)
             .map {
-                Article(
+                ArticleRecord(
                     id = it[Articles.id].value,
                     title = it[Articles.title],
                     content = it[Articles.content],
                     password = it[Articles.password],
                     authorId = it[Articles.authorId].value,
-                    authorName = it[Users.name],
-                    comments = Comments
-                        .leftJoin(Users, { Comments.authorId }, { Users.id })
-                        .slice(Comments.columns + Users.name + Users.id)
-                        .select { (Comments.articleId eq it[Articles.id]) and (Comments.deleted eq false) }
-                        .map { comment ->
-                            Comment(
-                                boardId = it[Articles.id].value,
-                                id = comment[Comments.id].value,
-                                content = comment[Comments.content],
-                                password = comment[Comments.password],
-                                authorId = comment[Users.id].value,
-                                authorName = comment[Users.name]
-                            )
-                        }
+                    authorName = it[Users.name]
                 )
             }
     }
 
-    fun find(id: Int): Article? {
+    fun find(id: Int): ArticleRecord? {
         return Articles
             .leftJoin(Users, { authorId }, { Users.id })
             .slice(Articles.columns + Users.name)
             .select { (Articles.id eq id) and (Articles.deleted eq false) }
             .map {
-                Article(
+                ArticleRecord(
                     id = it[Articles.id].value,
                     title = it[Articles.title],
                     content = it[Articles.content],
                     password = it[Articles.password],
                     authorId = it[authorId].value,
-                    authorName = it[Users.name],
-                    comments = Comments
-                        .leftJoin(Users, { authorId }, { Users.id })
-                        .slice(Comments.columns + Users.name + Users.id)
-                        .select { (Comments.articleId eq id) and (Comments.deleted eq false) }
-                        .map { comment ->
-                            Comment(
-                                boardId = it[Articles.id].value,
-                                id = comment[Comments.id].value,
-                                content = comment[Comments.content],
-                                password = comment[Comments.password],
-                                authorId = comment[Users.id].value,
-                                authorName = comment[Users.name]
-                            )
-                        }
+                    authorName = it[Users.name]
                 )
             }.firstOrNull()
     }

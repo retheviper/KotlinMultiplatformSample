@@ -24,7 +24,7 @@ fun <T : Any> Audit.insertAuditInfos(insertStatement: InsertStatement<T>, name: 
     insertStatement[deleted] = false
 }
 
-fun Audit.updateAuditInfos(it: UpdateStatement, name: String) {
-    it[lastModifiedBy] = name
-    it[lastModifiedDate] = LocalDateTime.now()
+fun Audit.updateAuditInfos(updateStatement: UpdateStatement, name: String) {
+    updateStatement[lastModifiedBy] = name
+    updateStatement[lastModifiedDate] = LocalDateTime.now()
 }

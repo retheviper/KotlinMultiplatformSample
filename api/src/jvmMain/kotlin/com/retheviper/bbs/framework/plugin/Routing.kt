@@ -2,6 +2,7 @@ package com.retheviper.bbs.framework.plugin
 
 import com.retheviper.bbs.auth.route.routeAuth
 import com.retheviper.bbs.board.route.routeBoard
+import com.retheviper.bbs.common.route.routeHealth
 import com.retheviper.bbs.constant.API_BASE_PATH
 import com.retheviper.bbs.constant.COUNT
 import com.retheviper.bbs.model.request.CountRequest
@@ -38,7 +39,7 @@ fun Application.configureRouting() {
                 call.application.log.info("Current count from ${request.platform} is: ${request.number}")
                 call.respond(HttpStatusCode.Accepted)
             }
-
+            routeHealth()
             routeAuth()
             routeUser()
             routeBoard()

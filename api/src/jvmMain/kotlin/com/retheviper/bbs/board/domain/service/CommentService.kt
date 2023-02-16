@@ -1,7 +1,7 @@
 package com.retheviper.bbs.board.domain.service
 
 import com.retheviper.bbs.board.domain.model.Comment
-import com.retheviper.bbs.board.infrastructure.CommentRepository
+import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.exception.CommentNotFoundException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
@@ -11,6 +11,22 @@ import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class CommentService(private val repository: CommentRepository) {
+
+    fun findAll(boardIds: List<Int>): List<Comment> {
+        return transaction {
+            repository.findAll(boardIds).map {
+                Comment.from(it)
+            }
+        }
+    }
+
+    fun findAll(boardId: Int): List<Comment> {
+        return transaction {
+            repository.findAll(boardId).map {
+                Comment.from(it)
+            }
+        }
+    }
 
     fun findAll(authorId: Int, page: Int, pageSize: Int, limit: Int): List<Comment> {
         return transaction {

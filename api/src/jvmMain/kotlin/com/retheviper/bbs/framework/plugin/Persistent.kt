@@ -2,8 +2,8 @@ package com.retheviper.bbs.framework.plugin
 
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Comment
-import com.retheviper.bbs.board.infrastructure.ArticleRepository
-import com.retheviper.bbs.board.infrastructure.CommentRepository
+import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
+import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Comments
 import com.retheviper.bbs.common.infrastructure.table.Users
@@ -47,14 +47,16 @@ fun Application.configurePersistent() {
                 )
             )
             repeat(articleId) {
-                commentRepository.create(
-                    Comment(
-                        boardId = articleId,
-                        content = "test comment $it",
-                        password = "1234",
-                        authorId = 1
+                if ((articleId % 2) == 0) {
+                    commentRepository.create(
+                        Comment(
+                            articleId = articleId,
+                            content = "test comment $it",
+                            password = "1234",
+                            authorId = 1
+                        )
                     )
-                )
+                }
             }
         }
     }

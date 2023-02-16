@@ -4,8 +4,8 @@ import com.retheviper.bbs.auth.domain.service.JwtService
 import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.board.domain.service.CommentService
-import com.retheviper.bbs.board.infrastructure.ArticleRepository
-import com.retheviper.bbs.board.infrastructure.CommentRepository
+import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
+import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.extension.getJwtConfigs
 import com.retheviper.bbs.user.domain.service.UserService
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
@@ -41,7 +41,7 @@ private fun userModules(): Module {
 }
 
 private fun boardModules(): Module {
-    val articleService = module { single { ArticleService(get()) } }
+    val articleService = module { single { ArticleService(get(), get()) } }
     val articleRepository = module { single { ArticleRepository() } }
     val commentService = module { single { CommentService(get()) } }
     val commentRepository = module { single { CommentRepository() } }
