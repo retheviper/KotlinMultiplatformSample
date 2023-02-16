@@ -29,7 +29,7 @@ class UserRepository {
     fun create(dto: User): User? {
         val id = Users.insertAndGetId {
             it[username] = dto.username
-            it[password] = requireNotNull(dto.password)
+            it[password] = dto.password
             it[name] = dto.name
             it[mail] = dto.mail
             insertAuditInfos(it, dto.username)

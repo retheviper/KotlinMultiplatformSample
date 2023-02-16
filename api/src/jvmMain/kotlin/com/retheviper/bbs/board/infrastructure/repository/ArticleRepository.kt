@@ -23,7 +23,7 @@ class ArticleRepository {
     fun count(authorId: UserId?): Long {
         return Articles
             .slice(Articles.id)
-            .select(selectOperator(authorId?.value))
+            .select(selectOperator(authorId))
             .count()
     }
 
@@ -31,7 +31,7 @@ class ArticleRepository {
         return Articles
             .leftJoin(Users, { Articles.authorId }, { Users.id })
             .slice(Articles.columns + Users.name)
-            .select(selectOperator(authorId?.value))
+            .select(selectOperator(authorId))
             .limit(limit)
             .limit(pageSize, ((page - 1) * pageSize).toLong())
             .orderBy(Articles.id, SortOrder.ASC)
@@ -73,8 +73,8 @@ class ArticleRepository {
     }
 
 
-    private fun selectOperator(authorId: Int?) = if (authorId != null) {
-        (Articles.authorId eq authorId) and (Articles.deleted eq false)
+    private fun selectOperator(authorId: UserId?) = if (authorId != null) {
+        (Articles.authorId eq authorId.value) and (Articles.deleted eq false)
     } else {
         Articles.deleted eq false
     }
