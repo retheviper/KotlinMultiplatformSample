@@ -12,8 +12,12 @@ fun String.toHashedString(): String {
     return Hash.password(this.toCharArray()).algorithm(Type.BCRYPT).create()
 }
 
-infix fun String.verifyWith(hashed: String): Boolean {
+infix fun String.matchesWith(hashed: String): Boolean {
     return Hash.password(this.toCharArray()).algorithm(Type.BCRYPT).verify(hashed)
+}
+
+infix fun String.notMatchesWith(hashed: String): Boolean {
+    return !matchesWith(hashed)
 }
 
 fun <T : Any> Audit.insertAuditInfos(insertStatement: InsertStatement<T>, name: String) {

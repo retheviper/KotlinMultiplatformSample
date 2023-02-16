@@ -5,8 +5,8 @@ import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.common.exception.ArticleNotFoundException
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
+import com.retheviper.bbs.common.extension.notMatchesWith
 import com.retheviper.bbs.common.extension.toHashedString
-import com.retheviper.bbs.common.extension.verifyWith
 import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -62,7 +62,7 @@ class ArticleService(private val commentService: CommentService, private val rep
             val exist =
                 repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: ${article.id}.")
 
-            if (article.password verifyWith exist.password) {
+            if (article.password notMatchesWith exist.password) {
                 throw PasswordNotMatchException(
                     "Article's password not match with id: ${article.id}.", ErrorCode.ARTICLE_PASSWORD_NOT_MATCH
                 )
@@ -77,7 +77,7 @@ class ArticleService(private val commentService: CommentService, private val rep
         transaction {
             val exist = repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: $id.")
 
-            if (password verifyWith exist.password) {
+            if (password notMatchesWith exist.password) {
                 throw PasswordNotMatchException(
                     "Article's password not match with id: ${id}.", ErrorCode.ARTICLE_PASSWORD_NOT_MATCH
                 )

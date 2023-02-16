@@ -5,8 +5,8 @@ import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.exception.CommentNotFoundException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
+import com.retheviper.bbs.common.extension.notMatchesWith
 import com.retheviper.bbs.common.extension.toHashedString
-import com.retheviper.bbs.common.extension.verifyWith
 import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -54,7 +54,7 @@ class CommentService(private val repository: CommentRepository) {
             val exist =
                 repository.find(id) ?: throw CommentNotFoundException("Comment not found with id: ${comment.id}.")
 
-            if (comment.password verifyWith exist.password) {
+            if (comment.password notMatchesWith exist.password) {
                 throw PasswordNotMatchException(
                     "Comment's password not match with id: ${comment.id}.",
                     ErrorCode.COMMENT_PASSWORD_NOT_MATCH
@@ -70,7 +70,7 @@ class CommentService(private val repository: CommentRepository) {
         transaction {
             val exist = repository.find(id) ?: throw CommentNotFoundException("Comment not found with id: $id")
 
-            if (password verifyWith exist.password) {
+            if (password notMatchesWith exist.password) {
                 throw PasswordNotMatchException("Comment not found with id: $id", ErrorCode.COMMENT_PASSWORD_NOT_MATCH)
             }
 
