@@ -12,17 +12,17 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 class CommentService(private val repository: CommentRepository) {
 
-    fun findAll(boardIds: List<Int>): List<Comment> {
+    fun findAll(articleIds: List<Int>): List<Comment> {
         return transaction {
-            repository.findAll(boardIds).map {
+            repository.findAll(articleIds).map {
                 Comment.from(it)
             }
         }
     }
 
-    fun findAll(boardId: Int): List<Comment> {
+    fun findAll(articleId: Int): List<Comment> {
         return transaction {
-            repository.findAll(boardId).map {
+            repository.findAll(articleId).map {
                 Comment.from(it)
             }
         }

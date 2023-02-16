@@ -3,6 +3,7 @@ package com.retheviper.bbs.auth.domain.service
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTVerificationException
+import com.auth0.jwt.exceptions.TokenExpiredException
 import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.common.exception.InvalidTokenException
@@ -95,11 +96,6 @@ class JwtServiceTest : FreeSpecWithDb({
         }
 
         "NG - Token expired" {
-            every { repository.find(credential.username) } returns Credential(
-                username = credential.username,
-                password = credential.password.toHashedString()
-            )
-
             val token = JWT.create()
                 .withAudience(config.audience)
                 .withIssuer(config.issuer)
@@ -107,7 +103,7 @@ class JwtServiceTest : FreeSpecWithDb({
                 .withExpiresAt(Date(System.currentTimeMillis() - 10 * 60 * 1000))
                 .sign(algorithm)
 
-            shouldThrow<InvalidTokenException> {
+            shouldThrow<TokenExpiredException> {
                 service.refreshToken(token)
             }
         }

@@ -15,17 +15,17 @@ import org.jetbrains.exposed.sql.update
 
 class CommentRepository {
 
-    fun findAll(boardIds: List<Int>): List<CommentRecord> {
+    fun findAll(articleIds: List<Int>): List<CommentRecord> {
         return Comments.leftJoin(Users, { authorId }, { Users.id })
             .slice(Comments.columns + Users.name)
-            .select { (Comments.articleId inList boardIds) and (Comments.deleted eq false) }
+            .select { (Comments.articleId inList articleIds) and (Comments.deleted eq false) }
             .map { it.toRecord() }
     }
 
-    fun findAll(boardId: Int): List<CommentRecord> {
+    fun findAll(articleId: Int): List<CommentRecord> {
         return Comments.leftJoin(Users, { authorId }, { Users.id })
             .slice(Comments.columns + Users.name)
-            .select { (Comments.articleId eq boardId) and (Comments.deleted eq false) }
+            .select { (Comments.articleId eq articleId) and (Comments.deleted eq false) }
             .map { it.toRecord() }
     }
 
