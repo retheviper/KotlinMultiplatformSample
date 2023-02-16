@@ -7,6 +7,5 @@ data class CreateArticleRequest(
     val title: String,
     val content: String,
     val password: String,
-    val authorId: Int,
-    val authorName: String,
+    val authorId: Int
 )

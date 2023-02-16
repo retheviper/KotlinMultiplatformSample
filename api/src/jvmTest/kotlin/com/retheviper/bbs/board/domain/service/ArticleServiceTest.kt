@@ -42,7 +42,7 @@ class ArticleServiceTest : FreeSpecWithDb({
                 password = "password",
                 authorId = UserId(1),
                 authorName = "authorName",
-                comments = null
+                comments = emptyList()
             )
         )
 

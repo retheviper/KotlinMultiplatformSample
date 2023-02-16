@@ -51,6 +51,18 @@ class ArticleService(private val commentService: CommentService, private val rep
     }
 
     fun create(article: Article) {
+        require(article.title.isNotEmpty()) {
+            throw BadRequestException("Article title is empty.")
+        }
+
+        require(article.content.isNotEmpty()) {
+            throw BadRequestException("Article content is empty.")
+        }
+
+        require(article.password.isNotEmpty()) {
+            throw BadRequestException("Article password is empty.")
+        }
+
         transaction {
             repository.create(article.copy(password = article.password.toHashedString()))
         }

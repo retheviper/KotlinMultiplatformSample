@@ -3,6 +3,7 @@ package com.retheviper.bbs.board.domain.model
 import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.UserId
+import com.retheviper.bbs.model.request.CreateArticleRequest
 
 data class Article(
     val id: ArticleId? = null,
@@ -11,7 +12,7 @@ data class Article(
     val password: String,
     val authorId: UserId,
     val authorName: String? = null,
-    val comments: List<Comment>? = null
+    val comments: List<Comment> = emptyList()
 ) {
     companion object {
         fun from(articleRecord: ArticleRecord, comments: List<Comment>?): Article {
@@ -22,7 +23,16 @@ data class Article(
                 password = articleRecord.password,
                 authorId = articleRecord.authorId,
                 authorName = articleRecord.authorName,
-                comments = comments
+                comments = comments ?: emptyList()
+            )
+        }
+
+        fun from(request: CreateArticleRequest): Article {
+            return Article(
+                title = request.title,
+                content = request.content,
+                password = request.password,
+                authorId = UserId(request.authorId)
             )
         }
     }

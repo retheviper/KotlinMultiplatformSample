@@ -23,6 +23,10 @@ fun Application.configurePersistent() {
         url = "jdbc:h2:mem:regular;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver"
     )
 
+    setupDatabase()
+}
+
+private fun Application.setupDatabase() {
     val userRepository by inject<UserRepository>()
     val articleRepository by inject<ArticleRepository>()
     val commentRepository by inject<CommentRepository>()
@@ -32,7 +36,7 @@ fun Application.configurePersistent() {
 
         userRepository.create(
             User(
-                username = "test_user",
+                username = "testuser",
                 password = "1234",
                 name = "test user",
                 mail = "test_user@test.com"

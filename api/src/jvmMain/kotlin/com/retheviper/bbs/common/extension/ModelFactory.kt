@@ -28,7 +28,7 @@ fun ListArticleResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dto
                 id = checkNotNull(it.id?.value),
                 title = it.title,
                 authorName = checkNotNull(it.authorName),
-                comments = it.comments?.size ?: 0
+                comments = it.comments.size
             )
         }
     )
@@ -40,9 +40,9 @@ fun GetArticleResponse.Companion.from(dto: Article): GetArticleResponse {
         title = dto.title,
         content = dto.content,
         author = checkNotNull(dto.authorName),
-        comments = dto.comments?.map {
+        comments = dto.comments.map {
             GetCommentResponse.from(it)
-        } ?: emptyList()
+        }
     )
 }
 
