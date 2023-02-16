@@ -6,6 +6,8 @@ import com.retheviper.bbs.common.extension.from
 import com.retheviper.bbs.common.extension.getIdFromParameter
 import com.retheviper.bbs.common.extension.getPaginationProperties
 import com.retheviper.bbs.common.extension.respondBadRequest
+import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ARTICLE
 import com.retheviper.bbs.model.response.GetArticleResponse
 import com.retheviper.bbs.model.response.ListArticleResponse
@@ -29,7 +31,7 @@ fun Route.routeArticle() {
                 return@get
             }
 
-            val authorId = call.request.queryParameters["authorId"]?.toInt()
+            val authorId = call.request.queryParameters["authorId"]?.toInt()?.let { UserId(it) }
 
             call.application.log.info("authorId: $authorId, page: $page, pageSize: $pageSize, limit: $limit.")
 
@@ -58,6 +60,8 @@ fun Route.routeArticle() {
                 call.respondBadRequest(e)
                 call.application.log.error(e.message)
                 return@get
+            }.let {
+                ArticleId(it)
             }
 
             val article = try {

@@ -1,9 +1,10 @@
 package com.retheviper.bbs.user.domain.model
 
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.model.request.CreateUserRequest
 
 data class User(
-    val id: Int? = null,
+    val id: UserId? = null,
     val username: String,
     val password: String,
     val name: String,

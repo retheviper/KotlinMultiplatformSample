@@ -7,18 +7,20 @@ import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.extension.notMatchesWith
 import com.retheviper.bbs.common.extension.toHashedString
+import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class ArticleService(private val commentService: CommentService, private val repository: ArticleRepository) {
 
-    fun count(authorId: Int?): Long {
+    fun count(authorId: UserId?): Long {
         return transaction {
             repository.count(authorId)
         }
     }
 
-    fun findAll(authorId: Int?, page: Int, pageSize: Int, limit: Int): List<Article> {
+    fun findAll(authorId: UserId?, page: Int, pageSize: Int, limit: Int): List<Article> {
         return transaction {
             val articles = repository.findAll(
                 authorId = authorId, page = page, pageSize = pageSize, limit = limit
@@ -37,7 +39,7 @@ class ArticleService(private val commentService: CommentService, private val rep
     }
 
     @Throws(BadRequestException::class)
-    fun find(id: Int): Article {
+    fun find(id: ArticleId): Article {
         return transaction {
             repository.find(id)?.let {
                 Article.from(
@@ -73,7 +75,7 @@ class ArticleService(private val commentService: CommentService, private val rep
     }
 
     @Throws(BadRequestException::class)
-    fun delete(id: Int, password: String) {
+    fun delete(id: ArticleId, password: String) {
         transaction {
             val exist = repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: $id.")
 

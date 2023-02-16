@@ -4,6 +4,7 @@ import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
 import com.retheviper.bbs.common.extension.getIdFromParameter
 import com.retheviper.bbs.common.extension.respondBadRequest
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.USER
 import com.retheviper.bbs.model.request.CreateUserRequest
 import com.retheviper.bbs.model.response.GetUserResponse
@@ -31,6 +32,8 @@ fun Route.routeUser() {
                 call.respondBadRequest(e)
                 call.application.log.error(e.message)
                 return@get
+            }.let {
+                UserId(it)
             }
 
             val user = try {

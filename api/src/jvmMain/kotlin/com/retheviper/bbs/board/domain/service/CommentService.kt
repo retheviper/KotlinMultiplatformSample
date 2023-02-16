@@ -7,12 +7,15 @@ import com.retheviper.bbs.common.exception.CommentNotFoundException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.extension.notMatchesWith
 import com.retheviper.bbs.common.extension.toHashedString
+import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.CommentId
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class CommentService(private val repository: CommentRepository) {
 
-    fun findAll(articleIds: List<Int>): List<Comment> {
+    fun findAll(articleIds: List<ArticleId>): List<Comment> {
         return transaction {
             repository.findAll(articleIds).map {
                 Comment.from(it)
@@ -20,7 +23,7 @@ class CommentService(private val repository: CommentRepository) {
         }
     }
 
-    fun findAll(articleId: Int): List<Comment> {
+    fun findAll(articleId: ArticleId): List<Comment> {
         return transaction {
             repository.findAll(articleId).map {
                 Comment.from(it)
@@ -28,7 +31,7 @@ class CommentService(private val repository: CommentRepository) {
         }
     }
 
-    fun findAll(authorId: Int, page: Int, pageSize: Int, limit: Int): List<Comment> {
+    fun findAll(authorId: UserId, page: Int, pageSize: Int, limit: Int): List<Comment> {
         return transaction {
             repository.findAll(
                 authorId = authorId,
@@ -66,7 +69,7 @@ class CommentService(private val repository: CommentRepository) {
     }
 
     @Throws(BadRequestException::class)
-    fun delete(id: Int, password: String) {
+    fun delete(id: CommentId, password: String) {
         transaction {
             val exist = repository.find(id) ?: throw CommentNotFoundException("Comment not found with id: $id")
 

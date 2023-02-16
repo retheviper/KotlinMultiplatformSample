@@ -5,6 +5,7 @@ import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
 import com.retheviper.bbs.common.extension.getPaginationProperties
 import com.retheviper.bbs.common.extension.respondBadRequest
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.COMMENT
 import com.retheviper.bbs.model.response.ListCommentResponse
 import io.ktor.server.application.call
@@ -19,7 +20,7 @@ fun Route.routeComment() {
     route(COMMENT) {
         val service by inject<CommentService>()
         get {
-            val authorId = call.request.queryParameters["authorId"]?.toInt()
+            val authorId = call.request.queryParameters["authorId"]?.toInt()?.let { UserId(it) }
 
             if (authorId == null) {
                 call.respondBadRequest("Invalid authorId.")

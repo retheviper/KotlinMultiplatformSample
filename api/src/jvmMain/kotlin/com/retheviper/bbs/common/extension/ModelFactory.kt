@@ -11,7 +11,7 @@ import com.retheviper.bbs.user.domain.model.User
 
 fun GetUserResponse.Companion.from(dto: User): GetUserResponse {
     return GetUserResponse(
-        id = checkNotNull(dto.id),
+        id = checkNotNull(dto.id?.value),
         username = dto.username,
         name = dto.name,
         mail = dto.mail
@@ -25,7 +25,7 @@ fun ListArticleResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dto
         pageSize = pageSize,
         articleSummaries = dtos.map {
             ListArticleResponse.ArticleSummary(
-                id = checkNotNull(it.id),
+                id = checkNotNull(it.id?.value),
                 title = it.title,
                 authorName = checkNotNull(it.authorName),
                 comments = it.comments?.size ?: 0
@@ -36,7 +36,7 @@ fun ListArticleResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dto
 
 fun GetArticleResponse.Companion.from(dto: Article): GetArticleResponse {
     return GetArticleResponse(
-        id = checkNotNull(dto.id),
+        id = checkNotNull(dto.id?.value),
         title = dto.title,
         content = dto.content,
         author = checkNotNull(dto.authorName),
@@ -59,7 +59,7 @@ fun ListCommentResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dto
 
 fun GetCommentResponse.Companion.from(dto: Comment): GetCommentResponse {
     return GetCommentResponse(
-        id = checkNotNull(dto.id),
+        id = checkNotNull(dto.id?.value),
         content = dto.content,
         author = checkNotNull(dto.authorName)
     )

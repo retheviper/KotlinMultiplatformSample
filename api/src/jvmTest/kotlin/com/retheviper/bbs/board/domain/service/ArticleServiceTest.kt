@@ -3,6 +3,8 @@ package com.retheviper.bbs.board.domain.service
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
+import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.testing.FreeSpecWithDb
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -17,14 +19,14 @@ class ArticleServiceTest : FreeSpecWithDb({
 
     "findAll" {
         val (page, pageSize, limit) = Triple(1, 1, 10)
-        val articleId = 1
+        val articleId = ArticleId(1)
         every { repository.findAll(authorId = null, page = page, pageSize = pageSize, limit = limit) } returns listOf(
             ArticleRecord(
                 id = articleId,
                 title = "title",
                 content = "content",
                 password = "password",
-                authorId = 1,
+                authorId = UserId(1),
                 authorName = "authorName"
             )
         )
@@ -34,11 +36,11 @@ class ArticleServiceTest : FreeSpecWithDb({
 
         articles shouldBe listOf(
             Article(
-                id = 1,
+                id = articleId,
                 title = "title",
                 content = "content",
                 password = "password",
-                authorId = 1,
+                authorId = UserId(1),
                 authorName = "authorName",
                 comments = null
             )
@@ -51,14 +53,14 @@ class ArticleServiceTest : FreeSpecWithDb({
     }
 
     "find" {
-        val articleId = 1
+        val articleId = ArticleId(1)
 
         every { repository.find(articleId) } returns ArticleRecord(
             id = articleId,
             title = "title",
             content = "content",
             password = "password",
-            authorId = 1,
+            authorId = UserId(1),
             authorName = "authorName"
         )
         every { commentService.findAll(articleId) } returns emptyList()
@@ -70,7 +72,7 @@ class ArticleServiceTest : FreeSpecWithDb({
             title = "title",
             content = "content",
             password = "password",
-            authorId = 1,
+            authorId = UserId(1),
             authorName = "authorName",
             comments = emptyList()
         )

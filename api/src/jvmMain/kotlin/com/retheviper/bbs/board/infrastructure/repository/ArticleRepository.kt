@@ -7,56 +7,58 @@ import com.retheviper.bbs.common.extension.updateAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Articles.authorId
 import com.retheviper.bbs.common.infrastructure.table.Users
+import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.UserId
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.leftJoin
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
 
 class ArticleRepository {
 
-    fun count(authorId: Int?): Long {
+    fun count(authorId: UserId?): Long {
         return Articles
             .slice(Articles.id)
-            .select(selectOperator(authorId))
+            .select(selectOperator(authorId?.value))
             .count()
     }
 
-    fun findAll(authorId: Int?, page: Int, pageSize: Int, limit: Int): List<ArticleRecord> {
+    fun findAll(authorId: UserId?, page: Int, pageSize: Int, limit: Int): List<ArticleRecord> {
         return Articles
             .leftJoin(Users, { Articles.authorId }, { Users.id })
             .slice(Articles.columns + Users.name)
-            .select(selectOperator(authorId))
+            .select(selectOperator(authorId?.value))
             .limit(limit)
             .limit(pageSize, ((page - 1) * pageSize).toLong())
             .orderBy(Articles.id, SortOrder.ASC)
             .map { it.toRecord() }
     }
 
-    fun find(id: Int): ArticleRecord? {
+    fun find(id: ArticleId): ArticleRecord? {
         return Articles
             .leftJoin(Users, { authorId }, { Users.id })
             .slice(Articles.columns + Users.name)
-            .select { (Articles.id eq id) and (Articles.deleted eq false) }
+            .select { (Articles.id eq id.value) and (Articles.deleted eq false) }
             .map { it.toRecord() }
             .firstOrNull()
     }
 
-    fun create(article: Article) {
-        Articles.insert {
+    fun create(article: Article): Int {
+        return Articles.insertAndGetId {
             it[title] = article.title
             it[content] = article.content
             it[password] = article.password
-            it[authorId] = article.authorId
+            it[authorId] = article.authorId.value
             insertAuditInfos(it, article.authorName ?: "")
-        }
+        }.value
     }
 
     fun update(article: Article) {
-        Articles.update({ Articles.id eq article.id }) {
+        Articles.update({ Articles.id eq article.id?.value }) {
             it[title] = article.title
             it[content] = article.content
             it[password] = article.password
@@ -64,8 +66,8 @@ class ArticleRepository {
         }
     }
 
-    fun delete(id: Int) {
-        Articles.update({ Articles.id eq id }) {
+    fun delete(id: ArticleId) {
+        Articles.update({ Articles.id eq id.value }) {
             it[deleted] = true
         }
     }
@@ -78,11 +80,11 @@ class ArticleRepository {
     }
 
     private fun ResultRow.toRecord() = ArticleRecord(
-        id = this[Articles.id].value,
+        id = ArticleId(this[Articles.id].value),
         title = this[Articles.title],
         content = this[Articles.content],
         password = this[Articles.password],
-        authorId = this[authorId].value,
+        authorId = UserId(this[authorId].value),
         authorName = this[Users.name]
     )
 }

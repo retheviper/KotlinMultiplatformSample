@@ -7,6 +7,8 @@ import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Comments
 import com.retheviper.bbs.common.infrastructure.table.Users
+import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.user.domain.model.User
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.ktor.server.application.Application
@@ -43,17 +45,17 @@ fun Application.configurePersistent() {
                     title = "test title $articleId",
                     content = "test content $articleId",
                     password = "1234",
-                    authorId = 1
+                    authorId = UserId(1)
                 )
             )
             repeat(articleId) {
                 if ((articleId % 2) == 0) {
                     commentRepository.create(
                         Comment(
-                            articleId = articleId,
+                            articleId = ArticleId(articleId),
                             content = "test comment $it",
                             password = "1234",
-                            authorId = 1
+                            authorId = UserId(1)
                         )
                     )
                 }
