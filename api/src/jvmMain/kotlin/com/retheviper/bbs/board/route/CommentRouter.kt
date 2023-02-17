@@ -4,7 +4,6 @@ import com.retheviper.bbs.board.domain.service.CommentService
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
 import com.retheviper.bbs.common.extension.getPaginationProperties
-import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.COMMENT
 import com.retheviper.bbs.model.response.ListCommentResponse
@@ -20,20 +19,11 @@ fun Route.routeComment() {
     route(COMMENT) {
         val service by inject<CommentService>()
         get {
-            val authorId = call.request.queryParameters["authorId"]?.toInt()?.let { UserId(it) }
-
-            if (authorId == null) {
-                call.respondBadRequest("Invalid authorId.")
-                return@get
+            val authorId = call.request.queryParameters["authorId"]?.toInt()?.let { UserId(it) } ?: run {
+                throw BadRequestException("Author ID is required.")
             }
 
-            val (page, pageSize, limit) = try {
-                call.getPaginationProperties()
-            } catch (e: BadRequestException) {
-                call.respondBadRequest(e)
-                call.application.log.error(e.message)
-                return@get
-            }
+            val (page, pageSize, limit) = call.getPaginationProperties()
 
             val dtos = service.findAll(
                 authorId = authorId,

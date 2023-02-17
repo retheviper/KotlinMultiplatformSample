@@ -11,6 +11,7 @@ import com.retheviper.bbs.common.exception.UserNotFoundException
 import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.property.JwtConfigs
 import com.retheviper.bbs.testing.FreeSpecWithDb
+import com.retheviper.bbs.testing.toToken
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.mockk.every
@@ -82,12 +83,7 @@ class JwtServiceTest : FreeSpecWithDb({
 
     "Refresh Token" - {
         "OK" {
-            val token = JWT.create()
-                .withAudience(config.audience)
-                .withIssuer(config.issuer)
-                .withClaim("username", credential.username)
-                .withExpiresAt(Date(System.currentTimeMillis() + 10 * 60 * 1000))
-                .sign(algorithm)
+            val token = credential.username.toToken(config)
 
             shouldNotThrow<InvalidTokenException> {
                 service.refreshToken(token)

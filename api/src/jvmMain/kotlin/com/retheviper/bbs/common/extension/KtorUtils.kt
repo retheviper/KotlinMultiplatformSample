@@ -2,12 +2,8 @@ package com.retheviper.bbs.common.extension
 
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.property.JwtConfigs
-import com.retheviper.bbs.constant.ErrorCode
-import com.retheviper.bbs.model.response.ExceptionResponse
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 
 fun Application.getEnvironmentVariable(key: String): String =
     environment.config.property(key).getString()
@@ -44,34 +40,4 @@ fun ApplicationCall.getPaginationProperties(): Triple<Int, Int, Int> {
 @Throws(BadRequestException::class)
 fun ApplicationCall.getIdFromParameter(): Int {
     return parameters["id"]?.toInt() ?: throw BadRequestException("Invalid ID")
-}
-
-suspend fun ApplicationCall.respondBadRequest(message: String) {
-    respond(
-        status = HttpStatusCode.BadRequest,
-        message = ExceptionResponse(
-            code = ErrorCode.INVALID_PARAMETER.value,
-            message = message
-        )
-    )
-}
-
-suspend fun ApplicationCall.respondBadRequest(exception: BadRequestException) {
-    respond(
-        status = HttpStatusCode.BadRequest,
-        message = ExceptionResponse(
-            code = exception.code.value,
-            message = exception.message ?: "Bad Request"
-        )
-    )
-}
-
-suspend fun ApplicationCall.respondInternalServerError() {
-    respond(
-        status = HttpStatusCode.InternalServerError,
-        message = ExceptionResponse(
-            code = ErrorCode.UNKNOWN_ERROR.value,
-            message = "Server Error"
-        )
-    )
 }

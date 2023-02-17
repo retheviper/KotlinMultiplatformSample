@@ -79,8 +79,10 @@ kotlin {
                 implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktorVersion")
                 implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
                 implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
                 implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
                 implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-request-validation:$ktorVersion")
                 implementation("ch.qos.logback:logback-classic:$logbackVersion")
                 implementation(compose.runtime)
 
@@ -102,9 +104,10 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
-                implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
                 implementation(kotlin("test"))
+                implementation("io.ktor:ktor-server-test-host:$ktorVersion")
+                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+                implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
                 implementation("io.mockk:mockk:1.13.4")
             }
         }

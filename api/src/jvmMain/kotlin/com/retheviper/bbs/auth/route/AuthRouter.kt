@@ -2,8 +2,6 @@ package com.retheviper.bbs.auth.route
 
 import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.auth.domain.service.JwtService
-import com.retheviper.bbs.common.exception.BadRequestException
-import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.constant.AUTH
 import com.retheviper.bbs.constant.LOGIN
 import com.retheviper.bbs.constant.REFRESH
@@ -27,13 +25,7 @@ fun Route.routeAuth() {
         post(LOGIN) {
             val credential = Credential.from(call.receive())
 
-            val token = try {
-                service.createToken(credential)
-            } catch (e: BadRequestException) {
-                call.respondBadRequest(e)
-                call.application.log.error("${e.message}: ${credential.username}")
-                return@post
-            }
+            val token = service.createToken(credential)
 
             call.application.log.info("Token created for user: ${credential.username}")
             call.response.header("Authorization", "Bearer $token")

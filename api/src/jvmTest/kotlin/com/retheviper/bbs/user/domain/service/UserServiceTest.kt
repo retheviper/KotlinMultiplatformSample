@@ -1,6 +1,5 @@
 package com.retheviper.bbs.user.domain.service
 
-import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.exception.UserAlreadyExistsException
 import com.retheviper.bbs.common.exception.UserNotFoundException
 import com.retheviper.bbs.common.extension.toHashedString
@@ -73,48 +72,6 @@ class UserServiceTest : FreeSpecWithDb({
 
             verify {
                 repository.find(user.username)
-            }
-        }
-
-        "NG - username is empty" {
-            shouldThrow<BadRequestException> {
-                service.create(user.copy(username = ""))
-            }
-        }
-
-        "NG - username is invalid" {
-            shouldThrow<BadRequestException> {
-                service.create(user.copy(username = "a"))
-            }
-        }
-
-        "NG - password is empty" {
-            shouldThrow<BadRequestException> {
-                service.create(user.copy(password = ""))
-            }
-        }
-
-        "NG - name is empty" {
-            shouldThrow<BadRequestException> {
-                service.create(user.copy(name = ""))
-            }
-        }
-
-        "NG - name is invalid" {
-            shouldThrow<BadRequestException> {
-                service.create(user.copy(name = "a"))
-            }
-        }
-
-        "NG - mail is empty" {
-            shouldThrow<BadRequestException> {
-                service.create(user.copy(mail = ""))
-            }
-        }
-
-        "NG - mail is invalid" {
-            shouldThrow<BadRequestException> {
-                service.create(user.copy(mail = "a"))
             }
         }
     }

@@ -47,14 +47,15 @@ class ArticleRepository {
             .firstOrNull()
     }
 
-    fun create(article: Article): Int {
-        return Articles.insertAndGetId {
+    fun create(article: Article): ArticleId {
+        val id = Articles.insertAndGetId {
             it[title] = article.title
             it[content] = article.content
             it[password] = article.password
             it[authorId] = article.authorId.value
             insertAuditInfos(it, article.authorName ?: "")
         }.value
+        return ArticleId(id)
     }
 
     fun update(article: Article) {

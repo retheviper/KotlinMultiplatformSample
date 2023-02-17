@@ -15,4 +15,6 @@ fun Application.module() {
     configureSerialization()
     configureMonitoring()
     configureRouting()
+    configureRequestValidation()
+    configureExceptionHandling()
 }

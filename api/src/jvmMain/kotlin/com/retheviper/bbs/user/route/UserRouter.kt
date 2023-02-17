@@ -1,9 +1,7 @@
 package com.retheviper.bbs.user.route
 
-import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.extension.from
 import com.retheviper.bbs.common.extension.getIdFromParameter
-import com.retheviper.bbs.common.extension.respondBadRequest
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.USER
 import com.retheviper.bbs.model.request.CreateUserRequest
@@ -26,23 +24,9 @@ fun Route.routeUser() {
 
     route(USER) {
         get("/{id}") {
-            val id = try {
-                call.getIdFromParameter()
-            } catch (e: BadRequestException) {
-                call.respondBadRequest(e)
-                call.application.log.error(e.message)
-                return@get
-            }.let {
-                UserId(it)
-            }
+            val id = UserId(call.getIdFromParameter())
 
-            val user = try {
-                service.find(id)
-            } catch (e: BadRequestException) {
-                call.respondBadRequest(e)
-                call.application.log.error("${e.message}: $id")
-                return@get
-            }
+            val user = service.find(id)
 
             call.respond(GetUserResponse.from(user))
         }
@@ -50,13 +34,7 @@ fun Route.routeUser() {
         post {
             val request = call.receive<CreateUserRequest>()
 
-            val user = try {
-                service.create(User.from(request))
-            } catch (e: BadRequestException) {
-                call.respondBadRequest(e)
-                call.application.log.error("${e.message}: ${request.username}")
-                return@post
-            }
+            val user = service.create(User.from(request))
 
             user?.let {
                 call.application.log.info("User created: ${user.username}")
