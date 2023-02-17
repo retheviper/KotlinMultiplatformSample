@@ -1,6 +1,7 @@
 package com.retheviper.bbs.framework.plugin
 
 import com.retheviper.bbs.common.exception.BadRequestException
+import com.retheviper.bbs.common.exception.NotFoundException
 import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.response.ExceptionResponse
 import io.ktor.http.HttpStatusCode
@@ -24,9 +25,9 @@ fun Application.configureExceptionHandling() {
 
         exception<BadRequestException> { call, cause ->
             call.respond(
-                status = HttpStatusCode.BadRequest,
+                status = if (cause is NotFoundException) HttpStatusCode.NotFound else HttpStatusCode.BadRequest,
                 message = ExceptionResponse(
-                    code = ErrorCode.INVALID_PARAMETER.value,
+                    code = cause.code.value,
                     message = cause.message.toString()
                 )
             )

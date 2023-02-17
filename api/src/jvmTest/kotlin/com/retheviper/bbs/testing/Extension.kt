@@ -29,11 +29,11 @@ fun ApplicationTestBuilder.jsonClient(): HttpClient {
     }
 }
 
-suspend fun HttpClient.postJson(
-    url: String,
+suspend inline fun HttpClient.postJson(
+    urlString: String,
     block: HttpRequestBuilder.() -> Unit
 ): HttpResponse {
-    return post(url) {
+    return post(urlString) {
         contentType(ContentType.Application.Json)
         block()
     }

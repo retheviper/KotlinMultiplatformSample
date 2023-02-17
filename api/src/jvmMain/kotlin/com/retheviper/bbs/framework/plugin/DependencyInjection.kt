@@ -20,30 +20,33 @@ fun Application.configureDependencyInjection() {
     install(Koin) {
         slf4jLogger()
         modules(
-            authModules(),
-            userModules(),
-            boardModules()
+            koinAuthModules(),
+            koinUserModules(),
+            koinBoardModules()
         )
     }
 }
 
-private fun Application.authModules(): Module {
-    val config = module { single { getJwtConfigs() } }
-    val service = module { single { JwtService(get(), get()) } }
-    val repository = module { single { AuthRepository() } }
-    return module { includes(config, service, repository) }
+fun Application.koinAuthModules(): Module {
+    return module {
+        single { getJwtConfigs() }
+        single { JwtService(get(), get()) }
+        single { AuthRepository() }
+    }
 }
 
-private fun userModules(): Module {
-    val service = module { single { UserService(get()) } }
-    val repository = module { single { UserRepository() } }
-    return module { includes(service, repository) }
+fun koinUserModules(): Module {
+    return module {
+        single { UserService(get()) }
+        single { UserRepository() }
+    }
 }
 
-private fun boardModules(): Module {
-    val articleService = module { single { ArticleService(get(), get()) } }
-    val articleRepository = module { single { ArticleRepository() } }
-    val commentService = module { single { CommentService(get()) } }
-    val commentRepository = module { single { CommentRepository() } }
-    return module { includes(articleService, articleRepository, commentService, commentRepository) }
+fun koinBoardModules(): Module {
+    return module {
+        single { ArticleService(get(), get()) }
+        single { ArticleRepository() }
+        single { CommentService(get()) }
+        single { CommentRepository() }
+    }
 }

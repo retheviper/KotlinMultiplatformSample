@@ -105,10 +105,14 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
+                implementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
                 implementation("io.mockk:mockk:1.13.4")
+                implementation("io.insert-koin:koin-test:$koinVersion")
+                implementation("io.insert-koin:koin-test-junit5:3.3.3")
             }
         }
     }

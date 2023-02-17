@@ -4,6 +4,7 @@ import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.property.JwtConfigs
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.ApplicationRequest
 
 fun Application.getEnvironmentVariable(key: String): String =
     environment.config.property(key).getString()
@@ -18,9 +19,9 @@ fun Application.getJwtConfigs(): JwtConfigs {
 
 @Throws(BadRequestException::class)
 fun ApplicationCall.getPaginationProperties(): Triple<Int, Int, Int> {
-    val page = request.queryParameters["page"]?.toInt() ?: 1
-    val pageSize = request.queryParameters["pageSize"]?.toInt() ?: 10
-    val limit = request.queryParameters["limit"]?.toInt() ?: 100
+    val page = request.queryParametersAsInt("page") ?: 1
+    val pageSize = request.queryParametersAsInt("pageSize") ?: 10
+    val limit = request.queryParametersAsInt("limit") ?: 100
 
     if (page < 1 || pageSize < 1 || limit < 1) {
         throw BadRequestException("Invalid page, pageSize or limit.")
@@ -39,5 +40,19 @@ fun ApplicationCall.getPaginationProperties(): Triple<Int, Int, Int> {
 
 @Throws(BadRequestException::class)
 fun ApplicationCall.getIdFromParameter(): Int {
-    return parameters["id"]?.toInt() ?: throw BadRequestException("Invalid ID")
+    val parameter = parameters["id"] ?: throw BadRequestException("Invalid ID")
+    return try {
+        parameter.toInt()
+    } catch (e: NumberFormatException) {
+        throw BadRequestException("Invalid ID")
+    }
+}
+
+fun ApplicationRequest.queryParametersAsInt(key: String): Int? {
+    val parameter = queryParameters[key]
+    return try {
+        parameter?.toInt()
+    } catch (e: NumberFormatException) {
+        throw BadRequestException("Invalid $key")
+    }
 }
