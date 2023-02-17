@@ -37,6 +37,18 @@ class ArticleRouterTest : FreeSpec({
             }
         }
 
+        "NG - Authentication failed (No token)" {
+            testApplication {
+                val client = jsonClient()
+
+                val response = client.postJson("/api/v1/board/article") {
+                    setBody(request)
+                }
+
+                response.status shouldBe HttpStatusCode.Unauthorized
+            }
+        }
+
         "NG - Title is empty" {
             testApplication {
                 val client = jsonClient()
