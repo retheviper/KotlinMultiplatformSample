@@ -5,13 +5,13 @@ import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.UserId
-import com.retheviper.bbs.testing.TestSpecWithDb
+import com.retheviper.bbs.testing.DatabaseFreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 
-class ArticleServiceTest : TestSpecWithDb({
+class ArticleServiceTest : DatabaseFreeSpec({
 
     val repository = mockk<ArticleRepository>()
     val commentService = mockk<CommentService>()

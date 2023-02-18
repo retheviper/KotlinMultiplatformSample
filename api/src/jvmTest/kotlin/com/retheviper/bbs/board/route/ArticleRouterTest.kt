@@ -4,6 +4,7 @@ import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.request.CreateArticleRequest
 import com.retheviper.bbs.model.response.ExceptionResponse
 import com.retheviper.bbs.testing.KtorTestSpec
+import com.retheviper.bbs.testing.insertTestData
 import com.retheviper.bbs.testing.jsonClient
 import com.retheviper.bbs.testing.postJson
 import com.retheviper.bbs.testing.toToken
@@ -20,8 +21,16 @@ class ArticleRouterTest : KtorTestSpec() {
     private val urlString = "/api/v1/board/article"
 
     init {
+        beforeTest {
+            testApplication {
+                application {
+                    insertTestData()
+                }
+            }
+        }
+
         "Find Article" - {
-            "OK".config(enabled = false) {
+            "OK" {
                 testApplication {
                     val client = jsonClient()
 
@@ -66,7 +75,7 @@ class ArticleRouterTest : KtorTestSpec() {
                 title = "title", content = "test content", password = "password", authorId = 1
             )
 
-            "OK".config(enabled = false) {
+            "OK" {
                 testApplication {
                     val client = jsonClient()
 

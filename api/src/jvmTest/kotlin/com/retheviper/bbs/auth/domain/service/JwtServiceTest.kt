@@ -10,7 +10,7 @@ import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.exception.UserNotFoundException
 import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.property.JwtConfigs
-import com.retheviper.bbs.testing.TestSpecWithDb
+import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.toToken
 import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
@@ -19,7 +19,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.util.Date
 
-class JwtServiceTest : TestSpecWithDb({
+class JwtServiceTest : DatabaseFreeSpec({
 
     val repository = mockk<AuthRepository>()
     val config = mockk<JwtConfigs> {

@@ -4,7 +4,7 @@ import com.retheviper.bbs.common.exception.UserAlreadyExistsException
 import com.retheviper.bbs.common.exception.UserNotFoundException
 import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.value.UserId
-import com.retheviper.bbs.testing.TestSpecWithDb
+import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.user.domain.model.User
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.kotest.assertions.throwables.shouldThrow
@@ -13,7 +13,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 
-class UserServiceTest : TestSpecWithDb({
+class UserServiceTest : DatabaseFreeSpec({
 
     val repository = mockk<UserRepository>()
     val service = UserService(repository)
