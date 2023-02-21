@@ -13,10 +13,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 fun Application.configurePersistent() {
 
     val config = HikariConfig().apply {
-        jdbcUrl = "jdbc:h2:mem:regular;DB_CLOSE_DELAY=-1;"
+        jdbcUrl = "jdbc:h2:./database"
         driverClassName = "org.h2.Driver"
-        username = "username"
-        password = "password"
         maximumPoolSize = 10
     }
 
