@@ -1,12 +1,9 @@
 package com.retheviper.bbs.board.route
 
-import com.retheviper.bbs.board.domain.model.Article
-import com.retheviper.bbs.board.domain.model.Comment
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Comments
-import com.retheviper.bbs.common.infrastructure.table.Comments.articleId
 import com.retheviper.bbs.common.infrastructure.table.Users
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.UserId
@@ -14,11 +11,11 @@ import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.request.CreateArticleRequest
 import com.retheviper.bbs.model.response.ExceptionResponse
 import com.retheviper.bbs.model.response.GetArticleResponse
-import com.retheviper.bbs.testing.KtorTestSpec
+import com.retheviper.bbs.testing.KtorFreeSpec
+import com.retheviper.bbs.testing.TestModelFactory
 import com.retheviper.bbs.testing.jsonClient
 import com.retheviper.bbs.testing.postJson
 import com.retheviper.bbs.testing.toToken
-import com.retheviper.bbs.user.domain.model.User
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -31,27 +28,12 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.koin.ktor.ext.inject
 
-class ArticleRouterTest : KtorTestSpec() {
+class ArticleRouterTest : KtorFreeSpec() {
 
     private val urlString = "/api/v1/board/article"
-    private val user = User(
-        username = "testuser",
-        password = "1234",
-        name = "test user",
-        mail = "test_user@test.com"
-    )
-    private val article = Article(
-        title = "test title $articleId",
-        content = "test content $articleId",
-        password = "1234",
-        authorId = UserId(1)
-    )
-    private val comment = Comment(
-        articleId = ArticleId(1),
-        content = "test comment $articleId",
-        password = "1234",
-        authorId = UserId(1)
-    )
+    private val user = TestModelFactory.userModel()
+    private val article = TestModelFactory.articleModel(UserId(1))
+    private val comment = TestModelFactory.commentModel(ArticleId(1), UserId(1))
 
     init {
         beforeSpec {
@@ -88,10 +70,6 @@ class ArticleRouterTest : KtorTestSpec() {
                         it.title shouldBe article.title
                         it.content shouldBe article.content
                         it.author shouldBe user.name
-                        it.comments.forEach {
-                            println(it)
-                        }
-                        it.comments.size shouldBe 1
                         it.comments.first().content shouldBe comment.content
                         it.comments.first().author shouldBe user.name
                     }
