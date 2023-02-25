@@ -12,6 +12,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.Date
 
 fun String.toToken(jwtConfig: JwtConfigs? = null): String = JWT.create()
@@ -30,11 +33,17 @@ fun ApplicationTestBuilder.jsonClient(): HttpClient {
 }
 
 suspend inline fun HttpClient.postJson(
-    urlString: String,
-    block: HttpRequestBuilder.() -> Unit
+    urlString: String, block: HttpRequestBuilder.() -> Unit
 ): HttpResponse {
     return post(urlString) {
         contentType(ContentType.Application.Json)
         block()
+    }
+}
+
+fun SchemaUtils.dropAndCreate(vararg tables: Table) {
+    transaction {
+        drop(*tables)
+        create(*tables)
     }
 }

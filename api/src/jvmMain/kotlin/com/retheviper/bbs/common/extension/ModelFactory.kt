@@ -28,7 +28,10 @@ fun ListArticleResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dto
                 id = checkNotNull(it.id?.value),
                 title = it.title,
                 authorName = checkNotNull(it.authorName),
-                comments = it.comments.size
+                categoryName = checkNotNull(it.category).name,
+                comments = it.comments.size,
+                viewCount = it.viewCount,
+                createdDate = it.createdDate.toString()
             )
         }
     )

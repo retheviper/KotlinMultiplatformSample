@@ -2,7 +2,14 @@ package com.retheviper.bbs.common.extension
 
 import com.amdelamar.jhash.Hash
 import com.amdelamar.jhash.algorithms.Type
+import com.retheviper.bbs.common.infrastructure.table.ArticleTags
+import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Audit
+import com.retheviper.bbs.common.infrastructure.table.Categories
+import com.retheviper.bbs.common.infrastructure.table.Comments
+import com.retheviper.bbs.common.infrastructure.table.Tags
+import com.retheviper.bbs.common.infrastructure.table.Users
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import java.time.LocalDateTime
@@ -31,4 +38,15 @@ fun <T : Any> Audit.insertAuditInfos(insertStatement: InsertStatement<T>, name: 
 fun Audit.updateAuditInfos(updateStatement: UpdateStatement, name: String) {
     updateStatement[lastModifiedBy] = name
     updateStatement[lastModifiedDate] = LocalDateTime.now()
+}
+
+fun getAllTabes(): Array<Table> {
+    return arrayOf(
+        Articles,
+        ArticleTags,
+        Categories,
+        Comments,
+        Tags,
+        Users
+    )
 }

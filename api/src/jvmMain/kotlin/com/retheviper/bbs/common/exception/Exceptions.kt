@@ -19,4 +19,6 @@ class BoardNotFoundException(message: String) : NotFoundException(message, Error
 
 class ArticleNotFoundException(message: String) : NotFoundException(message, ErrorCode.ARTICLE_NOT_FOUND)
 
+class ArticleAuthorNotMatchException(message: String) : BadRequestException(message, ErrorCode.ARTICLE_AUTHOR_NOT_MATCH)
+
 class CommentNotFoundException(message: String) : NotFoundException(message, ErrorCode.COMMENT_NOT_FOUND)

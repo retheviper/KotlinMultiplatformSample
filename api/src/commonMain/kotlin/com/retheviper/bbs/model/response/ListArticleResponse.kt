@@ -14,6 +14,9 @@ data class ListArticleResponse(
         val id: Int,
         val title: String,
         val authorName: String,
-        val comments: Int
+        val categoryName: String,
+        val comments: Int,
+        val viewCount: Int,
+        val createdDate: String
     )
 }

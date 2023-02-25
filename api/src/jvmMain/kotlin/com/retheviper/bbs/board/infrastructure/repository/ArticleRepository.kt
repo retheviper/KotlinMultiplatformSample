@@ -8,6 +8,7 @@ import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Articles.authorId
 import com.retheviper.bbs.common.infrastructure.table.Users
 import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.UserId
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -47,12 +48,21 @@ class ArticleRepository {
             .firstOrNull()
     }
 
+    fun findAuthorName(authorId: UserId): String {
+        return Users
+            .slice(Users.name)
+            .select { Users.id eq authorId.value }
+            .map { it[Users.name] }
+            .first()
+    }
+
     fun create(article: Article): ArticleId {
         val id = Articles.insertAndGetId {
             it[title] = article.title
             it[content] = article.content
             it[password] = article.password
             it[authorId] = article.authorId.value
+            it[categoryId] = article.category?.id?.value ?: 0
             insertAuditInfos(it, article.authorName ?: "")
         }.value
         return ArticleId(id)
@@ -63,6 +73,7 @@ class ArticleRepository {
             it[title] = article.title
             it[content] = article.content
             it[password] = article.password
+            it[categoryId] = article.category?.id?.value ?: 0
             updateAuditInfos(it, article.authorName ?: "")
         }
     }
@@ -86,6 +97,12 @@ class ArticleRepository {
         content = this[Articles.content],
         password = this[Articles.password],
         authorId = UserId(this[authorId].value),
-        authorName = this[Users.name]
+        authorName = this[Users.name],
+        categoryId =  CategoryId(this[Articles.categoryId].value),
+        likeCount = this[Articles.likeCount],
+        dislikeCount = this[Articles.dislikeCount],
+        viewCount = this[Articles.viewCount],
+        createdDate = this[Articles.createdDate],
+        updatedDate = this[Articles.lastModifiedDate],
     )
 }
