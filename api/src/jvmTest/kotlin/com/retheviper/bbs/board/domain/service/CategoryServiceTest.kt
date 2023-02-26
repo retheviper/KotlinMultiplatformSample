@@ -9,7 +9,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 
-class CategoryServiceTes : DatabaseFreeSpec({
+class CategoryServiceTest : DatabaseFreeSpec({
 
     "find" - {
 

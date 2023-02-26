@@ -23,36 +23,36 @@ object TestModelFactory {
 
     fun articleModel(authorId: UserId, category: Category): Article {
         return Instancio.of(Article::class.java)
-            .ignore(field(Article::class.java, "id"))
-            .set(field(Article::class.java, "authorId"), authorId.value)
-            .set(field(Article::class.java, "category"), category)
+            .ignore(field("id"))
+            .set(field("authorId"), authorId.value)
+            .set(field("category"), category)
             .create()
     }
 
     fun articleRecordModel(id: ArticleId, categoryId: CategoryId, authorId: UserId): ArticleRecord {
         return Instancio.of(ArticleRecord::class.java)
-            .set(field(ArticleRecord::class.java, "id"), id.value)
-            .set(field(ArticleRecord::class.java, "categoryId"), categoryId.value)
-            .set(field(ArticleRecord::class.java, "authorId"), authorId.value)
+            .set(field("id"), id.value)
+            .set(field("categoryId"), categoryId.value)
+            .set(field( "authorId"), authorId.value)
             .create()
     }
 
     fun categoryModel(): Category {
         return Instancio.of(Category::class.java)
-            .ignore(field(Category::class.java, "id"))
+            .ignore(field("id"))
             .create()
     }
 
     fun categoryRecordModel(id: CategoryId): CategoryRecord {
         return Instancio.of(CategoryRecord::class.java)
-            .set(field(CategoryRecord::class.java, "id"), id.value)
+            .set(field("id"), id.value)
             .create()
     }
 
     fun tagModel(articleId: ArticleId): Tag {
         return Instancio.of(Tag::class.java)
-            .ignore(field(Tag::class.java, "id"))
-            .set(field(Tag::class.java, "articleId"), articleId)
+            .ignore(field("id"))
+            .set(field("articleId"), articleId)
             .create()
     }
 
@@ -66,9 +66,9 @@ object TestModelFactory {
 
     fun commentModel(articleId: ArticleId, authorId: UserId): Comment {
         return Instancio.of(Comment::class.java)
-            .ignore(field(Comment::class.java, "id"))
-            .set(field(Comment::class.java, "articleId"), articleId.value)
-            .set(field(Comment::class.java, "authorId"), authorId.value)
+            .ignore(field("id"))
+            .set(field("articleId"), articleId.value)
+            .set(field("authorId"), authorId.value)
             .create()
     }
 
@@ -83,7 +83,16 @@ object TestModelFactory {
 
     fun commentRecordModel(id: CommentId, articleId: ArticleId, authorId: UserId): CommentRecord {
         return Instancio.of(CommentRecord::class.java)
-            .set(field(CommentRecord::class.java, "id"), id)
+            .set(field("id"), id)
+            .set(field("articleId"), articleId.value)
+            .set(field("authorId"), authorId.value)
+            .create()
+    }
+
+    fun commentRecordModels(articleId: ArticleId, authorId: UserId, count: Int = 10): List<CommentRecord> {
+        return Instancio.ofList(CommentRecord::class.java)
+            .size(count)
+            .ignore(field(CommentRecord::class.java, "id"))
             .set(field(CommentRecord::class.java, "articleId"), articleId.value)
             .set(field(CommentRecord::class.java, "authorId"), authorId.value)
             .create()
