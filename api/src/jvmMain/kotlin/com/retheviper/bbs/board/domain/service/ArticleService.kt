@@ -46,6 +46,7 @@ class ArticleService(
                 Article.from(
                     articleRecord = it,
                     category = Category(
+                        id = it.categoryId,
                         name = it.categoryName
                     ),
                     tags = tags[it.id] ?: emptyList(),
@@ -62,6 +63,7 @@ class ArticleService(
                 Article.from(
                     articleRecord = it,
                     category = Category(
+                        id = it.categoryId,
                         name = it.categoryName
                     ),
                     tags = tagService.findAll(listOf(it.id)),
