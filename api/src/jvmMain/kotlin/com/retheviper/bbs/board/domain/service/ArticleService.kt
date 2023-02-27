@@ -1,6 +1,7 @@
 package com.retheviper.bbs.board.domain.service
 
 import com.retheviper.bbs.board.domain.model.Article
+import com.retheviper.bbs.board.domain.model.Category
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.common.exception.ArticleAuthorNotMatchException
 import com.retheviper.bbs.common.exception.ArticleNotFoundException
@@ -35,9 +36,6 @@ class ArticleService(
                 limit = limit
             )
 
-            val categories = categoryService.findAll(articles.map { it.categoryId })
-                .associateBy { it.id }
-
             val tags = tagService.findAll(articles.map { it.id })
                 .groupBy { it.articleId }
 
@@ -47,7 +45,11 @@ class ArticleService(
             articles.map {
                 Article.from(
                     articleRecord = it,
-                    category = checkNotNull(categories[it.categoryId]),
+                    category = Category(
+                        articleId = it.id,
+                        id = it.categoryId,
+                        name = it.categoryName
+                    ),
                     tags = tags[it.id] ?: emptyList(),
                     comments = comments[it.id]
                 )
@@ -56,18 +58,24 @@ class ArticleService(
     }
 
     @Throws(BadRequestException::class)
-    fun find(id: ArticleId): Article {
+    fun find(id: ArticleId, username: String? = null): Article {
         return transaction {
-            val article = repository.find(id)?.let {
+            val article = repository.find(id = id, forUpdate = true)?.let {
                 Article.from(
                     articleRecord = it,
-                    category = categoryService.find(it.categoryId),
+                    category = Category(
+                        articleId = it.id,
+                        id = it.categoryId,
+                        name = it.categoryName
+                    ),
                     tags = tagService.findAll(listOf(it.id)),
                     comments = commentService.findAll(it.id)
                 )
             } ?: throw ArticleNotFoundException("Article not found with id: $id.")
 
-            repository.update(article.updateViewCount())
+            if (article.authorName != username) {
+                repository.update(article.updateViewCount())
+            }
 
             article
         }
@@ -103,7 +111,7 @@ class ArticleService(
 
         transaction {
             val exist =
-                repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: ${article.id}.")
+                repository.find(id = id, forUpdate = true) ?: throw ArticleNotFoundException("Article not found with id: ${article.id}.")
 
             if (article.authorId != exist.authorId) {
                 throw ArticleAuthorNotMatchException("Article's author id is not match with id: ${article.id}.")

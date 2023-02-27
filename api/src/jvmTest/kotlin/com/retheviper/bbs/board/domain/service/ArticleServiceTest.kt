@@ -1,6 +1,7 @@
 package com.retheviper.bbs.board.domain.service
 
 import com.retheviper.bbs.board.domain.model.Article
+import com.retheviper.bbs.board.domain.model.Category
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.CategoryId
@@ -41,13 +42,10 @@ class ArticleServiceTest : DatabaseFreeSpec({
         val commentService = mockk<CommentService> {
             every { findAll(listOf(articleRecord.id)) } returns comments
         }
-        val categoryService = mockk<CategoryService> {
-            every { findAll(listOf(articleRecord.categoryId)) } returns listOf(category)
-        }
         val tagService = mockk<TagService> {
             every { findAll(listOf(articleRecord.id)) } returns tags
         }
-        val service = ArticleService(categoryService, tagService, commentService, repository)
+        val service = ArticleService(mockk(), tagService, commentService, repository)
 
         val articles = service.findAll(
             authorId = null, page = page, pageSize = pageSize, limit = limit
@@ -61,7 +59,11 @@ class ArticleServiceTest : DatabaseFreeSpec({
                 password = articleRecord.password,
                 authorId = articleRecord.authorId,
                 authorName = articleRecord.authorName,
-                category = category,
+                category = Category(
+                    articleId = articleRecord.id,
+                    id = articleRecord.categoryId,
+                    name = articleRecord.categoryName
+                ),
                 tags = tags,
                 comments = comments,
                 viewCount = articleRecord.viewCount,
@@ -80,7 +82,6 @@ class ArticleServiceTest : DatabaseFreeSpec({
                 limit = limit
             )
             commentService.findAll(listOf(articleRecord.id))
-            categoryService.findAll(listOf(articleRecord.categoryId))
             tagService.findAll(listOf(articleRecord.id))
         }
     }
@@ -99,19 +100,16 @@ class ArticleServiceTest : DatabaseFreeSpec({
         val tags = TestModelFactory.tagModels(articleRecord.id, 2)
         val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
         val repository = mockk<ArticleRepository> {
-            every { find(articleRecord.id) } returns articleRecord
+            every { find(articleRecord.id, true) } returns articleRecord
             every { update(any()) } returns Unit
         }
         val commentService = mockk<CommentService> {
             every { findAll(articleRecord.id) } returns comments
         }
-        val categoryService = mockk<CategoryService> {
-            every { find(articleRecord.categoryId) } returns category
-        }
         val tagService = mockk<TagService> {
             every { findAll(listOf(articleRecord.id)) } returns tags
         }
-        val service = ArticleService(categoryService, tagService, commentService, repository)
+        val service = ArticleService(mockk(), tagService, commentService, repository)
 
         val article = service.find(articleRecord.id)
 
@@ -122,7 +120,11 @@ class ArticleServiceTest : DatabaseFreeSpec({
             password = articleRecord.password,
             authorId = articleRecord.authorId,
             authorName = articleRecord.authorName,
-            category = category,
+            category = Category(
+                articleId = articleRecord.id,
+                id = articleRecord.categoryId,
+                name = articleRecord.categoryName
+            ),
             tags = tags,
             comments = comments,
             viewCount = articleRecord.viewCount,
@@ -133,10 +135,9 @@ class ArticleServiceTest : DatabaseFreeSpec({
         )
 
         verify(exactly = 1) {
-            repository.find(articleRecord.id)
+            repository.find(articleRecord.id, true)
             repository.update(any())
             commentService.findAll(articleRecord.id)
-            categoryService.find(articleRecord.categoryId)
             tagService.findAll(listOf(articleRecord.id))
         }
     }

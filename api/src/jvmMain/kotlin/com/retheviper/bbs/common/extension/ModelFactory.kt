@@ -43,6 +43,11 @@ fun GetArticleResponse.Companion.from(dto: Article): GetArticleResponse {
         title = dto.title,
         content = dto.content,
         author = checkNotNull(dto.authorName),
+        viewCount = dto.viewCount,
+        likeCount = dto.likeCount,
+        dislikeCount = dto.dislikeCount,
+        categoryName = checkNotNull(dto.category).name,
+        tags = dto.tags.map { it.name },
         comments = dto.comments.map {
             GetCommentResponse.from(it)
         }

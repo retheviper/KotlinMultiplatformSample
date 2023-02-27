@@ -87,7 +87,7 @@ class ArticleRouterTest : KtorFreeSpec({
                 response.status shouldBe HttpStatusCode.NotFound
                 response.body<ExceptionResponse>().let {
                     it.code shouldBe ErrorCode.ARTICLE_NOT_FOUND.value
-                    it.message shouldContain "Article not found with id: ArticleId"
+                    it.message shouldContain "Article not found with id: ${Int.MAX_VALUE}"
                 }
             }
         }

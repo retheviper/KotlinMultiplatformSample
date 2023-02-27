@@ -10,13 +10,9 @@ class TagService(private val tagRepository: TagRepository, private val articleTa
 
     fun findAll(articleIds: List<ArticleId>): List<Tag> {
         return transaction {
-            val articleTags = articleTagRepository.find(articleIds)
-            val tags = tagRepository.findAll(articleTags.map { it.tagId })
-                .associateBy { it.id }
+            val tags = tagRepository.findAll(articleIds)
 
-            articleTags.map {
-                Tag.from(checkNotNull(tags[it.tagId]))
-            }
+            tags.map { Tag.from(it) }
         }
     }
 

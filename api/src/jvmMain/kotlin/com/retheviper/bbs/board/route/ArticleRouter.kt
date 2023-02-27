@@ -15,6 +15,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -48,7 +50,10 @@ fun Route.routeArticle() {
         get("/{id}") {
             val id = ArticleId(call.getIdFromParameter())
 
-            val article = service.find(id)
+            val principal = call.principal<JWTPrincipal>()
+            val username = principal?.payload?.getClaim("username")?.asString()
+
+            val article = service.find(id, username)
 
             call.respond(GetArticleResponse.from(article))
             call.application.log.info("Board returned with id: $id.")

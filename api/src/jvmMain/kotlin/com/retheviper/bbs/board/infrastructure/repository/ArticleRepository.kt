@@ -6,6 +6,7 @@ import com.retheviper.bbs.common.extension.insertAuditInfos
 import com.retheviper.bbs.common.extension.updateAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Articles.authorId
+import com.retheviper.bbs.common.infrastructure.table.Categories
 import com.retheviper.bbs.common.infrastructure.table.Users
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.CategoryId
@@ -31,7 +32,8 @@ class ArticleRepository {
     fun findAll(authorId: UserId?, page: Int, pageSize: Int, limit: Int): List<ArticleRecord> {
         return Articles
             .leftJoin(Users, { Articles.authorId }, { Users.id })
-            .slice(Articles.columns + Users.name)
+            .leftJoin(Categories, { Articles.categoryId }, { Categories.id })
+            .slice(Articles.columns + Users.name + Categories.name)
             .select(selectOperator(authorId))
             .limit(limit)
             .limit(pageSize, ((page - 1) * pageSize).toLong())
@@ -39,21 +41,27 @@ class ArticleRepository {
             .map { it.toRecord() }
     }
 
-    fun find(id: ArticleId): ArticleRecord? {
+    fun find(id: ArticleId, forUpdate: Boolean = false): ArticleRecord? {
         return Articles
             .leftJoin(Users, { authorId }, { Users.id })
-            .slice(Articles.columns + Users.name)
+            .leftJoin(Categories, { Articles.categoryId }, { Categories.id })
+            .slice(Articles.columns + Users.name + Categories.name)
             .select { (Articles.id eq id.value) and (Articles.deleted eq false) }
-            .map { it.toRecord() }
+            .apply {
+                if (forUpdate) {
+                    forUpdate()
+                }
+            }
             .firstOrNull()
+            .let { it?.toRecord() }
     }
 
     fun findAuthorName(authorId: UserId): String {
         return Users
             .slice(Users.name)
             .select { Users.id eq authorId.value }
-            .map { it[Users.name] }
             .first()
+            .let { it[Users.name] }
     }
 
     fun create(article: Article): ArticleId {
@@ -74,6 +82,9 @@ class ArticleRepository {
             it[content] = article.content
             it[password] = article.password
             it[categoryId] = article.category?.id?.value ?: 0
+            it[likeCount] = article.likeCount
+            it[dislikeCount] = article.dislikeCount
+            it[viewCount] = article.viewCount
             updateAuditInfos(it, article.authorName ?: "")
         }
     }
@@ -99,6 +110,7 @@ class ArticleRepository {
         authorId = UserId(this[authorId].value),
         authorName = this[Users.name],
         categoryId =  CategoryId(this[Articles.categoryId].value),
+        categoryName = this[Categories.name],
         likeCount = this[Articles.likeCount],
         dislikeCount = this[Articles.dislikeCount],
         viewCount = this[Articles.viewCount],

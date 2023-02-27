@@ -13,6 +13,7 @@ data class ArticleRecord(
     val authorId: UserId,
     val authorName: String,
     val categoryId: CategoryId,
+    val categoryName: String,
     val likeCount: Int,
     val dislikeCount: Int,
     val viewCount: Int,

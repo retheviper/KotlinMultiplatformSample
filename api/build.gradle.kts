@@ -6,7 +6,7 @@ val kotlinVersion: String by project
 val logbackVersion: String by project
 val exposedVersion: String by project
 val koinVersion: String by project
-val h2Version: String by project
+val mysqlVersion: String by project
 val kotestVersion: String by project
 
 plugins {
@@ -98,7 +98,7 @@ kotlin {
 
                 // Database
                 implementation("com.zaxxer:HikariCP:5.0.1")
-                implementation("com.h2database:h2:$h2Version")
+                implementation("mysql:mysql-connector-java:$mysqlVersion")
 
                 // Hash
                 implementation("com.amdelamar:jhash:2.2.0")
