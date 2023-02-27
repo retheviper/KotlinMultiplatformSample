@@ -60,8 +60,6 @@ class ArticleServiceTest : DatabaseFreeSpec({
                 authorId = articleRecord.authorId,
                 authorName = articleRecord.authorName,
                 category = Category(
-                    articleId = articleRecord.id,
-                    id = articleRecord.categoryId,
                     name = articleRecord.categoryName
                 ),
                 tags = tags,
@@ -121,8 +119,6 @@ class ArticleServiceTest : DatabaseFreeSpec({
             authorId = articleRecord.authorId,
             authorName = articleRecord.authorName,
             category = Category(
-                articleId = articleRecord.id,
-                id = articleRecord.categoryId,
                 name = articleRecord.categoryName
             ),
             tags = tags,
