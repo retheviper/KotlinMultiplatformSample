@@ -125,7 +125,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
             ),
             tags = tags,
             comments = comments,
-            viewCount = articleRecord.viewCount,
+            viewCount = articleRecord.viewCount + 1,
             likeCount = articleRecord.likeCount,
             dislikeCount = articleRecord.dislikeCount,
             createdDate = articleRecord.createdDate,

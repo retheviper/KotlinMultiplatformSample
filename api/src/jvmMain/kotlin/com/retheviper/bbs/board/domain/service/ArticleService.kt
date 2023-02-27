@@ -59,7 +59,7 @@ class ArticleService(
     @Throws(BadRequestException::class)
     fun find(id: ArticleId, username: String? = null): Article {
         return transaction {
-            val article = repository.find(id = id, forUpdate = true)?.let {
+            var article = repository.find(id = id, forUpdate = true)?.let {
                 Article.from(
                     articleRecord = it,
                     category = Category(
@@ -72,7 +72,8 @@ class ArticleService(
             } ?: throw ArticleNotFoundException("Article not found with id: $id.")
 
             if (article.authorName != username) {
-                repository.update(article.updateViewCount())
+                article = article.updateViewCount()
+                repository.update(article)
             }
 
             article
