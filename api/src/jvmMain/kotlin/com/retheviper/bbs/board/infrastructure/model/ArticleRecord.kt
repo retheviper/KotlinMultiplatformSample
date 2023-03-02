@@ -12,7 +12,7 @@ data class ArticleRecord(
     val password: String,
     val authorId: UserId,
     val authorName: String,
-    val categoryId: CategoryId,
+    val categoryId: CategoryId?,
     val categoryName: String,
     val likeCount: Int,
     val dislikeCount: Int,

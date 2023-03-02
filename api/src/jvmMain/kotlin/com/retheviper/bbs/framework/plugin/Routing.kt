@@ -1,4 +1,4 @@
-package com.retheviper.bbs.framework.plugin
+ package com.retheviper.bbs.framework.plugin
 
 import com.retheviper.bbs.auth.route.routeAuth
 import com.retheviper.bbs.board.route.routeBoard

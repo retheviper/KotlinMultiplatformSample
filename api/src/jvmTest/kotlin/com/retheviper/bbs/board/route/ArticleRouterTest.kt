@@ -3,7 +3,7 @@ package com.retheviper.bbs.board.route
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
 import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
-import com.retheviper.bbs.common.extension.getAllTabes
+import com.retheviper.bbs.common.extension.getAllTables
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
@@ -45,7 +45,7 @@ class ArticleRouterTest : KtorFreeSpec({
                 val commentRepository by inject<CommentRepository>()
 
                 transaction {
-                    SchemaUtils.dropAndCreate(*getAllTabes())
+                    SchemaUtils.dropAndCreate(*getAllTables())
                     val user = userRepository.create(user)
                     val categoryId = categoryRepository.create(category.name, category.description)
                     articleRepository.create(

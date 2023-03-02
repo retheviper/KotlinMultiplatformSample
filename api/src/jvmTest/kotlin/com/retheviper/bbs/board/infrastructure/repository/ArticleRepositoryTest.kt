@@ -1,7 +1,7 @@
 package com.retheviper.bbs.board.infrastructure.repository
 
 import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
-import com.retheviper.bbs.common.extension.getAllTabes
+import com.retheviper.bbs.common.extension.getAllTables
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.UserId
@@ -29,7 +29,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                 val categoryRepository by inject<CategoryRepository>()
                 val articleRepository by inject<ArticleRepository>()
                 transaction {
-                    SchemaUtils.dropAndCreate(*getAllTabes())
+                    SchemaUtils.dropAndCreate(*getAllTables())
                     userRepository.create(TestModelFactory.userModel())
                     categoryRepository.create(category.name, category.description)
                     articleRepository.create(TestModelFactory.articleModel(userId, category))

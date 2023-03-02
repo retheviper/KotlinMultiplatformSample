@@ -7,6 +7,7 @@ import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Audit
 import com.retheviper.bbs.common.infrastructure.table.Categories
 import com.retheviper.bbs.common.infrastructure.table.Comments
+import com.retheviper.bbs.common.infrastructure.table.SensitiveWords
 import com.retheviper.bbs.common.infrastructure.table.Tags
 import com.retheviper.bbs.common.infrastructure.table.Users
 import org.jetbrains.exposed.sql.Table
@@ -40,13 +41,14 @@ fun Audit.updateAuditInfos(updateStatement: UpdateStatement, name: String) {
     updateStatement[lastModifiedDate] = LocalDateTime.now()
 }
 
-fun getAllTabes(): Array<Table> {
+fun getAllTables(): Array<Table> {
     return arrayOf(
         Articles,
         ArticleTags,
         Categories,
         Comments,
         Tags,
-        Users
+        Users,
+        SensitiveWords
     )
 }

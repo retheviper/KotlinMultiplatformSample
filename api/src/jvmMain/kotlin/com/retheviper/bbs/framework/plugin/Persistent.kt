@@ -1,6 +1,6 @@
 package com.retheviper.bbs.framework.plugin
 
-import com.retheviper.bbs.common.extension.getAllTabes
+import com.retheviper.bbs.common.extension.getAllTables
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
@@ -25,6 +25,6 @@ fun Application.configurePersistent() {
 
     transaction {
         SchemaUtils.setSchema(schema)
-        SchemaUtils.create(*getAllTabes())
+        SchemaUtils.create(*getAllTables())
     }
 }

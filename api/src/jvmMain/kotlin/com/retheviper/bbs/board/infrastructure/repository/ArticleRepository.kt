@@ -81,7 +81,7 @@ class ArticleRepository {
             it[title] = article.title
             it[content] = article.content
             it[password] = article.password
-            it[categoryId] = article.category?.id?.value ?: 0
+            it[categoryId] = article.category?.id?.value
             it[likeCount] = article.likeCount
             it[dislikeCount] = article.dislikeCount
             it[viewCount] = article.viewCount
@@ -109,7 +109,7 @@ class ArticleRepository {
         password = this[Articles.password],
         authorId = UserId(this[authorId].value),
         authorName = this[Users.name],
-        categoryId =  CategoryId(this[Articles.categoryId].value),
+        categoryId =  this[Articles.categoryId]?.let { CategoryId(it.value) },
         categoryName = this[Categories.name],
         likeCount = this[Articles.likeCount],
         dislikeCount = this[Articles.dislikeCount],

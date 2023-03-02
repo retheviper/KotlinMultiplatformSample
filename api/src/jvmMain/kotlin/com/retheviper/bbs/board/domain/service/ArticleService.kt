@@ -15,6 +15,7 @@ import com.retheviper.bbs.constant.ErrorCode
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class ArticleService(
+    private val sensitiveWordService: SensitiveWordService,
     private val categoryService: CategoryService,
     private val tagService: TagService,
     private val commentService: CommentService,
@@ -81,7 +82,7 @@ class ArticleService(
     }
 
     fun create(article: Article): ArticleId {
-        var newArticle = article
+        var newArticle = article.checkSensitiveWord().trim()
         return transaction {
             if (article.category != null) {
                 val category = categoryService.find(article.category.name)
@@ -106,7 +107,7 @@ class ArticleService(
     @Throws(BadRequestException::class)
     fun update(article: Article) {
         val id = article.id ?: throw BadRequestException("Article id is null.")
-        var updatedArticle = article
+        var updatedArticle = article.checkSensitiveWord().trim()
 
         transaction {
             val exist =
@@ -156,5 +157,30 @@ class ArticleService(
             tagService.unlink(id)
             repository.delete(id)
         }
+    }
+
+    @Throws(BadRequestException::class)
+    private fun Article.checkSensitiveWord(): Article {
+        val title = sensitiveWordService.findSensitiveWords(title)
+
+        if (title.isNotEmpty()) {
+            throw BadRequestException("Article's title contains sensitive word: ${title.joinToString()}.")
+        }
+
+        val content  = sensitiveWordService.findSensitiveWords(content)
+
+        if (content.isNotEmpty()) {
+            throw BadRequestException("Article's content contains sensitive word: ${content.joinToString()}.")
+        }
+
+        return this
+    }
+
+    private fun Article.trim(): Article {
+        return this.copy(
+            title = this.title.trim(),
+            content = this.content.trim(),
+            password = this.password.trim()
+        )
     }
 }

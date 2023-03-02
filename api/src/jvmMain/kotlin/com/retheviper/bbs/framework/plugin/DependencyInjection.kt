@@ -5,11 +5,13 @@ import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.board.domain.service.CategoryService
 import com.retheviper.bbs.board.domain.service.CommentService
+import com.retheviper.bbs.board.domain.service.SensitiveWordService
 import com.retheviper.bbs.board.domain.service.TagService
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.repository.ArticleTagRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
 import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
+import com.retheviper.bbs.board.infrastructure.repository.SensitiveWordRepository
 import com.retheviper.bbs.board.infrastructure.repository.TagRepository
 import com.retheviper.bbs.common.extension.getJwtConfigs
 import com.retheviper.bbs.user.domain.service.UserService
@@ -49,7 +51,7 @@ fun koinUserModules(): Module {
 
 fun koinBoardModules(): Module {
     return module {
-        single { ArticleService(get(), get(), get(), get()) }
+        single { ArticleService(get(), get(), get(), get(), get()) }
         single { ArticleRepository() }
         single { CategoryService(get()) }
         single { CategoryRepository() }
@@ -58,5 +60,7 @@ fun koinBoardModules(): Module {
         single { ArticleTagRepository() }
         single { CommentService(get()) }
         single { CommentRepository() }
+        single { SensitiveWordService(get()) }
+        single { SensitiveWordRepository() }
     }
 }
