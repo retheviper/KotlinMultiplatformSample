@@ -2,6 +2,7 @@ package com.retheviper.bbs.common.extension
 
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Comment
+import com.retheviper.bbs.model.common.PaginationProperties
 import com.retheviper.bbs.model.response.GetArticleResponse
 import com.retheviper.bbs.model.response.GetCommentResponse
 import com.retheviper.bbs.model.response.GetUserResponse
@@ -18,11 +19,9 @@ fun GetUserResponse.Companion.from(dto: User): GetUserResponse {
     )
 }
 
-fun ListArticleResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dtos: List<Article>): ListArticleResponse {
+fun ListArticleResponse.Companion.from(paginationProperties: PaginationProperties, dtos: List<Article>): ListArticleResponse {
     return ListArticleResponse(
-        page = page,
-        limit = limit,
-        pageSize = pageSize,
+        paginationProperties = paginationProperties,
         articleSummaries = dtos.map {
             ListArticleResponse.ArticleSummary(
                 id = checkNotNull(it.id?.value),
@@ -54,11 +53,9 @@ fun GetArticleResponse.Companion.from(dto: Article): GetArticleResponse {
     )
 }
 
-fun ListCommentResponse.Companion.from(page: Int, pageSize: Int, limit: Int, dtos: List<Comment>): ListCommentResponse {
+fun ListCommentResponse.Companion.from(paginationProperties: PaginationProperties, dtos: List<Comment>): ListCommentResponse {
     return ListCommentResponse(
-        page = page,
-        limit = limit,
-        pageSize = pageSize,
+        paginationProperties = paginationProperties,
         comments = dtos.map {
             GetCommentResponse.from(it)
         }

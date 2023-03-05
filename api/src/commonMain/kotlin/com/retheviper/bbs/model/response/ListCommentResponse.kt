@@ -1,11 +1,10 @@
 package com.retheviper.bbs.model.response
 
+import com.retheviper.bbs.model.common.PaginationProperties
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class ListCommentResponse(
-    val page: Int,
-    val limit: Int,
-    val pageSize: Int,
+    val paginationProperties: PaginationProperties,
     val comments: List<GetCommentResponse>
 )

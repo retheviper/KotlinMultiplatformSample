@@ -11,11 +11,16 @@ import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.CommentId
 import com.retheviper.bbs.common.value.UserId
+import com.retheviper.bbs.model.common.PaginationProperties
 import com.retheviper.bbs.user.domain.model.User
 import org.instancio.Instancio
 import org.instancio.Select.field
 
 object TestModelFactory {
+
+    fun paginationPropertiesModel(): PaginationProperties {
+        return PaginationProperties(1, 10, 100)
+    }
 
     fun userModel(): User {
         return Instancio.create(User::class.java)

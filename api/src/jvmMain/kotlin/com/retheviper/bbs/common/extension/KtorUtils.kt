@@ -2,6 +2,7 @@ package com.retheviper.bbs.common.extension
 
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.property.JwtConfigs
+import com.retheviper.bbs.model.common.PaginationProperties
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.ApplicationRequest
@@ -18,31 +19,36 @@ fun Application.getJwtConfigs(): JwtConfigs {
 }
 
 @Throws(BadRequestException::class)
-fun ApplicationCall.getPaginationProperties(): Triple<Int, Int, Int> {
+fun ApplicationCall.getPaginationProperties(): PaginationProperties {
     val page = request.queryParametersAsInt("page") ?: 1
-    val pageSize = request.queryParametersAsInt("pageSize") ?: 10
+    val size = request.queryParametersAsInt("pageSize") ?: 10
     val limit = request.queryParametersAsInt("limit") ?: 100
 
-    if (page < 1 || pageSize < 1 || limit < 1) {
-        throw BadRequestException("Invalid page, pageSize or limit.")
+    if (page < 1 || size < 1 || limit < 1) {
+        throw BadRequestException("Invalid page, size or limit.")
     }
 
-    if (pageSize > limit) {
-        throw BadRequestException("pageSize must be less than or equal to limit.")
+    if (size > limit) {
+        throw BadRequestException("size must be less than or equal to limit.")
     }
 
-    if (page > limit / pageSize) {
+    if (page > limit / size) {
         throw BadRequestException("page must be less than or equal to limit / pageSize.")
     }
 
-    return Triple(page, pageSize, limit)
+    return PaginationProperties(page = page, size = size, limit = limit)
 }
 
 @Throws(BadRequestException::class)
 fun ApplicationCall.getIdFromParameter(): Int {
     val parameter = parameters["id"] ?: throw BadRequestException("Invalid ID")
     return try {
-        parameter.toInt()
+        val id = parameter.toInt()
+        if (id < 1) {
+            throw BadRequestException("Invalid ID")
+        } else {
+            id
+        }
     } catch (e: NumberFormatException) {
         throw BadRequestException("Invalid ID")
     }

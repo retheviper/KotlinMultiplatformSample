@@ -11,6 +11,7 @@ import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.CommentId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
+import com.retheviper.bbs.model.common.PaginationProperties
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class CommentService(private val repository: CommentRepository) {
@@ -31,13 +32,11 @@ class CommentService(private val repository: CommentRepository) {
         }
     }
 
-    fun findAll(authorId: UserId, page: Int, pageSize: Int, limit: Int): List<Comment> {
+    fun findAll(authorId: UserId, paginationProperties: PaginationProperties): List<Comment> {
         return transaction {
             repository.findAll(
                 authorId = authorId,
-                page = page,
-                pageSize = pageSize,
-                limit = limit
+                paginationProperties = paginationProperties
             ).map {
                 Comment.from(it)
             }

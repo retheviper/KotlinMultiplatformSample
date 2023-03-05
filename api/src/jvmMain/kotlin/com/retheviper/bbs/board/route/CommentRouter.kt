@@ -23,25 +23,21 @@ fun Route.routeComment() {
                 throw BadRequestException("Author ID is required.")
             }
 
-            val (page, pageSize, limit) = call.getPaginationProperties()
+            val paginationProperties = call.getPaginationProperties()
 
             val dtos = service.findAll(
                 authorId = authorId,
-                page = page,
-                pageSize = pageSize,
-                limit = limit
+                paginationProperties = paginationProperties
             )
 
             call.respond(
                 ListCommentResponse.from(
-                    page = page,
-                    pageSize = pageSize,
-                    limit = limit,
+                    paginationProperties = paginationProperties,
                     dtos = dtos
                 )
             )
 
-            call.application.log.info("Comment list returned with page: $page, pageSize: $pageSize, limit: $limit.")
+            call.application.log.info("Comment list returned with page: ${paginationProperties.page}, size: ${paginationProperties.size}, limit: ${paginationProperties.limit}.")
         }
     }
 }

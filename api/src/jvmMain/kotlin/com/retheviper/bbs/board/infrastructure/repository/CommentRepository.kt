@@ -4,11 +4,13 @@ import com.retheviper.bbs.board.domain.model.Comment
 import com.retheviper.bbs.board.infrastructure.model.CommentRecord
 import com.retheviper.bbs.common.extension.insertAuditInfos
 import com.retheviper.bbs.common.extension.updateAuditInfos
+import com.retheviper.bbs.common.extension.withPagination
 import com.retheviper.bbs.common.infrastructure.table.Comments
 import com.retheviper.bbs.common.infrastructure.table.Users
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.CommentId
 import com.retheviper.bbs.common.value.UserId
+import com.retheviper.bbs.model.common.PaginationProperties
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
@@ -32,10 +34,9 @@ class CommentRepository {
             .map { it.toRecord() }
     }
 
-    fun findAll(authorId: UserId, page: Int, pageSize: Int, limit: Int): List<CommentRecord> {
+    fun findAll(authorId: UserId, paginationProperties: PaginationProperties): List<CommentRecord> {
         return Comments.select { (Comments.authorId eq authorId.value) and (Comments.deleted eq false) }
-            .limit(limit)
-            .limit(pageSize, ((page - 1) * pageSize).toLong())
+            .withPagination(paginationProperties)
             .map { it.toRecord() }
     }
 

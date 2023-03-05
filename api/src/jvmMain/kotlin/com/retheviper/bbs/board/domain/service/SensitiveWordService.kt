@@ -8,7 +8,7 @@ class SensitiveWordService(private val repository: SensitiveWordRepository) {
 
     private val sensitiveWordsCache = ConcurrentSet<String>()
 
-    fun findSensitiveWords(text: String): Set<String> {
+    fun find(text: String): Set<String> {
         if (sensitiveWordsCache.isEmpty()) {
             val sensitiveWords = transaction {
                 repository.findAll()

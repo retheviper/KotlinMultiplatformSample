@@ -33,14 +33,12 @@ class ArticleServiceTest : DatabaseFreeSpec({
             every {
                 findAll(
                     authorId = null,
-                    page = page,
-                    pageSize = pageSize,
-                    limit = limit
+                    paginationProperties = TestModelFactory.paginationPropertiesModel()
                 )
             } returns listOf(articleRecord)
         }
         val sensitiveWordService = mockk<SensitiveWordService> {
-            every { findSensitiveWords(any()) } returns emptySet()
+            every { find(any()) } returns emptySet()
         }
         val commentService = mockk<CommentService> {
             every { findAll(listOf(articleRecord.id)) } returns comments
@@ -51,7 +49,8 @@ class ArticleServiceTest : DatabaseFreeSpec({
         val service = ArticleService(sensitiveWordService, mockk(), tagService, commentService, repository)
 
         val articles = service.findAll(
-            authorId = null, page = page, pageSize = pageSize, limit = limit
+            authorId = null,
+            paginationProperties = TestModelFactory.paginationPropertiesModel()
         )
 
         articles shouldBe listOf(
@@ -79,9 +78,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
         verify(exactly = 1) {
             repository.findAll(
                 authorId = null,
-                page = page,
-                pageSize = pageSize,
-                limit = limit
+                paginationProperties = TestModelFactory.paginationPropertiesModel()
             )
             commentService.findAll(listOf(articleRecord.id))
             tagService.findAll(listOf(articleRecord.id))
@@ -106,7 +103,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
             every { update(any()) } returns Unit
         }
         val sensitiveWordService = mockk<SensitiveWordService> {
-            every { findSensitiveWords(any()) } returns emptySet()
+            every { find(any()) } returns emptySet()
         }
         val commentService = mockk<CommentService> {
             every { findAll(articleRecord.id) } returns comments

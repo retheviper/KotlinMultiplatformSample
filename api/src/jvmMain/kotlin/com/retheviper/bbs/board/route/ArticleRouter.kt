@@ -29,22 +29,24 @@ fun Route.routeArticle() {
     route(ARTICLE) {
         val service by inject<ArticleService>()
         get {
-            val (page, pageSize, limit) = call.getPaginationProperties()
+            val paginationProperties = call.getPaginationProperties()
 
             val authorId = call.request.queryParameters["authorId"]?.toInt()?.let { UserId(it) }
 
-            call.application.log.info("authorId: $authorId, page: $page, pageSize: $pageSize, limit: $limit.")
+            call.application.log.info("authorId: $authorId, page: ${paginationProperties.page}, size: ${paginationProperties.size}, limit: ${paginationProperties.limit}.")
 
             val dtos = service.findAll(
-                authorId = authorId, page = page, pageSize = pageSize, limit = limit
+                authorId = authorId,
+                paginationProperties = paginationProperties
             )
 
             call.respond(
                 ListArticleResponse.from(
-                    page = page, pageSize = pageSize, limit = limit, dtos = dtos
+                    paginationProperties = paginationProperties,
+                    dtos = dtos
                 )
             )
-            call.application.log.info("Board list returned with page: $page, pageSize: $pageSize, limit: $limit.")
+            call.application.log.info("Board list returned with page: ${paginationProperties.page}, size: ${paginationProperties.size}, limit: ${paginationProperties.limit}.")
         }
 
         get("/{id}") {

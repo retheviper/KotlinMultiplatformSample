@@ -12,6 +12,7 @@ import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
+import com.retheviper.bbs.model.common.PaginationProperties
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class ArticleService(
@@ -28,13 +29,11 @@ class ArticleService(
         }
     }
 
-    fun findAll(authorId: UserId?, page: Int, pageSize: Int, limit: Int): List<Article> {
+    fun findAll(authorId: UserId?, paginationProperties: PaginationProperties): List<Article> {
         return transaction {
             val articles = repository.findAll(
                 authorId = authorId,
-                page = page,
-                pageSize = pageSize,
-                limit = limit
+                paginationProperties = paginationProperties
             )
 
             val tags = tagService.findAll(articles.map { it.id })
@@ -161,13 +160,13 @@ class ArticleService(
 
     @Throws(BadRequestException::class)
     private fun Article.checkSensitiveWord(): Article {
-        val title = sensitiveWordService.findSensitiveWords(title)
+        val title = sensitiveWordService.find(title)
 
         if (title.isNotEmpty()) {
             throw BadRequestException("Article's title contains sensitive word: ${title.joinToString()}.")
         }
 
-        val content  = sensitiveWordService.findSensitiveWords(content)
+        val content  = sensitiveWordService.find(content)
 
         if (content.isNotEmpty()) {
             throw BadRequestException("Article's content contains sensitive word: ${content.joinToString()}.")

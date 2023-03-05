@@ -70,9 +70,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                     val result = transaction {
                         repository.findAll(
                             authorId = userId,
-                            page = 1,
-                            pageSize = 10,
-                            limit = 100
+                            paginationProperties = TestModelFactory.paginationPropertiesModel()
                         )
                     }
                     result shouldNotBe emptyList<ArticleRecord>()
@@ -87,9 +85,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                     val result = transaction {
                         repository.findAll(
                             authorId = null,
-                            page = 1,
-                            pageSize = 10,
-                            limit = 100
+                            paginationProperties = TestModelFactory.paginationPropertiesModel()
                         )
                     }
                     result shouldNotBe emptyList<ArticleRecord>()
