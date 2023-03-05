@@ -39,13 +39,16 @@ class ArticleServiceTest : DatabaseFreeSpec({
                 )
             } returns listOf(articleRecord)
         }
+        val sensitiveWordService = mockk<SensitiveWordService> {
+            every { findSensitiveWords(any()) } returns emptySet()
+        }
         val commentService = mockk<CommentService> {
             every { findAll(listOf(articleRecord.id)) } returns comments
         }
         val tagService = mockk<TagService> {
             every { findAll(listOf(articleRecord.id)) } returns tags
         }
-        val service = ArticleService(mockk(), tagService, commentService, repository)
+        val service = ArticleService(sensitiveWordService, mockk(), tagService, commentService, repository)
 
         val articles = service.findAll(
             authorId = null, page = page, pageSize = pageSize, limit = limit
@@ -102,13 +105,16 @@ class ArticleServiceTest : DatabaseFreeSpec({
             every { find(articleRecord.id, true) } returns articleRecord
             every { update(any()) } returns Unit
         }
+        val sensitiveWordService = mockk<SensitiveWordService> {
+            every { findSensitiveWords(any()) } returns emptySet()
+        }
         val commentService = mockk<CommentService> {
             every { findAll(articleRecord.id) } returns comments
         }
         val tagService = mockk<TagService> {
             every { findAll(listOf(articleRecord.id)) } returns tags
         }
-        val service = ArticleService(mockk(), tagService, commentService, repository)
+        val service = ArticleService(sensitiveWordService, mockk(), tagService, commentService, repository)
 
         val article = service.find(articleRecord.id)
 

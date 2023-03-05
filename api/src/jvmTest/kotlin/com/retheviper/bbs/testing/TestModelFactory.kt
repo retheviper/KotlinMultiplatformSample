@@ -32,7 +32,7 @@ object TestModelFactory {
     fun articleRecordModel(id: ArticleId, categoryId: CategoryId, authorId: UserId): ArticleRecord {
         return Instancio.of(ArticleRecord::class.java)
             .set(field("id"), id.value)
-            .set(field("categoryId"), categoryId.value)
+            .set(field("categoryId"), categoryId)
             .set(field( "authorId"), authorId.value)
             .create()
     }
