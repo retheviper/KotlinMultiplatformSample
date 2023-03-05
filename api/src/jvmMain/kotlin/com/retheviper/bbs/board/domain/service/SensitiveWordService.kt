@@ -2,6 +2,7 @@ package com.retheviper.bbs.board.domain.service
 
 import com.retheviper.bbs.board.infrastructure.repository.SensitiveWordRepository
 import io.ktor.util.collections.ConcurrentSet
+import org.jetbrains.exposed.sql.transactions.transaction
 
 class SensitiveWordService(private val repository: SensitiveWordRepository) {
 
@@ -9,7 +10,10 @@ class SensitiveWordService(private val repository: SensitiveWordRepository) {
 
     fun findSensitiveWords(text: String): Set<String> {
         if (sensitiveWordsCache.isEmpty()) {
-            sensitiveWordsCache.addAll(repository.findAll())
+            val sensitiveWords = transaction {
+                repository.findAll()
+            }
+            sensitiveWordsCache.addAll(sensitiveWords)
         }
 
         val letters = text.filter { it.isLetter() }
