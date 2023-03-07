@@ -8,7 +8,6 @@ import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.testing.KtorFreeSpec
 import com.retheviper.bbs.testing.TestModelFactory
 import com.retheviper.bbs.testing.dropAndCreate
-import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.server.testing.testApplication
@@ -25,14 +24,14 @@ class ArticleRepositoryTest : KtorFreeSpec({
     beforeSpec {
         testApplication {
             application {
-                val userRepository by inject<UserRepository>()
-                val categoryRepository by inject<CategoryRepository>()
-                val articleRepository by inject<ArticleRepository>()
                 transaction {
                     SchemaUtils.dropAndCreate(*getAllTables())
-                    userRepository.create(TestModelFactory.userModel())
-                    categoryRepository.create(category.name, category.description)
-                    articleRepository.create(TestModelFactory.articleModel(userId, category))
+                    val createUserQuery = "INSERT INTO Users (created_by, created_date, deleted, last_modified_by, last_modified_date, mail, `name`, password, username) VALUES ('ZCRQD', '2023-03-07T16:08:32.494946', FALSE, 'ZCRQD', '2023-03-07T16:08:32.495029', 'KJMVSHXHV', 'ABIIAUPWSE', 'XIAP', 'ZCRQD')"
+                    val createCategoryQuery = "INSERT INTO Categories (created_by, created_date, deleted, description, last_modified_by, last_modified_date, `name`) VALUES ('system', '2023-03-07T16:08:32.517222', FALSE, 'WYOGAGN', 'system', '2023-03-07T16:08:32.517229', 'BONNC')"
+                    val createArticleQuery = "INSERT INTO Articles (author_id, category_id, content, created_by, created_date, deleted, dislike_count, last_modified_by, last_modified_date, like_count, password, title, view_count) VALUES (1, 1, 'FOXIE', 'AMKHSBHUX', '2023-03-07T16:15:08.386278', FALSE, 0, 'AMKHSBHUX', '2023-03-07T16:15:08.386287', 0, 'CZYRWU', 'ZIXW', 0)"
+                    exec(createUserQuery)
+                    exec(createCategoryQuery)
+                    exec(createArticleQuery)
                 }
             }
         }

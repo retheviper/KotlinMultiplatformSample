@@ -16,17 +16,11 @@ import io.mockk.verify
 class ArticleServiceTest : DatabaseFreeSpec({
 
     "findAll" {
-        val (page, pageSize, limit) = Triple(1, 1, 10)
         val articleRecord = TestModelFactory.articleRecordModel(
             id = ArticleId(1),
             categoryId = CategoryId(1),
             authorId = UserId(1)
         )
-        val category = TestModelFactory.categoryModel()
-            .copy(
-                id = articleRecord.categoryId,
-                articleId = articleRecord.id
-            )
         val tags = TestModelFactory.tagModels(articleRecord.id, 2)
         val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
         val repository = mockk<ArticleRepository> {
@@ -91,11 +85,6 @@ class ArticleServiceTest : DatabaseFreeSpec({
             categoryId = CategoryId(1),
             authorId = UserId(1)
         )
-        val category = TestModelFactory.categoryModel()
-            .copy(
-                id = articleRecord.categoryId,
-                articleId = articleRecord.id
-            )
         val tags = TestModelFactory.tagModels(articleRecord.id, 2)
         val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
         val repository = mockk<ArticleRepository> {

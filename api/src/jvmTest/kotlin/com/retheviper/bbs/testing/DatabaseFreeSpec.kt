@@ -1,14 +1,13 @@
 package com.retheviper.bbs.testing
 
-import com.retheviper.bbs.framework.plugin.hikariConfig
 import io.kotest.core.spec.style.FreeSpec
 import org.jetbrains.exposed.sql.Database
 
 abstract class DatabaseFreeSpec(body: FreeSpec.() -> Unit = {}) : FreeSpec(body) {
     init {
         Database.connect(
-            url = hikariConfig.jdbcUrl,
-            driver = hikariConfig.driverClassName
+            url = "jdbc:mysql://localhost:3131/bbs?useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC",
+            driver = "com.mysql.cj.jdbc.Driver"
         )
     }
 }
