@@ -3,6 +3,7 @@ package com.retheviper.bbs.board.infrastructure.repository
 import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.common.extension.getAllTables
 import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.testing.KtorFreeSpec
@@ -17,6 +18,7 @@ import org.koin.ktor.ext.inject
 
 class ArticleRepositoryTest : KtorFreeSpec({
 
+    val boardId = BoardId(1)
     val userId = UserId(1)
     val articleId = ArticleId(1)
     val category = TestModelFactory.categoryModel().copy(id = CategoryId(1))
@@ -26,9 +28,11 @@ class ArticleRepositoryTest : KtorFreeSpec({
             application {
                 transaction {
                     SchemaUtils.dropAndCreate(*getAllTables())
+                    val createBoardQuery = "INSERT INTO Boards (created_by, created_date, deleted, last_modified_by, last_modified_date, `name`) VALUES ('system', '2023-03-07T16:08:32.494946', FALSE, 'system', '2023-03-07T16:08:32.494946', 'system')"
                     val createUserQuery = "INSERT INTO Users (created_by, created_date, deleted, last_modified_by, last_modified_date, mail, `name`, password, username) VALUES ('ZCRQD', '2023-03-07T16:08:32.494946', FALSE, 'ZCRQD', '2023-03-07T16:08:32.495029', 'KJMVSHXHV', 'ABIIAUPWSE', 'XIAP', 'ZCRQD')"
-                    val createCategoryQuery = "INSERT INTO Categories (created_by, created_date, deleted, description, last_modified_by, last_modified_date, `name`) VALUES ('system', '2023-03-07T16:08:32.517222', FALSE, 'WYOGAGN', 'system', '2023-03-07T16:08:32.517229', 'BONNC')"
-                    val createArticleQuery = "INSERT INTO Articles (author_id, category_id, content, created_by, created_date, deleted, dislike_count, last_modified_by, last_modified_date, like_count, password, title, view_count) VALUES (1, 1, 'FOXIE', 'AMKHSBHUX', '2023-03-07T16:15:08.386278', FALSE, 0, 'AMKHSBHUX', '2023-03-07T16:15:08.386287', 0, 'CZYRWU', 'ZIXW', 0)"
+                    val createCategoryQuery = "INSERT INTO Categories (created_by, created_date, deleted, description, last_modified_by, last_modified_date, `name`, board_id) VALUES ('system', '2023-03-07T16:08:32.517222', FALSE, 'WYOGAGN', 'system', '2023-03-07T16:08:32.517229', 'BONNC', 1)"
+                    val createArticleQuery = "INSERT INTO Articles (author_id, category_id, content, created_by, created_date, deleted, last_modified_by, last_modified_date, password, title, board_id) VALUES (1, 1, 'FOXIE', 'AMKHSBHUX', '2023-03-07T16:15:08.386278', FALSE, 'AMKHSBHUX', '2023-03-07T16:15:08.386287', 'CZYRWU', 'ZIXW', 1)"
+                    exec(createBoardQuery)
                     exec(createUserQuery)
                     exec(createCategoryQuery)
                     exec(createArticleQuery)
@@ -68,6 +72,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                     val repository by inject<ArticleRepository>()
                     val result = transaction {
                         repository.findAll(
+                            boardId = boardId,
                             authorId = userId,
                             paginationProperties = TestModelFactory.paginationPropertiesModel()
                         )
@@ -83,6 +88,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                     val repository by inject<ArticleRepository>()
                     val result = transaction {
                         repository.findAll(
+                            boardId = boardId,
                             authorId = null,
                             paginationProperties = TestModelFactory.paginationPropertiesModel()
                         )
@@ -98,7 +104,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
             testApplication {
                 application {
                     val repository by inject<ArticleRepository>()
-                    val article = TestModelFactory.articleModel(userId, category)
+                    val article = TestModelFactory.articleModel(category = category)
                     val result = transaction { repository.create(article) }
                     result shouldNotBe null
                 }
@@ -111,7 +117,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
             testApplication {
                 application {
                     val repository by inject<ArticleRepository>()
-                    val article = TestModelFactory.articleModel(userId, category).copy(id = articleId)
+                    val article = TestModelFactory.articleModel(category = category).copy(id = articleId)
                     transaction { repository.update(article) }
 
                     val result = transaction { repository.find(articleId) }

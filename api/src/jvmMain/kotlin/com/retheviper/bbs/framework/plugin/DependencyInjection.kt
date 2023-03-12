@@ -9,6 +9,7 @@ import com.retheviper.bbs.board.domain.service.SensitiveWordService
 import com.retheviper.bbs.board.domain.service.TagService
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.repository.ArticleTagRepository
+import com.retheviper.bbs.board.infrastructure.repository.BoardRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
 import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.board.infrastructure.repository.SensitiveWordRepository
@@ -51,6 +52,7 @@ fun koinUserModules(): Module {
 
 fun koinBoardModules(): Module {
     return module {
+        single { BoardRepository() }
         single { ArticleService(get(), get(), get(), get(), get()) }
         single { ArticleRepository() }
         single { CategoryService(get()) }

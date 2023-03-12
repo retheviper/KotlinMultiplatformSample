@@ -10,6 +10,7 @@ import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.extension.notMatchesWith
 import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.common.PaginationProperties
@@ -29,9 +30,10 @@ class ArticleService(
         }
     }
 
-    fun findAll(authorId: UserId?, paginationProperties: PaginationProperties): List<Article> {
+    fun findAll(boardId: BoardId, authorId: UserId?, paginationProperties: PaginationProperties): List<Article> {
         return transaction {
             val articles = repository.findAll(
+                boardId = boardId,
                 authorId = authorId,
                 paginationProperties = paginationProperties
             )

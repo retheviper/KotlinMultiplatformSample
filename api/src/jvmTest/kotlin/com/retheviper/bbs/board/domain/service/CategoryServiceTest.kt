@@ -59,12 +59,12 @@ class CategoryServiceTest : DatabaseFreeSpec({
 
     "create" {
         val id = CategoryId(1)
-        val (name, description, createdBy) = Triple("name", "description", "createdBy")
+        val category = TestModelFactory.categoryModel()
         val repository = mockk<CategoryRepository> {
-            every { create(name, description, createdBy) } returns id
+            every { create(category) } returns id
         }
         val service = CategoryService(repository)
-        val result = service.create(name, description, createdBy)
+        val result = service.create(category)
         result shouldBe id
     }
 })

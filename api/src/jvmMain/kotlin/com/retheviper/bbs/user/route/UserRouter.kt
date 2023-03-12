@@ -23,8 +23,8 @@ fun Route.routeUser() {
     val service by inject<UserService>()
 
     route(USER) {
-        get("/{id}") {
-            val id = UserId(call.getIdFromParameter())
+        get("/{userId}") {
+            val id = call.getIdFromParameter<UserId>()
 
             val user = service.find(id)
 

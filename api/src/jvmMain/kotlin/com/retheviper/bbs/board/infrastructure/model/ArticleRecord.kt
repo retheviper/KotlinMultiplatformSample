@@ -1,11 +1,13 @@
 package com.retheviper.bbs.board.infrastructure.model
 
 import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.UserId
 import java.time.LocalDateTime
 
 data class ArticleRecord(
+    val boardId: BoardId,
     val id: ArticleId,
     val title: String,
     val content: String,

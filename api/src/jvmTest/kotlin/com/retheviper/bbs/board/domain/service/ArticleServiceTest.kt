@@ -3,9 +3,6 @@ package com.retheviper.bbs.board.domain.service
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Category
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
-import com.retheviper.bbs.common.value.ArticleId
-import com.retheviper.bbs.common.value.CategoryId
-import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.TestModelFactory
 import io.kotest.matchers.shouldBe
@@ -16,16 +13,13 @@ import io.mockk.verify
 class ArticleServiceTest : DatabaseFreeSpec({
 
     "findAll" {
-        val articleRecord = TestModelFactory.articleRecordModel(
-            id = ArticleId(1),
-            categoryId = CategoryId(1),
-            authorId = UserId(1)
-        )
+        val articleRecord = TestModelFactory.articleRecordModel()
         val tags = TestModelFactory.tagModels(articleRecord.id, 2)
         val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
         val repository = mockk<ArticleRepository> {
             every {
                 findAll(
+                    boardId = articleRecord.boardId,
                     authorId = null,
                     paginationProperties = TestModelFactory.paginationPropertiesModel()
                 )
@@ -43,12 +37,14 @@ class ArticleServiceTest : DatabaseFreeSpec({
         val service = ArticleService(sensitiveWordService, mockk(), tagService, commentService, repository)
 
         val articles = service.findAll(
+            boardId = articleRecord.boardId,
             authorId = null,
             paginationProperties = TestModelFactory.paginationPropertiesModel()
         )
 
         articles shouldBe listOf(
             Article(
+                boardId = articleRecord.boardId,
                 id = articleRecord.id,
                 title = articleRecord.title,
                 content = articleRecord.content,
@@ -71,6 +67,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
 
         verify(exactly = 1) {
             repository.findAll(
+                boardId = articleRecord.boardId,
                 authorId = null,
                 paginationProperties = TestModelFactory.paginationPropertiesModel()
             )
@@ -80,11 +77,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
     }
 
     "find" {
-        val articleRecord = TestModelFactory.articleRecordModel(
-            id = ArticleId(1),
-            categoryId = CategoryId(1),
-            authorId = UserId(1)
-        )
+        val articleRecord = TestModelFactory.articleRecordModel()
         val tags = TestModelFactory.tagModels(articleRecord.id, 2)
         val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
         val repository = mockk<ArticleRepository> {
@@ -105,6 +98,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
         val article = service.find(articleRecord.id)
 
         article shouldBe Article(
+            boardId = articleRecord.boardId,
             id = articleRecord.id,
             title = articleRecord.title,
             content = articleRecord.content,

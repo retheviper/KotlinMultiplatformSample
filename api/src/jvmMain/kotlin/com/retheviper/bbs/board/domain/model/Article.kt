@@ -2,11 +2,13 @@ package com.retheviper.bbs.board.domain.model
 
 import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.model.request.CreateArticleRequest
 import java.time.LocalDateTime
 
 data class Article(
+    val boardId: BoardId? = null,
     val id: ArticleId? = null,
     val title: String,
     val content: String,
@@ -25,6 +27,7 @@ data class Article(
     companion object {
         fun from(articleRecord: ArticleRecord, category: Category, tags: List<Tag>, comments: List<Comment>?): Article {
             return Article(
+                boardId = articleRecord.boardId,
                 id = articleRecord.id,
                 title = articleRecord.title,
                 content = articleRecord.content,
@@ -42,8 +45,9 @@ data class Article(
             )
         }
 
-        fun from(request: CreateArticleRequest): Article {
+        fun from(boardId: BoardId?, request: CreateArticleRequest): Article {
             return Article(
+                boardId = boardId,
                 title = request.title,
                 content = request.content,
                 password = request.password,

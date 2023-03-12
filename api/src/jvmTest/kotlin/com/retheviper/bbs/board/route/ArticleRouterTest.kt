@@ -1,10 +1,10 @@
 package com.retheviper.bbs.board.route
 
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
+import com.retheviper.bbs.board.infrastructure.repository.BoardRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
 import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.extension.getAllTables
-import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.request.CreateArticleRequest
@@ -30,27 +30,29 @@ import org.koin.ktor.ext.inject
 
 class ArticleRouterTest : KtorFreeSpec({
 
-    val urlString = "/api/v1/board/article"
+    val urlString = "/api/v1/board/1/article"
     val user = TestModelFactory.userModel()
     val category = TestModelFactory.categoryModel()
-    val article = TestModelFactory.articleModel(authorId = UserId(1), category = category)
-    val comment = TestModelFactory.commentModel(ArticleId(1), UserId(1))
+    val article = TestModelFactory.articleModel(category = category)
+    val comment = TestModelFactory.commentModel()
 
     beforeSpec {
         testApplication {
             application {
                 val userRepository by inject<UserRepository>()
+                val boardRepository by inject<BoardRepository>()
                 val articleRepository by inject<ArticleRepository>()
                 val categoryRepository by inject<CategoryRepository>()
                 val commentRepository by inject<CommentRepository>()
 
                 transaction {
                     SchemaUtils.dropAndCreate(*getAllTables())
-                    val user = userRepository.create(user)
-                    val categoryId = categoryRepository.create(category.name, category.description)
+                    userRepository.create(user)
+                    boardRepository.create(TestModelFactory.boardModel())
+                    val categoryId = categoryRepository.create(category)
                     articleRepository.create(
                         article.copy(
-                            authorId = user?.id ?: UserId(1),
+                            authorId = UserId(1),
                             category = category.copy(id = categoryId)
                         )
                     )

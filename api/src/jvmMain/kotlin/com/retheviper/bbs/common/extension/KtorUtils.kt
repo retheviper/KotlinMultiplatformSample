@@ -3,6 +3,13 @@ package com.retheviper.bbs.common.extension
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.property.DatabaseConfigs
 import com.retheviper.bbs.common.property.JwtConfigs
+import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.BoardId
+import com.retheviper.bbs.common.value.CategoryId
+import com.retheviper.bbs.common.value.CommentId
+import com.retheviper.bbs.common.value.Id
+import com.retheviper.bbs.common.value.TagId
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.model.common.PaginationProperties
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
@@ -61,17 +68,30 @@ fun ApplicationCall.getPaginationProperties(): PaginationProperties {
 }
 
 @Throws(BadRequestException::class)
-fun ApplicationCall.getIdFromParameter(): Int {
-    val parameter = parameters["id"] ?: throw BadRequestException("Invalid ID")
+inline fun <reified T: Id> ApplicationCall.getIdFromParameter(): T {
+    val badRequestException = BadRequestException("Invalid ID")
+
+    val parameterName = when (T::class) {
+        BoardId::class -> "boardId"
+        ArticleId::class -> "articleId"
+        CommentId::class -> "commentId"
+        CategoryId::class -> "categoryId"
+        TagId::class -> "tagId"
+        UserId::class -> "userId"
+        else -> throw badRequestException
+    }
+
+    val parameter = parameters[parameterName] ?: throw badRequestException
+
     return try {
         val id = parameter.toInt()
         if (id < 1) {
-            throw BadRequestException("Invalid ID")
+            throw badRequestException
         } else {
-            id
+            T::class.java.getDeclaredConstructor(Int::class.java).apply { isAccessible = true }.newInstance(id)
         }
     } catch (e: NumberFormatException) {
-        throw BadRequestException("Invalid ID")
+        throw badRequestException
     }
 }
 

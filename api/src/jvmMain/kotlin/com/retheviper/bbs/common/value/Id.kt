@@ -1,26 +1,35 @@
 package com.retheviper.bbs.common.value
 
+interface Id {
+    val value: Int
+}
+
 @JvmInline
-value class ArticleId(val value: Int) {
+value class BoardId(override val value: Int): Id {
     override fun toString() = value.toString()
 }
 
 @JvmInline
-value class CommentId(val value: Int) {
+value class ArticleId(override val value: Int): Id {
     override fun toString() = value.toString()
 }
 
 @JvmInline
-value class UserId(val value: Int) {
+value class CommentId(override val value: Int): Id {
     override fun toString() = value.toString()
 }
 
 @JvmInline
-value class CategoryId(val value: Int) {
+value class UserId(override val value: Int): Id {
     override fun toString() = value.toString()
 }
 
 @JvmInline
-value class TagId(val value: Int) {
+value class CategoryId(override val value: Int): Id {
+    override fun toString() = value.toString()
+}
+
+@JvmInline
+value class TagId(override val value: Int): Id {
     override fun toString() = value.toString()
 }

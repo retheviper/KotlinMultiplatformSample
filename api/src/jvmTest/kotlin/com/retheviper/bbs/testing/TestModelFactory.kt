@@ -1,6 +1,7 @@
 package com.retheviper.bbs.testing
 
 import com.retheviper.bbs.board.domain.model.Article
+import com.retheviper.bbs.board.domain.model.Board
 import com.retheviper.bbs.board.domain.model.Category
 import com.retheviper.bbs.board.domain.model.Comment
 import com.retheviper.bbs.board.domain.model.Tag
@@ -8,6 +9,7 @@ import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.board.infrastructure.model.CategoryRecord
 import com.retheviper.bbs.board.infrastructure.model.CommentRecord
 import com.retheviper.bbs.common.value.ArticleId
+import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.CommentId
 import com.retheviper.bbs.common.value.UserId
@@ -26,25 +28,32 @@ object TestModelFactory {
         return Instancio.create(User::class.java)
     }
 
-    fun articleModel(authorId: UserId, category: Category): Article {
+    fun boardModel(): Board {
+        return Instancio.create(Board::class.java)
+    }
+
+    fun articleModel(boardId: BoardId = BoardId(1), authorId: UserId = UserId(1), category: Category): Article {
         return Instancio.of(Article::class.java)
             .ignore(field("id"))
+            .set(field("boardId"), boardId)
             .set(field("authorId"), authorId.value)
             .set(field("category"), category)
             .create()
     }
 
-    fun articleRecordModel(id: ArticleId, categoryId: CategoryId, authorId: UserId): ArticleRecord {
+    fun articleRecordModel(boardId: BoardId = BoardId(1), id: ArticleId = ArticleId(1), categoryId: CategoryId = CategoryId(1), authorId: UserId = UserId(1)): ArticleRecord {
         return Instancio.of(ArticleRecord::class.java)
+            .set(field("boardId"), boardId.value)
             .set(field("id"), id.value)
             .set(field("categoryId"), categoryId)
             .set(field( "authorId"), authorId.value)
             .create()
     }
 
-    fun categoryModel(): Category {
+    fun categoryModel(boardId: BoardId = BoardId(1)): Category {
         return Instancio.of(Category::class.java)
             .ignore(field("id"))
+            .set(field("boardId"), boardId)
             .create()
     }
 
@@ -69,7 +78,7 @@ object TestModelFactory {
             .create()
     }
 
-    fun commentModel(articleId: ArticleId, authorId: UserId): Comment {
+    fun commentModel(articleId: ArticleId = ArticleId(1), authorId: UserId = UserId(1)): Comment {
         return Instancio.of(Comment::class.java)
             .ignore(field("id"))
             .set(field("articleId"), articleId.value)

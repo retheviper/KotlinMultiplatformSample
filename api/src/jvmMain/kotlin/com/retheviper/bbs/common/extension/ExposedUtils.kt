@@ -3,6 +3,7 @@ package com.retheviper.bbs.common.extension
 import com.retheviper.bbs.common.infrastructure.table.ArticleTags
 import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Audit
+import com.retheviper.bbs.common.infrastructure.table.Boards
 import com.retheviper.bbs.common.infrastructure.table.Categories
 import com.retheviper.bbs.common.infrastructure.table.Comments
 import com.retheviper.bbs.common.infrastructure.table.SensitiveWords
@@ -36,6 +37,6 @@ fun Query.withPagination(paginationProperties: PaginationProperties): Query {
 
 fun getAllTables(): Array<Table> {
     return arrayOf(
-        Articles, ArticleTags, Categories, Comments, Tags, Users, SensitiveWords
+        Boards, Articles, ArticleTags, Categories, Comments, Tags, Users, SensitiveWords
     )
 }

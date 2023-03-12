@@ -26,9 +26,9 @@ class CategoryService(private val categoryRepository: CategoryRepository) {
         }
     }
 
-    fun create(name: String, description: String, createdBy: String): CategoryId {
+    fun create(category: Category): CategoryId {
         return transaction {
-            categoryRepository.create(name, description, createdBy)
+            categoryRepository.create(category)
         }
     }
 }

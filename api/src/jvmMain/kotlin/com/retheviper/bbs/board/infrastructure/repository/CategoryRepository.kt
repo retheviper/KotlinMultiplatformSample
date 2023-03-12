@@ -1,8 +1,10 @@
 package com.retheviper.bbs.board.infrastructure.repository
 
+import com.retheviper.bbs.board.domain.model.Category
 import com.retheviper.bbs.board.infrastructure.model.CategoryRecord
 import com.retheviper.bbs.common.extension.insertAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.Categories
+import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.CategoryId
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
@@ -28,16 +30,18 @@ class CategoryRepository {
             .first()
     }
 
-    fun create(name: String, description: String?, createdBy: String = "system"): CategoryId {
+    fun create(category: Category): CategoryId {
         val id = Categories.insertAndGetId {
-            it[Categories.name] = name
-            it[Categories.description] = description
-            insertAuditInfos(it, createdBy)
+            it[name] = category.name
+            it[description] = category.description
+            it[boardId] = requireNotNull(category.boardId).value
+            insertAuditInfos(it, "system")
         }.value
         return CategoryId(id)
     }
 
     private fun ResultRow.toRecord() = CategoryRecord(
+        boardId = BoardId(this[Categories.id].value),
         id = CategoryId(this[Categories.id].value),
         name = this[Categories.name],
         description = this[Categories.description]
