@@ -58,7 +58,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
             testApplication {
                 application {
                     val repository by inject<ArticleRepository>()
-                    val result = transaction { repository.find(articleId) }
+                    val result = transaction { repository.find(articleId, false) }
                     result shouldNotBe null
                 }
             }
@@ -120,7 +120,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                     val article = TestModelFactory.articleModel(category = category).copy(id = articleId)
                     transaction { repository.update(article) }
 
-                    val result = transaction { repository.find(articleId) }
+                    val result = transaction { repository.find(articleId, false) }
                     result shouldNotBe null
                     result?.let {
                         it.title shouldBe article.title
@@ -138,7 +138,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                     val repository by inject<ArticleRepository>()
                     transaction { repository.delete(articleId) }
 
-                    val result = transaction { repository.find(articleId) }
+                    val result = transaction { repository.find(articleId, false) }
                     result shouldBe null
                 }
             }

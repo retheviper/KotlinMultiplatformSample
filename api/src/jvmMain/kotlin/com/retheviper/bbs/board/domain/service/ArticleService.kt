@@ -147,7 +147,7 @@ class ArticleService(
     @Throws(BadRequestException::class)
     fun delete(id: ArticleId, password: String) {
         transaction {
-            val exist = repository.find(id) ?: throw ArticleNotFoundException("Article not found with id: $id.")
+            val exist = repository.find(id, forUpdate = true) ?: throw ArticleNotFoundException("Article not found with id: $id.")
 
             if (password notMatchesWith exist.password) {
                 throw PasswordNotMatchException(

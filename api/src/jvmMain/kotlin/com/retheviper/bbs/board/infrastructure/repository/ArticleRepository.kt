@@ -42,7 +42,7 @@ class ArticleRepository {
             .map { it.toRecord() }
     }
 
-    fun find(id: ArticleId, forUpdate: Boolean = false): ArticleRecord? {
+    fun find(id: ArticleId, forUpdate: Boolean): ArticleRecord? {
         return Articles.leftJoin(Users, { authorId }, { Users.id })
             .leftJoin(Categories, { Articles.categoryId }, { Categories.id })
             .slice(Articles.columns + Users.name + Categories.name)
