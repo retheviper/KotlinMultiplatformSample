@@ -11,24 +11,23 @@ import io.mockk.verify
 
 class CategoryServiceTest : DatabaseFreeSpec({
 
-    "find" - {
-
-        "findAll" {
-            val record = TestModelFactory.categoryRecordModel(CategoryId(1))
-            val repository = mockk<CategoryRepository> {
-                every { findAll(listOf(CategoryId(1))) } returns listOf(record)
-            }
-            val service = CategoryService(repository)
-            val result = service.findAll(listOf(record.id))
-            result.size shouldBe 1
-            result.first().id shouldBe record.id
-            result.first().name shouldBe record.name
-            result.first().description shouldBe record.description
-
-            verify(exactly = 1) { repository.findAll(listOf(record.id)) }
+    "findAll" {
+        val record = TestModelFactory.categoryRecordModel(CategoryId(1))
+        val repository = mockk<CategoryRepository> {
+            every { findAll(listOf(CategoryId(1))) } returns listOf(record)
         }
+        val service = CategoryService(repository)
+        val result = service.findAll(listOf(record.id))
+        result.size shouldBe 1
+        result.first().id shouldBe record.id
+        result.first().name shouldBe record.name
+        result.first().description shouldBe record.description
 
-        "find - by id" {
+        verify(exactly = 1) { repository.findAll(listOf(record.id)) }
+    }
+
+    "find" - {
+        "by id" {
             val record = TestModelFactory.categoryRecordModel(CategoryId(1))
             val repository = mockk<CategoryRepository> {
                 every { find(record.id) } returns record
@@ -42,7 +41,7 @@ class CategoryServiceTest : DatabaseFreeSpec({
             verify(exactly = 1) { repository.find(record.id) }
         }
 
-        "find - by name" {
+        "by name" {
             val record = TestModelFactory.categoryRecordModel(CategoryId(1))
             val repository = mockk<CategoryRepository> {
                 every { find(record.name) } returns record

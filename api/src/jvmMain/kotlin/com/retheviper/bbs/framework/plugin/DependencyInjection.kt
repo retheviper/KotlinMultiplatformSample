@@ -5,16 +5,18 @@ import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.board.domain.service.CategoryService
 import com.retheviper.bbs.board.domain.service.CommentService
-import com.retheviper.bbs.board.domain.service.SensitiveWordService
 import com.retheviper.bbs.board.domain.service.TagService
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.repository.ArticleTagRepository
 import com.retheviper.bbs.board.infrastructure.repository.BoardRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
 import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
-import com.retheviper.bbs.board.infrastructure.repository.SensitiveWordRepository
 import com.retheviper.bbs.board.infrastructure.repository.TagRepository
+import com.retheviper.bbs.common.domain.service.SensitiveWordService
 import com.retheviper.bbs.common.extension.getJwtConfigs
+import com.retheviper.bbs.common.infrastructure.repository.SensitiveWordRepository
+import com.retheviper.bbs.message.domain.service.MessageService
+import com.retheviper.bbs.message.infrastructure.repository.MessageRepository
 import com.retheviper.bbs.user.domain.service.UserService
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.ktor.server.application.Application
@@ -30,7 +32,8 @@ fun Application.configureDependencyInjection() {
         modules(
             koinAuthModules(),
             koinUserModules(),
-            koinBoardModules()
+            koinBoardModules(),
+            koinMessageModules()
         )
     }
 }
@@ -64,5 +67,12 @@ fun koinBoardModules(): Module {
         single { CommentRepository() }
         single { SensitiveWordService(get()) }
         single { SensitiveWordRepository() }
+    }
+}
+
+fun koinMessageModules(): Module {
+    return module {
+        single { MessageService(get(), get()) }
+        single { MessageRepository() }
     }
 }

@@ -1,4 +1,4 @@
-package com.retheviper.bbs.board.infrastructure.repository
+package com.retheviper.bbs.common.infrastructure.repository
 
 import com.retheviper.bbs.common.infrastructure.table.SensitiveWords
 import org.jetbrains.exposed.sql.selectAll

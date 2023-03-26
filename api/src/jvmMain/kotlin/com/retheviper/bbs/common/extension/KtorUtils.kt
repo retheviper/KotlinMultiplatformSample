@@ -8,11 +8,14 @@ import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.CommentId
 import com.retheviper.bbs.common.value.Id
+import com.retheviper.bbs.common.value.MessageGroupId
 import com.retheviper.bbs.common.value.TagId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.model.common.PaginationProperties
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.request.ApplicationRequest
 
 fun Application.getEnvironmentVariable(key: String): String = environment.config.property(key).getString()
@@ -78,6 +81,7 @@ inline fun <reified T: Id> ApplicationCall.getIdFromParameter(): T {
         CategoryId::class -> "categoryId"
         TagId::class -> "tagId"
         UserId::class -> "userId"
+        MessageGroupId::class -> "messageGroupId"
         else -> throw badRequestException
     }
 
@@ -102,4 +106,12 @@ fun ApplicationRequest.queryParametersAsInt(key: String): Int? {
     } catch (e: NumberFormatException) {
         throw BadRequestException("Invalid $key")
     }
+}
+
+fun ApplicationCall.getUserInfoFromToken(): Pair<UserId, String> {
+    val badRequestException = BadRequestException("Invalid token")
+    val principal = principal<JWTPrincipal>() ?: throw badRequestException
+    val userId = principal.payload.getClaim("userId").asInt() ?: throw badRequestException
+    val username = principal.payload.getClaim("username").asString() ?: throw badRequestException
+    return Pair(UserId(userId), username)
 }

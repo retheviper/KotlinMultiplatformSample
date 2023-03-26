@@ -45,13 +45,13 @@ data class Article(
             )
         }
 
-        fun from(boardId: BoardId?, request: CreateArticleRequest): Article {
+        fun from(boardId: BoardId?, authorId: UserId, request: CreateArticleRequest): Article {
             return Article(
                 boardId = boardId,
                 title = request.title,
                 content = request.content,
+                authorId = authorId,
                 password = request.password,
-                authorId = UserId(request.authorId),
                 category = Category(name = request.categoryName),
                 tags = request.tagNames?.map { Tag(name = it) } ?: emptyList()
             )

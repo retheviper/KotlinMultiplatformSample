@@ -2,12 +2,14 @@ package com.retheviper.bbs.common.extension
 
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Comment
+import com.retheviper.bbs.message.domain.model.Message
 import com.retheviper.bbs.model.common.PaginationProperties
 import com.retheviper.bbs.model.response.GetArticleResponse
 import com.retheviper.bbs.model.response.GetCommentResponse
 import com.retheviper.bbs.model.response.GetUserResponse
 import com.retheviper.bbs.model.response.ListArticleResponse
 import com.retheviper.bbs.model.response.ListCommentResponse
+import com.retheviper.bbs.model.response.ListLatestMessagesResponse
 import com.retheviper.bbs.user.domain.model.User
 
 fun GetUserResponse.Companion.from(dto: User): GetUserResponse {
@@ -67,5 +69,17 @@ fun GetCommentResponse.Companion.from(dto: Comment): GetCommentResponse {
         id = checkNotNull(dto.id?.value),
         content = dto.content,
         author = checkNotNull(dto.authorName)
+    )
+}
+
+fun ListLatestMessagesResponse.Companion.from(dto: Message): ListLatestMessagesResponse {
+    return ListLatestMessagesResponse(
+        id = checkNotNull(dto.id?.value),
+        messageGroupId = checkNotNull(dto.messageGroupId.value),
+        userId = checkNotNull(dto.userId.value),
+        username = dto.username,
+        content = dto.content,
+        createdDate = dto.createdDate.toString(),
+        updatedDate = dto.updatedDate.toString()
     )
 }

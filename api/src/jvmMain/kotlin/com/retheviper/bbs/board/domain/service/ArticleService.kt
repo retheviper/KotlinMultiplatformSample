@@ -3,6 +3,7 @@ package com.retheviper.bbs.board.domain.service
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Category
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
+import com.retheviper.bbs.common.domain.service.SensitiveWordService
 import com.retheviper.bbs.common.exception.ArticleAuthorNotMatchException
 import com.retheviper.bbs.common.exception.ArticleNotFoundException
 import com.retheviper.bbs.common.exception.BadRequestException

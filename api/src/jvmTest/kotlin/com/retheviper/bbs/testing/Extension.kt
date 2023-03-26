@@ -2,6 +2,7 @@ package com.retheviper.bbs.testing
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.common.property.JwtConfigs
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -17,12 +18,12 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.Date
 
-fun String.toToken(jwtConfig: JwtConfigs? = null): String = JWT.create()
-    .withAudience(jwtConfig?.audience ?: "jwt-audience")
-    .withIssuer(jwtConfig?.issuer ?: "ktor sample app")
-    .withClaim("username", this)
-    .withExpiresAt(Date(System.currentTimeMillis() + 10 * 60 * 1000))
-    .sign(Algorithm.HMAC256(jwtConfig?.secret ?: "secret"))
+fun Credential.toToken(jwtConfig: JwtConfigs? = null): String =
+    JWT.create().withAudience(jwtConfig?.audience ?: "jwt-audience").withIssuer(jwtConfig?.issuer ?: "ktor sample app")
+        .withClaim("userId", requireNotNull(this.userId).value)
+        .withClaim("username", this.username)
+        .withExpiresAt(Date(System.currentTimeMillis() + 10 * 60 * 1000))
+        .sign(Algorithm.HMAC256(jwtConfig?.secret ?: "secret"))
 
 fun ApplicationTestBuilder.jsonClient(): HttpClient {
     return createClient {

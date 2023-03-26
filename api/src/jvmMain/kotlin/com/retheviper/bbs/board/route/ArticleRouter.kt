@@ -5,6 +5,7 @@ import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.common.extension.from
 import com.retheviper.bbs.common.extension.getIdFromParameter
 import com.retheviper.bbs.common.extension.getPaginationProperties
+import com.retheviper.bbs.common.extension.getUserInfoFromToken
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.UserId
@@ -70,9 +71,10 @@ fun Route.routeArticle() {
         authenticate("auth-jwt") {
             post {
                 val boardId = call.getIdFromParameter<BoardId>()
+                val authorId = call.getUserInfoFromToken().first
                 val request = call.receive<CreateArticleRequest>()
 
-                val id = service.create(Article.from(boardId, request))
+                val id = service.create(Article.from(boardId, authorId, request))
 
                 call.respond(HttpStatusCode.Created)
                 call.application.log.info("Board created with id: ${id.value}.")

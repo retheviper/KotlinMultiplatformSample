@@ -14,7 +14,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.Date
 
 class JwtService(
-    private val jwtConfigs: JwtConfigs, private val repository: AuthRepository
+    private val jwtConfigs: JwtConfigs,
+    private val repository: AuthRepository
 ) {
 
     private val oneHour = 1000 * 60 * 60
@@ -28,7 +29,7 @@ class JwtService(
             throw PasswordNotMatchException("Invalid password.", ErrorCode.USER_PASSWORD_NOT_MATCH)
         }
 
-        return createToken(exist.username)
+        return createToken(checkNotNull(exist.userId).value, exist.username)
     }
 
     fun refreshToken(token: String): String {
@@ -37,14 +38,15 @@ class JwtService(
         }
 
         JWT.decode(token).let {
-            return createToken(it.getClaim("username").asString())
+            return createToken(it.getClaim("userId").asInt(), it.getClaim("username").asString())
         }
     }
 
-    private fun createToken(username: String): String {
+    private fun createToken(userId: Int, username: String): String {
         return JWT.create()
             .withAudience(jwtConfigs.audience)
             .withIssuer(jwtConfigs.issuer)
+            .withClaim("userId", userId)
             .withClaim("username", username)
             .withExpiresAt(Date(System.currentTimeMillis() + oneHour))
             .sign(algorithm)

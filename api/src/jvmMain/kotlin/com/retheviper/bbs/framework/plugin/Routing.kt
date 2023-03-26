@@ -5,6 +5,7 @@ import com.retheviper.bbs.board.route.routeBoard
 import com.retheviper.bbs.common.route.routeHealth
 import com.retheviper.bbs.constant.API_BASE_PATH
 import com.retheviper.bbs.constant.COUNT
+import com.retheviper.bbs.message.route.routeMessage
 import com.retheviper.bbs.model.request.CountRequest
 import com.retheviper.bbs.user.route.routeUser
 import io.ktor.http.HttpStatusCode
@@ -43,6 +44,7 @@ fun Application.configureRouting() {
             routeAuth()
             routeUser()
             routeBoard()
+            routeMessage()
         }
     }
 }

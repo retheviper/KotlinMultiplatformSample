@@ -1,6 +1,6 @@
-package com.retheviper.bbs.board.domain.service
+package com.retheviper.bbs.common.domain.service
 
-import com.retheviper.bbs.board.infrastructure.repository.SensitiveWordRepository
+import com.retheviper.bbs.common.infrastructure.repository.SensitiveWordRepository
 import io.ktor.util.collections.ConcurrentSet
 import org.jetbrains.exposed.sql.transactions.transaction
 

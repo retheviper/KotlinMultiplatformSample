@@ -33,3 +33,13 @@ value class CategoryId(override val value: Int): Id {
 value class TagId(override val value: Int): Id {
     override fun toString() = value.toString()
 }
+
+@JvmInline
+value class MessageId(override val value: Int): Id {
+    override fun toString() = value.toString()
+}
+
+@JvmInline
+value class MessageGroupId(override val value: Int): Id {
+    override fun toString() = value.toString()
+}

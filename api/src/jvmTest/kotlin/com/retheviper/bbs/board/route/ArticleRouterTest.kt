@@ -1,5 +1,6 @@
 package com.retheviper.bbs.board.route
 
+import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.repository.BoardRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
@@ -35,6 +36,7 @@ class ArticleRouterTest : KtorFreeSpec({
     val category = TestModelFactory.categoryModel()
     val article = TestModelFactory.articleModel(category = category)
     val comment = TestModelFactory.commentModel()
+    val token = Credential(UserId(1), user.username, user.password).toToken()
 
     beforeSpec {
         testApplication {
@@ -115,7 +117,6 @@ class ArticleRouterTest : KtorFreeSpec({
             title = "title",
             content = "test content",
             password = "password",
-            authorId = 1,
             categoryName = category.name,
             tagNames = listOf("tag1", "tag2")
         )
@@ -125,7 +126,7 @@ class ArticleRouterTest : KtorFreeSpec({
                 val client = jsonClient()
 
                 val response = client.postJson(urlString) {
-                    headers["Authorization"] = "Bearer ${"username".toToken()}"
+                    headers["Authorization"] = "Bearer $token"
                     setBody(request)
                 }
 
@@ -150,7 +151,7 @@ class ArticleRouterTest : KtorFreeSpec({
                 val client = jsonClient()
 
                 val response = client.postJson(urlString) {
-                    headers["Authorization"] = "Bearer ${"username".toToken()}"
+                    headers["Authorization"] = "Bearer $token"
                     setBody(request.copy(title = ""))
                 }
 
@@ -167,7 +168,7 @@ class ArticleRouterTest : KtorFreeSpec({
                 val client = jsonClient()
 
                 val response = client.postJson(urlString) {
-                    headers["Authorization"] = "Bearer ${"username".toToken()}"
+                    headers["Authorization"] = "Bearer $token"
                     setBody(request.copy(content = ""))
                 }
 
@@ -184,7 +185,7 @@ class ArticleRouterTest : KtorFreeSpec({
                 val client = jsonClient()
 
                 val response = client.postJson(urlString) {
-                    headers["Authorization"] = "Bearer ${"username".toToken()}"
+                    headers["Authorization"] = "Bearer $token"
                     setBody(request.copy(password = ""))
                 }
 

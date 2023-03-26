@@ -10,6 +10,7 @@ import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.exception.UserNotFoundException
 import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.property.JwtConfigs
+import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.toToken
 import io.kotest.assertions.throwables.shouldNotThrow
@@ -28,12 +29,13 @@ class JwtServiceTest : DatabaseFreeSpec({
         every { audience } returns "audience"
     }
     val algorithm = Algorithm.HMAC256(config.secret)
-    val credential = Credential("username", "password")
+    val credential = Credential(userId = UserId(1), username = "username", password = "password")
     val service = JwtService(config, repository)
 
     "Token creation" - {
         "OK" {
             every { repository.find(credential.username) } returns Credential(
+                userId = UserId(1),
                 username = credential.username,
                 password = credential.password.toHashedString()
             )
@@ -83,7 +85,7 @@ class JwtServiceTest : DatabaseFreeSpec({
 
     "Refresh Token" - {
         "OK" {
-            val token = credential.username.toToken(config)
+            val token = credential.toToken(config)
 
             shouldNotThrow<InvalidTokenException> {
                 service.refreshToken(token)
