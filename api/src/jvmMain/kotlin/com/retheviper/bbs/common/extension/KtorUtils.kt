@@ -17,6 +17,8 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.request.ApplicationRequest
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 fun Application.getEnvironmentVariable(key: String): String = environment.config.property(key).getString()
 
@@ -51,9 +53,9 @@ fun Application.getDatabaseConfigs(): DatabaseConfigs {
 
 @Throws(BadRequestException::class)
 fun ApplicationCall.getPaginationProperties(): PaginationProperties {
-    val page = request.queryParametersAsInt("page") ?: 1
-    val size = request.queryParametersAsInt("size") ?: 10
-    val limit = request.queryParametersAsInt("limit") ?: 100
+    val page = request.getQueryParameter("page") ?: 1
+    val size = request.getQueryParameter("size") ?: 10
+    val limit = request.getQueryParameter("limit") ?: 100
 
     if (page < 1 || size < 1 || limit < 1) {
         throw BadRequestException("Invalid page, size or limit.")
@@ -71,7 +73,7 @@ fun ApplicationCall.getPaginationProperties(): PaginationProperties {
 }
 
 @Throws(BadRequestException::class)
-inline fun <reified T: Id> ApplicationCall.getIdFromParameter(): T {
+inline fun <reified T : Id> ApplicationCall.getIdFromPathParameter(): T {
     val badRequestException = BadRequestException("Invalid ID")
 
     val parameterName = when (T::class) {
@@ -86,25 +88,24 @@ inline fun <reified T: Id> ApplicationCall.getIdFromParameter(): T {
     }
 
     val parameter = parameters[parameterName] ?: throw badRequestException
+    val id = parameter.toIntOrNull() ?: throw badRequestException
 
-    return try {
-        val id = parameter.toInt()
-        if (id < 1) {
-            throw badRequestException
-        } else {
-            T::class.java.getDeclaredConstructor(Int::class.java).apply { isAccessible = true }.newInstance(id)
-        }
-    } catch (e: NumberFormatException) {
+    return if (id < 1) {
         throw badRequestException
+    } else {
+        T::class.java.getDeclaredConstructor(Int::class.java).apply { isAccessible = true }.newInstance(id)
     }
 }
 
-fun ApplicationRequest.queryParametersAsInt(key: String): Int? {
+inline fun <reified T: Any> ApplicationRequest.getQueryParameter(key: String): T? {
     val parameter = queryParameters[key]
-    return try {
-        parameter?.toInt()
-    } catch (e: NumberFormatException) {
-        throw BadRequestException("Invalid $key")
+
+    return when (T::class) {
+        String::class -> parameter as T?
+        Long::class -> parameter?.toLongOrNull() as T?
+        Int::class -> parameter?.toIntOrNull() as T?
+        LocalDateTime::class -> parameter?.let { LocalDateTime.parse(it, DateTimeFormatter.ISO_LOCAL_DATE_TIME) } as T?
+        else -> null
     }
 }
 

@@ -3,7 +3,7 @@ package com.retheviper.bbs.board.route
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.common.extension.from
-import com.retheviper.bbs.common.extension.getIdFromParameter
+import com.retheviper.bbs.common.extension.getIdFromPathParameter
 import com.retheviper.bbs.common.extension.getPaginationProperties
 import com.retheviper.bbs.common.extension.getUserInfoFromToken
 import com.retheviper.bbs.common.value.ArticleId
@@ -32,7 +32,7 @@ fun Route.routeArticle() {
         val service by inject<ArticleService>()
 
         get {
-            val boardId = call.getIdFromParameter<BoardId>()
+            val boardId = call.getIdFromPathParameter<BoardId>()
             val paginationProperties = call.getPaginationProperties()
 
             val authorId = call.request.queryParameters["authorId"]?.toInt()?.let { UserId(it) }
@@ -54,7 +54,7 @@ fun Route.routeArticle() {
         }
 
         get("/{articleId}") {
-            val articleId = call.getIdFromParameter<ArticleId>()
+            val articleId = call.getIdFromPathParameter<ArticleId>()
 
             val principal = call.principal<JWTPrincipal>()
             val username = principal?.payload?.getClaim("username")?.asString()
@@ -70,7 +70,7 @@ fun Route.routeArticle() {
 
         authenticate("auth-jwt") {
             post {
-                val boardId = call.getIdFromParameter<BoardId>()
+                val boardId = call.getIdFromPathParameter<BoardId>()
                 val authorId = call.getUserInfoFromToken().first
                 val request = call.receive<CreateArticleRequest>()
 

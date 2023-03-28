@@ -8,6 +8,7 @@ import com.retheviper.bbs.message.domain.model.MessageGroup
 import com.retheviper.bbs.message.infrastructure.repository.MessageRepository
 import io.ktor.server.plugins.BadRequestException
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.time.LocalDateTime
 
 class MessageService(
     private val repository: MessageRepository,
@@ -50,9 +51,9 @@ class MessageService(
         }
     }
 
-    fun findGroupMessages(messageGroupId: MessageGroupId, userId: UserId): List<Message> {
+    fun findGroupMessages(messageGroupId: MessageGroupId, userId: UserId, lastUpdatedTime: LocalDateTime?): List<Message> {
         val groupMessages = transaction {
-            repository.findGroupMessages(messageGroupId).map { Message.from(it) }
+            repository.findGroupMessages(messageGroupId, lastUpdatedTime).map { Message.from(it) }
         }
 
         if (groupMessages.none { it.userId == userId }) {

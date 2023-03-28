@@ -1,7 +1,7 @@
 package com.retheviper.bbs.user.route
 
 import com.retheviper.bbs.common.extension.from
-import com.retheviper.bbs.common.extension.getIdFromParameter
+import com.retheviper.bbs.common.extension.getIdFromPathParameter
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.USER
 import com.retheviper.bbs.model.request.CreateUserRequest
@@ -24,7 +24,7 @@ fun Route.routeUser() {
 
     route(USER) {
         get("/{userId}") {
-            val id = call.getIdFromParameter<UserId>()
+            val id = call.getIdFromPathParameter<UserId>()
 
             val user = service.find(id)
 

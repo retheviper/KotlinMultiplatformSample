@@ -9,7 +9,7 @@ import com.retheviper.bbs.model.response.GetCommentResponse
 import com.retheviper.bbs.model.response.GetUserResponse
 import com.retheviper.bbs.model.response.ListArticleResponse
 import com.retheviper.bbs.model.response.ListCommentResponse
-import com.retheviper.bbs.model.response.ListLatestMessagesResponse
+import com.retheviper.bbs.model.response.ListMessagesResponse
 import com.retheviper.bbs.user.domain.model.User
 
 fun GetUserResponse.Companion.from(dto: User): GetUserResponse {
@@ -72,8 +72,8 @@ fun GetCommentResponse.Companion.from(dto: Comment): GetCommentResponse {
     )
 }
 
-fun ListLatestMessagesResponse.Companion.from(dto: Message): ListLatestMessagesResponse {
-    return ListLatestMessagesResponse(
+fun ListMessagesResponse.Companion.from(dto: Message): ListMessagesResponse {
+    return ListMessagesResponse(
         id = checkNotNull(dto.id?.value),
         messageGroupId = checkNotNull(dto.messageGroupId.value),
         userId = checkNotNull(dto.userId.value),

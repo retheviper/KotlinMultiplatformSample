@@ -3,7 +3,7 @@ package com.retheviper.bbs.model.response
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ListLatestMessagesResponse(
+data class ListMessagesResponse(
     val id: Int,
     val messageGroupId: Int,
     val userId: Int,

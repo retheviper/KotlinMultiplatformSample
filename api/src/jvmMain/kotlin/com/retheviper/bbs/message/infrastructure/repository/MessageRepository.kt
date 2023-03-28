@@ -21,6 +21,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.select
+import java.time.LocalDateTime
 
 class MessageRepository {
 
@@ -63,11 +64,17 @@ class MessageRepository {
         }
     }
 
-    fun findGroupMessages(messageGroupId: MessageGroupId): List<MessageRecord> {
+    fun findGroupMessages(messageGroupId: MessageGroupId, after: LocalDateTime?): List<MessageRecord> {
         return Messages.join(Users, JoinType.LEFT, additionalConstraint = { Messages.userId eq Users.id })
             .select {
                 (Messages.messageGroupId eq messageGroupId.value) and (Messages.deleted eq false)
-            }.map {
+            }
+            .apply {
+                if (after != null) {
+                    andWhere { Messages.createdDate greaterEq after }
+                }
+            }
+            .map {
                 it.toMessageRecord()
             }
     }

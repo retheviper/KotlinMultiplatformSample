@@ -1,7 +1,8 @@
 package com.retheviper.bbs.message.route
 
 import com.retheviper.bbs.common.extension.from
-import com.retheviper.bbs.common.extension.getIdFromParameter
+import com.retheviper.bbs.common.extension.getIdFromPathParameter
+import com.retheviper.bbs.common.extension.getQueryParameter
 import com.retheviper.bbs.common.extension.getUserInfoFromToken
 import com.retheviper.bbs.common.value.MessageGroupId
 import com.retheviper.bbs.constant.MESSAGE
@@ -10,7 +11,7 @@ import com.retheviper.bbs.message.domain.model.Message
 import com.retheviper.bbs.message.domain.model.MessageGroup
 import com.retheviper.bbs.message.domain.service.MessageService
 import com.retheviper.bbs.model.request.CreateMessageGroupRequest
-import com.retheviper.bbs.model.response.ListLatestMessagesResponse
+import com.retheviper.bbs.model.response.ListMessagesResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
@@ -27,6 +28,7 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import org.koin.ktor.ext.inject
+import java.time.LocalDateTime
 
 fun Route.routeMessage() {
 
@@ -39,14 +41,15 @@ fun Route.routeMessage() {
             get("/latest") {
                 val userId = call.getUserInfoFromToken().first
                 val messages = service.findLatestMessages(userId)
-                call.respond(messages.map { ListLatestMessagesResponse.from(it) })
+                call.respond(messages.map { ListMessagesResponse.from(it) })
             }
 
             get("/group/{messageGroupId}") {
-                val messageGroupId = call.getIdFromParameter<MessageGroupId>()
+                val messageGroupId = call.getIdFromPathParameter<MessageGroupId>()
+                val lastUpdatedTime = call.request.getQueryParameter<LocalDateTime>("lastUpdatedTime")
                 val userId = call.getUserInfoFromToken().first
-                val messages = service.findGroupMessages(messageGroupId, userId)
-                call.respond(messages.map { ListLatestMessagesResponse.from(it) })
+                val messages = service.findGroupMessages(messageGroupId, userId, lastUpdatedTime)
+                call.respond(messages.map { ListMessagesResponse.from(it) })
             }
 
             post("/group") {
@@ -57,7 +60,7 @@ fun Route.routeMessage() {
             }
 
             webSocket("/group/{messageGroupId}") {
-                val messageGroupId = call.getIdFromParameter<MessageGroupId>()
+                val messageGroupId = call.getIdFromPathParameter<MessageGroupId>()
                 val messageGroup = service.findGroup(messageGroupId)
                 val userInfo = call.getUserInfoFromToken()
 
@@ -91,10 +94,14 @@ fun Route.routeMessage() {
                     }
                 } catch (e: Exception) {
                     connections.remove(connection)
-                    connections.forEach { it.session.send(Frame.Text("User ${connection.username} left because of error")) }
+                    connections.forEach {
+                        it.session.send(Frame.Text("User ${connection.username} left because of error"))
+                    }
                 } finally {
                     connections.remove(connection)
-                    connections.forEach { it.session.send(Frame.Text("User ${connection.username} left")) }
+                    connections.forEach {
+                        it.session.send(Frame.Text("User ${connection.username} left"))
+                    }
                     messageGroupConnections.remove(messageGroupId)
                 }
             }
