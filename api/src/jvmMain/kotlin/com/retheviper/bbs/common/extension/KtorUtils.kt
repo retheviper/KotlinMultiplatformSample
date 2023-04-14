@@ -17,6 +17,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.request.ApplicationRequest
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -97,13 +98,14 @@ inline fun <reified T : Id> ApplicationCall.getIdFromPathParameter(): T {
     }
 }
 
-inline fun <reified T: Any> ApplicationRequest.getQueryParameter(key: String): T? {
+inline fun <reified T : Any> ApplicationRequest.getQueryParameter(key: String): T? {
     val parameter = queryParameters[key]
 
     return when (T::class) {
         String::class -> parameter as T?
         Long::class -> parameter?.toLongOrNull() as T?
         Int::class -> parameter?.toIntOrNull() as T?
+        LocalDate::class -> parameter?.let { LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE) } as T?
         LocalDateTime::class -> parameter?.let { LocalDateTime.parse(it, DateTimeFormatter.ISO_LOCAL_DATE_TIME) } as T?
         else -> null
     }
