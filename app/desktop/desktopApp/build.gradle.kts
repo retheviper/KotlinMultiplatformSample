@@ -26,7 +26,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.0")
+                implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")

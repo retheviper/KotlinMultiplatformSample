@@ -38,7 +38,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-android:$ktorVersion")
             }
         }
-        val androidTest by getting
+//        val androidTest by getting
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
@@ -69,5 +69,9 @@ android {
     defaultConfig {
         minSdk = 26
         targetSdk = 33
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }

@@ -12,8 +12,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.log
-import io.ktor.server.http.content.resources
-import io.ktor.server.http.content.static
+import io.ktor.server.http.content.CompressedFileType
+import io.ktor.server.http.content.staticFiles
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
@@ -21,17 +22,14 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import java.io.File
 
-fun Application.configureRouting() {
+ fun Application.configureRouting() {
 
     routing {
-        get {
-            call.respondRedirect("/index.html")
-        }
-
-        // Static plugin. Try to access `/static/index.html`
-        static {
-            resources("")
+        staticFiles("/", File("build/distributions")) {
+            default("index.html")
+            preCompressed(CompressedFileType.GZIP)
         }
 
         route(API_BASE_PATH) {
