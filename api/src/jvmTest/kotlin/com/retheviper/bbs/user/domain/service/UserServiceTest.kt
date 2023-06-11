@@ -6,6 +6,7 @@ import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.TestModelFactory
+import com.retheviper.bbs.user.domain.service.UserService
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe

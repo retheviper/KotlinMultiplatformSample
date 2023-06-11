@@ -7,6 +7,7 @@ import com.retheviper.bbs.user.domain.model.User
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
@@ -26,7 +27,7 @@ class UserRepository {
             .firstOrNull()
             ?.toDto()
 
-    fun create(dto: User): User? {
+    fun create(dto: User): User {
         val id = Users.insertAndGetId {
             it[username] = dto.username
             it[password] = dto.password
@@ -35,7 +36,7 @@ class UserRepository {
             insertAuditInfos(it, dto.username)
         }
 
-        return find { Users.id eq id }
+        return checkNotNull(find { Users.id eq id })
     }
 
     private fun ResultRow.toDto() = User(

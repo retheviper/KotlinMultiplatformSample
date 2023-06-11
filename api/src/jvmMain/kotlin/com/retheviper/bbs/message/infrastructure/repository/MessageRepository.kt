@@ -70,7 +70,7 @@ class MessageRepository {
                 (Messages.messageGroupId eq messageGroupId.value) and (Messages.deleted eq false)
             }
             .apply {
-                if (after != null) {
+                after?.let {
                     andWhere { Messages.createdDate greaterEq after }
                 }
             }

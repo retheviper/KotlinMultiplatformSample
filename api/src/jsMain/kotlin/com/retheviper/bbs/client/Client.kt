@@ -32,6 +32,8 @@ val jsonClient = HttpClient {
     defaultRequest {
         contentType(ContentType.Application.Json)
     }
+
+    "".filter { it.isWhitespace() }
 }
 
 suspend fun postCount(number: Int) {

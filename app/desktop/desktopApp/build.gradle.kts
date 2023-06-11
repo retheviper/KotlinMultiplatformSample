@@ -10,6 +10,8 @@ group = "com.retheviper.bbs"
 version = "1.0-SNAPSHOT"
 
 val ktorVersion: String by project
+val koinVersion: String by project
+val kotestVersion: String by project
 
 repositories {
     google()
@@ -31,9 +33,18 @@ kotlin {
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+                implementation("io.insert-koin:koin-ktor:$koinVersion")
+                implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")
             }
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+                implementation("io.mockk:mockk:1.13.4")
+                implementation("org.instancio:instancio-junit:2.10.0")
+                implementation("org.instancio:instancio-core:2.10.0")
+            }
+        }
     }
 }
 

@@ -5,6 +5,8 @@ enum class ErrorCode(val value: String) {
     UNKNOWN_ERROR("C001"),
     INVALID_PARAMETER("C002"),
     INVALID_TOKEN("C003"),
+    AUTHENTICATION_FAILED("C004"),
+    ID_NOT_MATCH("C005"),
 
     // User
     USER_NOT_FOUND("U001"),
@@ -21,10 +23,15 @@ enum class ErrorCode(val value: String) {
     ARTICLE_PASSWORD_NOT_MATCH("A003"),
     ARTICLE_AUTHOR_NOT_MATCH("A004"),
 
+    // Category
+    CATEGORY_NOT_FOUND("C001"),
+    CATEGORY_ALREADY_EXISTS("C002"),
+
     // Comment
     COMMENT_NOT_FOUND("C001"),
-    COMMENT_ALREADY_EXISTS("C002"),
+    COMMENT_AUTHOR_NOT_MATCH("C002"),
     COMMENT_PASSWORD_NOT_MATCH("C003");
+
 
     fun from(value: String): ErrorCode {
         return values().firstOrNull { it.value == value } ?: UNKNOWN_ERROR

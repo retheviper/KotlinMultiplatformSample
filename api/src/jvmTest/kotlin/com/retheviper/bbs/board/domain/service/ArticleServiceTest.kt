@@ -7,6 +7,7 @@ import com.retheviper.bbs.common.domain.service.SensitiveWordService
 import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.TestModelFactory
 import io.kotest.matchers.shouldBe
+import io.ktor.client.plugins.cache.storage.DisabledStorage.findAll
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -19,7 +20,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
         val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
         val repository = mockk<ArticleRepository> {
             every {
-                findAll(
+                findBy(
                     boardId = articleRecord.boardId,
                     authorId = null,
                     paginationProperties = TestModelFactory.paginationPropertiesModel()
@@ -27,7 +28,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
             } returns listOf(articleRecord)
         }
         val sensitiveWordService = mockk<SensitiveWordService> {
-            every { find(any()) } returns emptySet()
+            every { findAll(any()) } returns emptySet()
         }
         val commentService = mockk<CommentService> {
             every { findAll(listOf(articleRecord.id)) } returns comments
@@ -37,7 +38,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
         }
         val service = ArticleService(sensitiveWordService, mockk(), tagService, commentService, repository)
 
-        val articles = service.findAll(
+        val articles = service.findBy(
             boardId = articleRecord.boardId,
             authorId = null,
             paginationProperties = TestModelFactory.paginationPropertiesModel()
@@ -67,7 +68,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
         )
 
         verify(exactly = 1) {
-            repository.findAll(
+            repository.findBy(
                 boardId = articleRecord.boardId,
                 authorId = null,
                 paginationProperties = TestModelFactory.paginationPropertiesModel()
@@ -86,7 +87,7 @@ class ArticleServiceTest : DatabaseFreeSpec({
             every { update(any()) } returns Unit
         }
         val sensitiveWordService = mockk<SensitiveWordService> {
-            every { find(any()) } returns emptySet()
+            every { findAll(any()) } returns emptySet()
         }
         val commentService = mockk<CommentService> {
             every { findAll(articleRecord.id) } returns comments

@@ -18,7 +18,7 @@ class CommentServiceTest : DatabaseFreeSpec({
             val authorId = UserId(1)
             val commentRecords = TestModelFactory.commentRecordModels(articleId, authorId)
             val repository = mockk<CommentRepository> {
-                every { findAll(articleId) } returns commentRecords
+                every { findBy(articleId) } returns commentRecords
             }
             val service = CommentService(repository)
             val result = service.findAll(articleId)

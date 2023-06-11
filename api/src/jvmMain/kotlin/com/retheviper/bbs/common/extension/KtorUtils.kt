@@ -1,5 +1,6 @@
 package com.retheviper.bbs.common.extension
 
+import com.retheviper.bbs.common.domain.model.AuthUser
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.property.DatabaseConfigs
 import com.retheviper.bbs.common.property.JwtConfigs
@@ -58,6 +59,20 @@ fun ApplicationCall.getPaginationProperties(): PaginationProperties {
     val size = request.getQueryParameter("size") ?: 10
     val limit = request.getQueryParameter("limit") ?: 100
 
+    return paginationProperties(page, size, limit)
+}
+
+@Throws(BadRequestException::class)
+fun ApplicationCall.getSubPaginationProperties(): PaginationProperties {
+    val page = request.getQueryParameter("sub_page") ?: 1
+    val size = request.getQueryParameter("sub_size") ?: 10
+    val limit = request.getQueryParameter("sub_limit") ?: 100
+
+    return paginationProperties(page, size, limit)
+}
+
+@Throws(BadRequestException::class)
+private fun paginationProperties(page: Int, size: Int, limit: Int): PaginationProperties {
     if (page < 1 || size < 1 || limit < 1) {
         throw BadRequestException("Invalid page, size or limit.")
     }
@@ -111,10 +126,11 @@ inline fun <reified T : Any> ApplicationRequest.getQueryParameter(key: String): 
     }
 }
 
-fun ApplicationCall.getUserInfoFromToken(): Pair<UserId, String> {
-    val badRequestException = BadRequestException("Invalid token")
-    val principal = principal<JWTPrincipal>() ?: throw badRequestException
-    val userId = principal.payload.getClaim("userId").asInt() ?: throw badRequestException
-    val username = principal.payload.getClaim("username").asString() ?: throw badRequestException
-    return Pair(UserId(userId), username)
-}
+val ApplicationCall.authUser: AuthUser?
+    get() {
+        val principal = principal<JWTPrincipal>()
+        val payload = principal?.payload ?: return null
+        val userId = payload.getClaim("userId").asInt()
+        val username = payload.getClaim("username").asString()
+        return AuthUser(UserId(userId), username)
+    }

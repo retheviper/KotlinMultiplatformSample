@@ -1,64 +1,81 @@
 package com.retheviper.bbs.board.domain.model
 
 import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
+import com.retheviper.bbs.board.infrastructure.model.CommentRecord
+import com.retheviper.bbs.board.infrastructure.model.TagRecord
+import com.retheviper.bbs.common.extension.toHashedString
+import com.retheviper.bbs.common.extension.trimAll
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.BoardId
+import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.model.request.CreateArticleRequest
+import com.retheviper.bbs.model.request.UpdateArticleRequest
 import java.time.LocalDateTime
 
 data class Article(
     val boardId: BoardId? = null,
     val id: ArticleId? = null,
-    val title: String,
-    val content: String,
+    val title: String? = null,
+    val content: String? = null,
     val password: String,
     val authorId: UserId,
     val authorName: String? = null,
     val category: Category? = null,
     val tags: List<Tag> = emptyList(),
     val comments: List<Comment> = emptyList(),
-    val viewCount: Int = 0,
-    val likeCount: Int = 0,
-    val dislikeCount: Int = 0,
+    val viewCount: UInt = 0u,
+    val likeCount: UInt = 0u,
+    val dislikeCount: UInt = 0u,
     val createdDate: LocalDateTime? = null,
     val updatedDate: LocalDateTime? = null
 ) {
     companion object {
-        fun from(articleRecord: ArticleRecord, category: Category, tags: List<Tag>, comments: List<Comment>?): Article {
+        fun from(article: ArticleRecord, tags: List<TagRecord>, comments: List<CommentRecord>): Article {
             return Article(
-                boardId = articleRecord.boardId,
-                id = articleRecord.id,
-                title = articleRecord.title,
-                content = articleRecord.content,
-                password = articleRecord.password,
-                authorId = articleRecord.authorId,
-                authorName = articleRecord.authorName,
-                category = category,
-                tags = tags,
-                comments = comments ?: emptyList(),
-                viewCount = articleRecord.viewCount,
-                likeCount = articleRecord.likeCount,
-                dislikeCount = articleRecord.dislikeCount,
-                createdDate = articleRecord.createdDate,
-                updatedDate = articleRecord.updatedDate
+                boardId = article.boardId,
+                id = article.id,
+                title = article.title,
+                content = article.content,
+                password = article.password,
+                authorId = article.authorId,
+                authorName = article.authorName,
+                category = Category(
+                    id = article.categoryId,
+                    name = article.categoryName
+                ),
+                tags = tags.map { Tag.from(it) },
+                comments = comments.map { Comment.from(it) },
+                viewCount = article.viewCount,
+                likeCount = article.likeCount,
+                dislikeCount = article.dislikeCount,
+                createdDate = article.createdDate,
+                updatedDate = article.updatedDate
             )
         }
 
         fun from(boardId: BoardId?, authorId: UserId, request: CreateArticleRequest): Article {
             return Article(
                 boardId = boardId,
-                title = request.title,
-                content = request.content,
+                title = request.title.trimAll(),
+                content = request.content.trimAll(),
                 authorId = authorId,
-                password = request.password,
-                category = Category(name = request.categoryName),
-                tags = request.tagNames?.map { Tag(name = it) } ?: emptyList()
+                password = request.password.trimAll(),
+                category = Category(id = CategoryId(request.categoryId)),
+                tags = request.tagNames?.map { Tag(name = it.trimAll()) }?.distinct() ?: emptyList()
             )
         }
-    }
 
-    fun updateViewCount(): Article {
-        return this.copy(viewCount = this.viewCount + 1)
+        fun from(id: ArticleId, authorId: UserId, request: UpdateArticleRequest): Article {
+            return Article(
+                id = id,
+                title = request.title?.trimAll(),
+                content = request.content?.trimAll(),
+                authorId = authorId,
+                password = request.password.trimAll(),
+                category = request.categoryId?.let { Category(id = CategoryId(request.categoryId)) },
+                tags = request.tagNames?.map { Tag(name = it.trimAll()) }?.distinct() ?: emptyList()
+            )
+        }
     }
 }

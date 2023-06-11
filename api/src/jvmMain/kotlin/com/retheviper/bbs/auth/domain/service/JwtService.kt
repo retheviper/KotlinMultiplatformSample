@@ -18,7 +18,7 @@ class JwtService(
     private val repository: AuthRepository
 ) {
 
-    private val oneHour = 1000 * 60 * 60
+    private val oneHour = 1_000 * 60 * 60
     private val algorithm = Algorithm.HMAC256(jwtConfigs.secret)
 
     fun createToken(credential: Credential): String {

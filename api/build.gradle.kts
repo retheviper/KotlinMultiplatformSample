@@ -57,7 +57,7 @@ kotlin {
         }
         val jsMain by getting {
             dependencies {
-                implementation(compose.web.core)
+                implementation(compose.html.core)
                 implementation(compose.runtime)
                 implementation("io.ktor:ktor-client-js:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
@@ -143,6 +143,26 @@ tasks {
         val webpackTask = getByName<KotlinWebpack>(taskName)
         dependsOn(webpackTask) // make sure JS gets compiled first
         from(File(webpackTask.destinationDirectory, webpackTask.outputFileName)) // bring output file along into the JAR
+    }
+
+    getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
+        dependsOn("jsDevelopmentExecutableCompileSync")
+    }
+
+    getByName<KotlinWebpack>("jsBrowserDevelopmentWebpack") {
+        dependsOn("jsProductionExecutableCompileSync")
+    }
+
+    distZip {
+        dependsOn(allMetadataJar)
+        dependsOn(getByName<Jar>("jsJar"))
+        dependsOn(shadowJar)
+    }
+
+    distTar {
+        dependsOn(allMetadataJar)
+        dependsOn(getByName<Jar>("jsJar"))
+        dependsOn(shadowJar)
     }
 }
 

@@ -3,10 +3,8 @@ package com.retheviper.bbs.model.request
 import kotlinx.serialization.Serializable
 
 @Serializable
-class CreateCommentRequest(
+data class CreateCommentRequest(
     val content: String,
     val authorId: Int,
-    val password: String,
-    val authorName: String,
-    val boardId: Int
+    val password: String
 )

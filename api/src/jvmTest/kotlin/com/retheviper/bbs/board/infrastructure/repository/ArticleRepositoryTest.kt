@@ -41,18 +41,6 @@ class ArticleRepositoryTest : KtorFreeSpec({
         }
     }
 
-    "count" - {
-        "OK" {
-            testApplication {
-                application {
-                    val repository by inject<ArticleRepository>()
-                    val result = transaction { repository.count(userId) }
-                    result shouldBe 1
-                }
-            }
-        }
-    }
-
     "find" - {
         "OK" {
             testApplication {
@@ -71,7 +59,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                 application {
                     val repository by inject<ArticleRepository>()
                     val result = transaction {
-                        repository.findAll(
+                        repository.findBy(
                             boardId = boardId,
                             authorId = userId,
                             paginationProperties = TestModelFactory.paginationPropertiesModel()
@@ -87,7 +75,7 @@ class ArticleRepositoryTest : KtorFreeSpec({
                 application {
                     val repository by inject<ArticleRepository>()
                     val result = transaction {
-                        repository.findAll(
+                        repository.findBy(
                             boardId = boardId,
                             authorId = null,
                             paginationProperties = TestModelFactory.paginationPropertiesModel()

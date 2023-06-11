@@ -1,5 +1,6 @@
 package com.retheviper.bbs.message.domain.service
 
+import com.retheviper.bbs.common.domain.usecase.HasSensitiveWordService
 import com.retheviper.bbs.common.domain.service.SensitiveWordService
 import com.retheviper.bbs.common.value.MessageGroupId
 import com.retheviper.bbs.common.value.UserId
@@ -12,18 +13,12 @@ import java.time.LocalDateTime
 
 class MessageService(
     private val repository: MessageRepository,
-    private val sensitiveWordService: SensitiveWordService
-) {
+    override val sensitiveWordService: SensitiveWordService
+) : HasSensitiveWordService {
 
     fun findLatestMessages(userId: UserId): List<Message> {
         return transaction {
             repository.findLatestMessages(userId).map { Message.from(it) }
-        }
-    }
-
-    fun existsGroup(messageGroupId: MessageGroupId): Boolean {
-        return transaction {
-            repository.findGroup(messageGroupId) != null
         }
     }
 
@@ -64,7 +59,7 @@ class MessageService(
     }
 
     fun createMessage(dto: Message): Message {
-        val sensitiveWords = sensitiveWordService.find(dto.content)
+        val sensitiveWords = findSensitiveWords(dto.content)
 
         val message = if (sensitiveWords.isNotEmpty()) {
             var content = dto.content

@@ -11,21 +11,15 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 class UserService(private val repository: UserRepository) {
 
-    @Throws(BadRequestException::class)
-    fun find(id: UserId): User {
-        return transaction {
-            repository.find(id)
-        } ?: throw UserNotFoundException("User not found with id: $id.")
+    fun find(id: UserId): User? {
+        return repository.find(id)
     }
 
-    @Throws(BadRequestException::class)
-    fun create(user: User): User? {
-        return transaction {
-            if (repository.find(user.username) != null) {
-                throw UserAlreadyExistsException("User already exists with username: ${user.username}.")
-            }
+    fun find(username: String): User? {
+        return repository.find(username)
+    }
 
-            repository.create(user.copy(password = user.password.toHashedString()))
-        }
+    fun create(user: User): User {
+        return repository.create(user)
     }
 }

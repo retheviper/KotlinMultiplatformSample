@@ -16,9 +16,9 @@ data class ArticleRecord(
     val authorName: String,
     val categoryId: CategoryId?,
     val categoryName: String,
-    val likeCount: Int,
-    val dislikeCount: Int,
-    val viewCount: Int,
+    val likeCount: UInt,
+    val dislikeCount: UInt,
+    val viewCount: UInt,
     val createdDate: LocalDateTime,
     val updatedDate: LocalDateTime
 )

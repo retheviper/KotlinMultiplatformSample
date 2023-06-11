@@ -1,4 +1,4 @@
-# BBS-SERVER
+# BBS-MOBILE
 
 ## Project structure
 

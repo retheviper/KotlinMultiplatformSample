@@ -7,7 +7,7 @@ import com.retheviper.bbs.common.value.CategoryId
 data class Category(
     val boardId: BoardId? = null,
     val id: CategoryId? = null,
-    val name: String,
+    val name: String = "",
     val description: String? = null
 ) {
     companion object {

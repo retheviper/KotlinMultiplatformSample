@@ -1,188 +1,140 @@
 package com.retheviper.bbs.board.domain.service
 
 import com.retheviper.bbs.board.domain.model.Article
-import com.retheviper.bbs.board.domain.model.Category
+import com.retheviper.bbs.board.infrastructure.model.ArticleRecord
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
-import com.retheviper.bbs.common.domain.service.SensitiveWordService
-import com.retheviper.bbs.common.exception.ArticleAuthorNotMatchException
+import com.retheviper.bbs.board.infrastructure.repository.ArticleTagRepository
+import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
+import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
+import com.retheviper.bbs.board.infrastructure.repository.TagRepository
+import com.retheviper.bbs.common.exception.ArticleAlreadyExistsException
 import com.retheviper.bbs.common.exception.ArticleNotFoundException
 import com.retheviper.bbs.common.exception.BadRequestException
-import com.retheviper.bbs.common.exception.PasswordNotMatchException
-import com.retheviper.bbs.common.extension.notMatchesWith
-import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.UserId
-import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.common.PaginationProperties
-import org.jetbrains.exposed.sql.transactions.transaction
 
 class ArticleService(
-    private val sensitiveWordService: SensitiveWordService,
-    private val categoryService: CategoryService,
-    private val tagService: TagService,
-    private val commentService: CommentService,
-    private val repository: ArticleRepository
+    private val articleRepository: ArticleRepository,
+    private val categoryRepository: CategoryRepository,
+    private val tagRepository: TagRepository,
+    private val articleTagRepository: ArticleTagRepository,
+    private val commentRepository: CommentRepository
 ) {
-
-    fun count(authorId: UserId?): Long {
-        return transaction {
-            repository.count(authorId)
-        }
-    }
-
-    fun findAll(boardId: BoardId, authorId: UserId?, paginationProperties: PaginationProperties): List<Article> {
-        return transaction {
-            val articles = repository.findAll(
-                boardId = boardId,
-                authorId = authorId,
-                paginationProperties = paginationProperties
-            )
-
-            val tags = tagService.findAll(articles.map { it.id })
-                .groupBy { it.articleId }
-
-            val comments = commentService.findAll(articles.map { it.id })
-                .groupBy { it.articleId }
-
-            articles.map {
-                Article.from(
-                    articleRecord = it,
-                    category = Category(
-                        id = it.categoryId,
-                        name = it.categoryName
-                    ),
-                    tags = tags[it.id] ?: emptyList(),
-                    comments = comments[it.id]
-                )
-            }
-        }
-    }
-
-    @Throws(BadRequestException::class)
-    fun find(id: ArticleId, username: String? = null): Article {
-        return transaction {
-            var article = repository.find(id = id, forUpdate = true)?.let {
-                Article.from(
-                    articleRecord = it,
-                    category = Category(
-                        id = it.categoryId,
-                        name = it.categoryName
-                    ),
-                    tags = tagService.findAll(listOf(it.id)),
-                    comments = commentService.findAll(it.id)
-                )
-            } ?: throw ArticleNotFoundException("Article not found with id: $id.")
-
-            if (article.authorName != username) {
-                article = article.updateViewCount()
-                repository.update(article)
-            }
-
-            article
-        }
-    }
-
-    fun create(article: Article): ArticleId {
-        var newArticle = article.checkSensitiveWord().trim()
-        return transaction {
-            if (article.category != null) {
-                val category = categoryService.find(article.category.name)
-                newArticle = article.copy(category = category)
-            }
-
-            newArticle = newArticle.copy(
-                password = article.password.toHashedString(),
-                authorName = repository.findAuthorName(article.authorId)
-            )
-
-            val articleId = repository.create(newArticle)
-
-            article.tags.forEach {
-                tagService.link(articleId, it.copy(createdBy = newArticle.authorName))
-            }
-
-            articleId
-        }
-    }
-
-    @Throws(BadRequestException::class)
-    fun update(article: Article) {
-        val id = article.id ?: throw BadRequestException("Article id is null.")
-        var updatedArticle = article.checkSensitiveWord().trim()
-
-        transaction {
-            val exist =
-                repository.find(id = id, forUpdate = true) ?: throw ArticleNotFoundException("Article not found with id: ${article.id}.")
-
-            if (article.authorId != exist.authorId) {
-                throw ArticleAuthorNotMatchException("Article's author id is not match with id: ${article.id}.")
-            }
-
-            if (article.password notMatchesWith exist.password) {
-                throw PasswordNotMatchException(
-                    "Article's password not match with id: ${article.id}.", ErrorCode.ARTICLE_PASSWORD_NOT_MATCH
-                )
-            }
-
-            updatedArticle = updatedArticle.copy(
-                authorName = exist.authorName,
-                password = article.password.toHashedString()
-            )
-
-            if (article.category != null) {
-                val category = categoryService.find(article.category.name)
-                updatedArticle = article.copy(category = category)
-            }
-
-            if (article.tags.isNotEmpty()) {
-                article.tags.forEach {
-                    tagService.link(id, it.copy(createdBy = updatedArticle.authorName))
-                }
-            }
-
-            repository.update(updatedArticle)
-        }
-    }
-
-    @Throws(BadRequestException::class)
-    fun delete(id: ArticleId, password: String) {
-        transaction {
-            val exist = repository.find(id, forUpdate = true) ?: throw ArticleNotFoundException("Article not found with id: $id.")
-
-            if (password notMatchesWith exist.password) {
-                throw PasswordNotMatchException(
-                    "Article's password not match with id: ${id}.", ErrorCode.ARTICLE_PASSWORD_NOT_MATCH
-                )
-            }
-
-            tagService.unlink(id)
-            repository.delete(id)
-        }
-    }
-
-    @Throws(BadRequestException::class)
-    private fun Article.checkSensitiveWord(): Article {
-        val title = sensitiveWordService.find(title)
-
-        if (title.isNotEmpty()) {
-            throw BadRequestException("Article's title contains sensitive word: ${title.joinToString()}.")
-        }
-
-        val content  = sensitiveWordService.find(content)
-
-        if (content.isNotEmpty()) {
-            throw BadRequestException("Article's content contains sensitive word: ${content.joinToString()}.")
-        }
-
-        return this
-    }
-
-    private fun Article.trim(): Article {
-        return this.copy(
-            title = this.title.trim(),
-            content = this.content.trim(),
-            password = this.password.trim()
+    fun findBy(boardId: BoardId, authorId: UserId?, paginationProperties: PaginationProperties): List<Article> {
+        val articles = articleRepository.findBy(
+            boardId = boardId,
+            authorId = authorId,
+            paginationProperties = paginationProperties
         )
+
+        val articleIds = articles.map { it.id }
+
+        val tags = tagRepository.findBy(articleIds)
+            .groupBy { it.articleId }
+
+        val comments = commentRepository.findBy(articleIds)
+            .groupBy { it.articleId }
+
+        return articles.map {
+            Article.from(
+                article = it,
+                tags = tags[it.id] ?: emptyList(),
+                comments = comments[it.id] ?: emptyList()
+            )
+        }
+    }
+
+    @Throws(ArticleNotFoundException::class)
+    fun find(id: ArticleId, subPaginationProperties: PaginationProperties? = null): Article {
+        val article = articleRepository.find(id = id, forUpdate = false)
+            ?: throw ArticleNotFoundException("Article not found with id: $id.")
+
+        val tags = tagRepository.findBy(article.id)
+
+        val comments = commentRepository.findBy(article.id, subPaginationProperties)
+
+        return Article.from(
+            article = article,
+            tags = tags,
+            comments = comments
+        )
+    }
+
+    @Throws(ArticleNotFoundException::class)
+    fun findForUpdate(id: ArticleId): ArticleRecord {
+        return articleRepository.find(id = id, forUpdate = true)
+            ?: throw ArticleNotFoundException("Article not found with id: $id.")
+    }
+
+    @Throws(ArticleAlreadyExistsException::class)
+    fun create(article: Article): Article {
+        var newArticle = article
+
+        checkIsValidCategory(article)
+
+        val articleId = articleRepository.create(article)
+        newArticle = newArticle.copy(id = articleId)
+
+        if (newArticle.tags.isNotEmpty()) {
+            linkTags(newArticle)
+        }
+
+        return newArticle
+    }
+
+    @Throws(BadRequestException::class)
+    fun update(article: Article): Article {
+        article.id ?: throw BadRequestException("Article id is null.")
+
+        checkIsValidCategory(article)
+
+        if (article.tags.isNotEmpty()) {
+            linkTags(article)
+        }
+
+        articleRepository.update(article)
+        return article
+    }
+
+    fun updateViewCount(id: ArticleId) {
+        articleRepository.updateViewCount(id)
+    }
+
+    @Throws(BadRequestException::class)
+    fun delete(id: ArticleId) {
+        articleTagRepository.deleteAll(id)
+        articleRepository.delete(id)
+    }
+
+    private fun checkIsValidCategory(article: Article) {
+        if (article.category?.id == null) {
+            return
+        }
+
+        val category = categoryRepository.find(article.category.id)
+            ?: throw BadRequestException("Category not found with id: ${article.category.id}.")
+
+        if (category.boardId != null && category.boardId != article.boardId) {
+            throw BadRequestException("Category id: ${article.category.id} is not available for board id: ${article.boardId}.")
+        }
+    }
+
+    private fun linkTags(article: Article) {
+        article.id ?: throw BadRequestException("Article id is null.")
+
+        val existingTags = tagRepository.findBy(article.tags.map { it.name })
+        val newTags = article.tags.filter { tag -> existingTags.none { it.name == tag.name } }
+
+        if (newTags.isNotEmpty()) {
+            val createdTags = tagRepository.batchCreate(newTags)
+            articleTagRepository.batchCreate(article.id, createdTags.map { it.id }, createdTags.first().createdBy)
+        }
+
+        val removedTags = existingTags.filter { tag -> article.tags.none { it.name == tag.name } }
+        if (removedTags.isNotEmpty()) {
+            articleTagRepository.batchDelete(article.id, removedTags.map { it.id })
+        }
     }
 }

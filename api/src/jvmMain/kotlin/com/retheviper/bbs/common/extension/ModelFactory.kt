@@ -4,11 +4,10 @@ import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Comment
 import com.retheviper.bbs.message.domain.model.Message
 import com.retheviper.bbs.model.common.PaginationProperties
-import com.retheviper.bbs.model.response.GetArticleResponse
-import com.retheviper.bbs.model.response.GetCommentResponse
+import com.retheviper.bbs.model.response.ArticleResponse
+import com.retheviper.bbs.model.response.CommentResponse
 import com.retheviper.bbs.model.response.GetUserResponse
 import com.retheviper.bbs.model.response.ListArticleResponse
-import com.retheviper.bbs.model.response.ListCommentResponse
 import com.retheviper.bbs.model.response.ListMessagesResponse
 import com.retheviper.bbs.user.domain.model.User
 
@@ -21,13 +20,16 @@ fun GetUserResponse.Companion.from(dto: User): GetUserResponse {
     )
 }
 
-fun ListArticleResponse.Companion.from(paginationProperties: PaginationProperties, dtos: List<Article>): ListArticleResponse {
+fun ListArticleResponse.Companion.from(
+    paginationProperties: PaginationProperties,
+    dtos: List<Article>
+): ListArticleResponse {
     return ListArticleResponse(
         paginationProperties = paginationProperties,
         articleSummaries = dtos.map {
             ListArticleResponse.ArticleSummary(
                 id = checkNotNull(it.id?.value),
-                title = it.title,
+                title = it.title ?: "",
                 authorName = checkNotNull(it.authorName),
                 categoryName = checkNotNull(it.category).name,
                 comments = it.comments.size,
@@ -38,11 +40,11 @@ fun ListArticleResponse.Companion.from(paginationProperties: PaginationPropertie
     )
 }
 
-fun GetArticleResponse.Companion.from(dto: Article): GetArticleResponse {
-    return GetArticleResponse(
+fun ArticleResponse.Companion.from(dto: Article): ArticleResponse {
+    return ArticleResponse(
         id = checkNotNull(dto.id?.value),
-        title = dto.title,
-        content = dto.content,
+        title = dto.title ?: "",
+        content = dto.content ?: "",
         author = checkNotNull(dto.authorName),
         viewCount = dto.viewCount,
         likeCount = dto.likeCount,
@@ -50,22 +52,13 @@ fun GetArticleResponse.Companion.from(dto: Article): GetArticleResponse {
         categoryName = checkNotNull(dto.category).name,
         tags = dto.tags.map { it.name },
         comments = dto.comments.map {
-            GetCommentResponse.from(it)
+            CommentResponse.from(it)
         }
     )
 }
 
-fun ListCommentResponse.Companion.from(paginationProperties: PaginationProperties, dtos: List<Comment>): ListCommentResponse {
-    return ListCommentResponse(
-        paginationProperties = paginationProperties,
-        comments = dtos.map {
-            GetCommentResponse.from(it)
-        }
-    )
-}
-
-fun GetCommentResponse.Companion.from(dto: Comment): GetCommentResponse {
-    return GetCommentResponse(
+fun CommentResponse.Companion.from(dto: Comment): CommentResponse {
+    return CommentResponse(
         id = checkNotNull(dto.id?.value),
         content = dto.content,
         author = checkNotNull(dto.authorName)

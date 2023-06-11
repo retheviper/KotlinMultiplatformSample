@@ -15,7 +15,7 @@ data class ListArticleResponse(
         val authorName: String,
         val categoryName: String,
         val comments: Int,
-        val viewCount: Int,
+        val viewCount: UInt,
         val createdDate: String
     )
 }

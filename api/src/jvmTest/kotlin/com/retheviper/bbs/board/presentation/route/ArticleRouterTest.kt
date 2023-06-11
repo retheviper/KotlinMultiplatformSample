@@ -1,4 +1,4 @@
-package com.retheviper.bbs.board.route
+package com.retheviper.bbs.board.presentation.route
 
 import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
@@ -10,7 +10,7 @@ import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.request.CreateArticleRequest
 import com.retheviper.bbs.model.response.ExceptionResponse
-import com.retheviper.bbs.model.response.GetArticleResponse
+import com.retheviper.bbs.model.response.ArticleResponse
 import com.retheviper.bbs.testing.KtorFreeSpec
 import com.retheviper.bbs.testing.TestModelFactory
 import com.retheviper.bbs.testing.dropAndCreate
@@ -72,7 +72,7 @@ class ArticleRouterTest : KtorFreeSpec({
                 val response = client.get("$urlString/1")
 
                 response.status shouldBe HttpStatusCode.OK
-                response.body<GetArticleResponse>().let {
+                response.body<ArticleResponse>().let {
                     it.title shouldBe article.title
                     it.content shouldBe article.content
                     it.author shouldBe user.name

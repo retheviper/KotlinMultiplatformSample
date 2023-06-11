@@ -14,16 +14,16 @@ class CategoryServiceTest : DatabaseFreeSpec({
     "findAll" {
         val record = TestModelFactory.categoryRecordModel(CategoryId(1))
         val repository = mockk<CategoryRepository> {
-            every { findAll(listOf(CategoryId(1))) } returns listOf(record)
+            every { findBy(listOf(CategoryId(1))) } returns listOf(record)
         }
         val service = CategoryService(repository)
-        val result = service.findAll(listOf(record.id))
+        val result = service.findBy(listOf(record.id))
         result.size shouldBe 1
         result.first().id shouldBe record.id
         result.first().name shouldBe record.name
         result.first().description shouldBe record.description
 
-        verify(exactly = 1) { repository.findAll(listOf(record.id)) }
+        verify(exactly = 1) { repository.findBy(listOf(record.id)) }
     }
 
     "find" - {

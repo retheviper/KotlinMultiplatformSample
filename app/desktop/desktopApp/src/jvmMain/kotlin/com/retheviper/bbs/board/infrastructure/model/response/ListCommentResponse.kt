@@ -1,4 +1,4 @@
-package com.retheviper.bbs.model.response
+package com.retheviper.bbs.board.infrastructure.model.response
 
 import com.retheviper.bbs.model.common.PaginationProperties
 import kotlinx.serialization.Serializable

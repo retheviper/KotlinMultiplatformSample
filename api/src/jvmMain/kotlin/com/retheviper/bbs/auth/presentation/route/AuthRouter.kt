@@ -1,4 +1,4 @@
-package com.retheviper.bbs.auth.route
+package com.retheviper.bbs.auth.presentation.route
 
 import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.auth.domain.service.JwtService

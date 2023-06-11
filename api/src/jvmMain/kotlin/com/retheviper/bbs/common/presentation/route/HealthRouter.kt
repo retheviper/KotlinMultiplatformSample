@@ -1,4 +1,4 @@
-package com.retheviper.bbs.common.route
+package com.retheviper.bbs.common.presentation.route
 
 import com.retheviper.bbs.model.response.GetHealthResponse
 import io.ktor.server.application.call
