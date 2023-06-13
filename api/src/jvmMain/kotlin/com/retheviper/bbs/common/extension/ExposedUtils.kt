@@ -49,6 +49,16 @@ fun Query.withPagination(paginationProperties: PaginationProperties): Query {
 
 fun getAllTables(): Array<Table> {
     return arrayOf(
-        Boards, Articles, ArticleTags, Categories, Comments, Tags, Users, SensitiveWords, MessageGroups, MessageGroupMembers, Messages
+        Boards,
+        Articles,
+        ArticleTags,
+        Categories,
+        Comments,
+        Tags,
+        Users,
+        SensitiveWords,
+        MessageGroups,
+        MessageGroupMembers,
+        Messages
     )
 }

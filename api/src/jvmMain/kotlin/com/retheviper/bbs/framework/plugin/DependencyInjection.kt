@@ -1,6 +1,7 @@
 package com.retheviper.bbs.framework.plugin
 
-import com.retheviper.bbs.auth.domain.service.JwtService
+import com.retheviper.bbs.auth.domain.service.AuthService
+import com.retheviper.bbs.auth.domain.usecase.AuthUseCase
 import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.board.domain.service.CategoryService
@@ -15,10 +16,9 @@ import com.retheviper.bbs.common.extension.getJwtConfigs
 import com.retheviper.bbs.common.infrastructure.repository.SensitiveWordRepository
 import com.retheviper.bbs.message.domain.service.MessageService
 import com.retheviper.bbs.message.infrastructure.repository.MessageRepository
-import com.retheviper.bbs.user.domain.usecase.UserUseCase
 import com.retheviper.bbs.user.domain.service.UserService
+import com.retheviper.bbs.user.domain.usecase.UserUseCase
 import com.retheviper.bbs.user.infrastructure.repository.UserRepository
-import com.retheviper.bbs.user.presentation.controller.UserController
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import org.koin.core.module.Module
@@ -42,7 +42,8 @@ fun Application.configureDependencyInjection() {
 fun Application.koinAuthModules(): Module {
     return module {
         single { getJwtConfigs() }
-        single { JwtService(get(), get()) }
+        single { AuthUseCase(get()) }
+        single { AuthService(get(), get()) }
         single { AuthRepository() }
     }
 }
@@ -56,8 +57,7 @@ fun koinCommonModules(): Module {
 
 fun koinUserModules(): Module {
     return module {
-        single { UserController(get()) }
-        single { UserUseCase(get()) }
+        single { UserUseCase(get(), get()) }
         single { UserService(get()) }
         single { UserRepository() }
     }

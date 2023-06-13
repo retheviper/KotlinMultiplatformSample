@@ -1,11 +1,11 @@
-package com.retheviper.bbs.model.response
+package com.retheviper.bbs.model.request
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class GetUserResponse(
-    val id: Int,
+data class UpdateUserRequest(
     val username: String,
+    val password: String,
     val name: String,
     val mail: String
 )

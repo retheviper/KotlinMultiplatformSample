@@ -1,7 +1,8 @@
 package com.retheviper.bbs.auth.presentation.route
 
 import com.retheviper.bbs.auth.domain.model.Credential
-import com.retheviper.bbs.auth.domain.service.JwtService
+import com.retheviper.bbs.auth.domain.service.AuthService
+import com.retheviper.bbs.auth.domain.usecase.AuthUseCase
 import com.retheviper.bbs.constant.AUTH
 import com.retheviper.bbs.constant.LOGIN
 import com.retheviper.bbs.constant.REFRESH
@@ -19,13 +20,13 @@ import org.koin.ktor.ext.inject
 
 fun Route.routeAuth() {
 
-    val service by inject<JwtService>()
+    val usecase by inject<AuthUseCase>()
 
     route(AUTH) {
         post(LOGIN) {
             val credential = Credential.from(call.receive())
 
-            val token = service.createToken(credential)
+            val token = usecase.createToken(credential)
 
             call.application.log.info("Token created for user: ${credential.username}")
             call.response.header("Authorization", "Bearer $token")
@@ -33,7 +34,7 @@ fun Route.routeAuth() {
         }
         get(REFRESH) {
             val oldToken = call.request.header("Authorization")?.removePrefix("Bearer ") ?: ""
-            val newToken = service.refreshToken(oldToken)
+            val newToken = usecase.refreshToken(oldToken)
 
             call.response.header("Authorization", "Bearer $newToken")
             call.respond("Token created")

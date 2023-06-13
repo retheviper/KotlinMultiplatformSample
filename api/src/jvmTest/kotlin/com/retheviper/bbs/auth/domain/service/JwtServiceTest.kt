@@ -5,7 +5,6 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTVerificationException
 import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
-import com.retheviper.bbs.auth.domain.service.JwtService
 import com.retheviper.bbs.common.exception.InvalidTokenException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.exception.UserNotFoundException
@@ -31,7 +30,7 @@ class JwtServiceTest : DatabaseFreeSpec({
     }
     val algorithm = Algorithm.HMAC256(config.secret)
     val credential = Credential(userId = UserId(1), username = "username", password = "password")
-    val service = JwtService(config, repository)
+    val service = AuthService(config, repository)
 
     "Token creation" - {
         "OK" {

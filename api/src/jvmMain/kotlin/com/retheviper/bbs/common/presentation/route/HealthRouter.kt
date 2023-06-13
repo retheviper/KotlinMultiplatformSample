@@ -1,6 +1,6 @@
 package com.retheviper.bbs.common.presentation.route
 
-import com.retheviper.bbs.model.response.GetHealthResponse
+import com.retheviper.bbs.model.response.HealthResponse
 import io.ktor.server.application.call
 import io.ktor.server.application.log
 import io.ktor.server.response.respond
@@ -26,7 +26,7 @@ fun Route.routeHealth() {
 
         call.application.log.info("Database connection: $databaseConnection")
         call.respond(
-            GetHealthResponse(
+            HealthResponse(
                 health = "OK",
                 databaseConnection = databaseConnection
             )

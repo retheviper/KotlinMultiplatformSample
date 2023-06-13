@@ -6,13 +6,13 @@ import com.retheviper.bbs.message.domain.model.Message
 import com.retheviper.bbs.model.common.PaginationProperties
 import com.retheviper.bbs.model.response.ArticleResponse
 import com.retheviper.bbs.model.response.CommentResponse
-import com.retheviper.bbs.model.response.GetUserResponse
+import com.retheviper.bbs.model.response.UserResponse
 import com.retheviper.bbs.model.response.ListArticleResponse
 import com.retheviper.bbs.model.response.ListMessagesResponse
 import com.retheviper.bbs.user.domain.model.User
 
-fun GetUserResponse.Companion.from(dto: User): GetUserResponse {
-    return GetUserResponse(
+fun UserResponse.Companion.from(dto: User): UserResponse {
+    return UserResponse(
         id = checkNotNull(dto.id?.value),
         username = dto.username,
         name = dto.name,
