@@ -2,6 +2,7 @@ package com.retheviper.bbs.common.domain.usecase
 
 import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.domain.service.SensitiveWordService
+import com.retheviper.bbs.common.extension.ifNotEmpty
 import java.awt.SystemColor.text
 
 interface HasSensitiveWordService {
@@ -29,15 +30,15 @@ interface HasSensitiveWordService {
 
     fun checkSensitiveWords(text: String) {
         val sensitiveWords = findSensitiveWords(text)
-        if (sensitiveWords.isNotEmpty()) {
-            throw BadRequestException("Sensitive words found: ${sensitiveWords.joinToString(", ")}")
+        sensitiveWords.ifNotEmpty {
+            throw BadRequestException("Sensitive words found: ${it.joinToString(", ")}")
         }
     }
 
     fun checkSensitiveWords(texts: List<String>) {
         val sensitiveWords = findSensitiveWords(texts)
-        if (sensitiveWords.isNotEmpty()) {
-            throw BadRequestException("Sensitive words found: ${sensitiveWords.joinToString(", ")}")
+        sensitiveWords.ifNotEmpty {
+            throw BadRequestException("Sensitive words found: ${it.joinToString(", ")}")
         }
     }
 }

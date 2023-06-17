@@ -10,6 +10,7 @@ import com.retheviper.bbs.board.infrastructure.repository.TagRepository
 import com.retheviper.bbs.common.exception.ArticleAlreadyExistsException
 import com.retheviper.bbs.common.exception.ArticleNotFoundException
 import com.retheviper.bbs.common.exception.BadRequestException
+import com.retheviper.bbs.common.extension.ifNotEmpty
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.UserId
@@ -77,7 +78,7 @@ class ArticleService(
         val articleId = articleRepository.create(article)
         newArticle = newArticle.copy(id = articleId)
 
-        if (newArticle.tags.isNotEmpty()) {
+        newArticle.tags.ifNotEmpty {
             linkTags(newArticle)
         }
 
@@ -90,7 +91,7 @@ class ArticleService(
 
         checkIsValidCategory(article)
 
-        if (article.tags.isNotEmpty()) {
+        article.tags.ifNotEmpty {
             linkTags(article)
         }
 
@@ -127,13 +128,13 @@ class ArticleService(
         val existingTags = tagRepository.findBy(article.tags.map { it.name })
         val newTags = article.tags.filter { tag -> existingTags.none { it.name == tag.name } }
 
-        if (newTags.isNotEmpty()) {
+        newTags.ifNotEmpty {
             val createdTags = tagRepository.batchCreate(newTags)
             articleTagRepository.batchCreate(article.id, createdTags.map { it.id }, createdTags.first().createdBy)
         }
 
         val removedTags = existingTags.filter { tag -> article.tags.none { it.name == tag.name } }
-        if (removedTags.isNotEmpty()) {
+        removedTags.ifNotEmpty {
             articleTagRepository.batchDelete(article.id, removedTags.map { it.id })
         }
     }

@@ -22,3 +22,9 @@ fun String.trimAll(): String {
 
 val String.isEmail: Boolean
     get() = Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$").matches(this)
+
+fun <T> Collection<T>.ifNotEmpty(block: (Collection<T>) -> Unit) {
+    if (isNotEmpty()) {
+        block(this)
+    }
+}

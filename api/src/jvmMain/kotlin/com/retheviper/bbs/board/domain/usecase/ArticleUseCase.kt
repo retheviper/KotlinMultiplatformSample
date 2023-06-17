@@ -8,6 +8,7 @@ import com.retheviper.bbs.common.exception.BadRequestException
 import com.retheviper.bbs.common.exception.PasswordNotMatchException
 import com.retheviper.bbs.common.extension.notMatchesWith
 import com.retheviper.bbs.common.domain.service.SensitiveWordService
+import com.retheviper.bbs.common.extension.ifNotEmpty
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.UserId
@@ -43,8 +44,8 @@ class ArticleUseCase(
         article.content ?: throw BadRequestException("Article content is null.")
         checkSensitiveWords(article.content)
 
-        if (article.tags.isNotEmpty()) {
-            checkSensitiveWords(article.tags.map { it.name })
+        article.tags.ifNotEmpty { tags ->
+            checkSensitiveWords(tags.map { it.name })
         }
 
         return articleService.create(article)
@@ -74,8 +75,8 @@ class ArticleUseCase(
             checkSensitiveWords(it)
         }
 
-        if (article.tags.isNotEmpty()) {
-            checkSensitiveWords(article.tags.map { it.name })
+        article.tags.ifNotEmpty { tags ->
+            checkSensitiveWords(tags.map { it.name })
         }
 
         return articleService.update(article)
