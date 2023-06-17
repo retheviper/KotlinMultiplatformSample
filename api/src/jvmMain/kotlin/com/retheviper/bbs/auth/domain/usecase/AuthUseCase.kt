@@ -23,11 +23,11 @@ class AuthUseCase(private val service: AuthService) {
         return service.createToken(exist.userId, exist.username)
     }
 
-    fun refreshToken(token: String) {
+    fun refreshToken(token: String): String {
         if (!service.isValidToken(token)) {
             throw InvalidTokenException("Invalid token.")
         }
 
-        service.refreshToken(token)
+        return service.refreshToken(token)
     }
 }

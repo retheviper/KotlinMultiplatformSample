@@ -50,9 +50,9 @@ fun Route.routeArticle() {
                     boardId = boardId,
                     authorId = authorId,
                     paginationProperties = paginationProperties
-                ).let {
-                    ListArticleResponse.from(paginationProperties, it)
-                }
+                )
+            }.let {
+                ListArticleResponse.from(paginationProperties, it)
             }
 
             call.respond(response)
@@ -67,8 +67,7 @@ fun Route.routeArticle() {
 
                 val article = transaction {
                     usecase.create(Article.from(boardId, authorId, request))
-                        .let { ArticleResponse.from(it) }
-                }
+                }.let { ArticleResponse.from(it) }
 
                 call.respond(HttpStatusCode.Created)
                 call.application.log.info("Board created with id: ${article.id}.")
@@ -91,8 +90,8 @@ fun Route.routeArticle() {
                         id = articleId,
                         userId = userId,
                         subPaginationProperties = subPaginationProperties
-                    ).let { ArticleResponse.from(it) }
-                }
+                    )
+                }.let { ArticleResponse.from(it) }
 
                 call.respond(response)
                 call.application.log.info("Board returned with id: $articleId.")
@@ -106,8 +105,7 @@ fun Route.routeArticle() {
 
                     transaction {
                         usecase.update(Article.from(articleId, authorId, request))
-                            .let { ArticleResponse.from(it) }
-                    }
+                    }.let { ArticleResponse.from(it) }
 
                     call.respond(HttpStatusCode.OK)
                     call.application.log.info("Board updated with id: ${articleId.value}.")

@@ -28,7 +28,7 @@ class CommentRepository {
             .map { it.toRecord() }
     }
 
-    fun findBy(articleId: ArticleId, paginationProperties: PaginationProperties?): List<CommentRecord> {
+    fun findBy(articleId: ArticleId, paginationProperties: PaginationProperties? = null): List<CommentRecord> {
         return Comments.leftJoin(Users, { authorId }, { Users.id })
             .slice(Comments.columns + Users.name)
             .select { (Comments.articleId eq articleId.value) and (Comments.deleted eq false) }

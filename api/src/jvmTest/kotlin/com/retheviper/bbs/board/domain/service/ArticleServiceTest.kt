@@ -2,50 +2,102 @@ package com.retheviper.bbs.board.domain.service
 
 import com.retheviper.bbs.board.domain.model.Article
 import com.retheviper.bbs.board.domain.model.Category
+import com.retheviper.bbs.board.domain.model.Comment
+import com.retheviper.bbs.board.domain.model.Tag
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
-import com.retheviper.bbs.common.domain.service.SensitiveWordService
+import com.retheviper.bbs.board.infrastructure.repository.ArticleTagRepository
+import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
+import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
+import com.retheviper.bbs.board.infrastructure.repository.TagRepository
+import com.retheviper.bbs.common.exception.ArticleNotFoundException
+import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.TestModelFactory
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
-import io.ktor.client.plugins.cache.storage.DisabledStorage.findAll
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 
 class ArticleServiceTest : DatabaseFreeSpec({
 
-    "findAll" {
-        val articleRecord = TestModelFactory.articleRecordModel()
-        val tags = TestModelFactory.tagModels(articleRecord.id, 2)
-        val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
-        val repository = mockk<ArticleRepository> {
-            every {
-                findBy(
+    val articleRepository = mockk<ArticleRepository>()
+    val categoryRepository = mockk<CategoryRepository>()
+    val tagRepository = mockk<TagRepository>()
+    val articleTagRepository = mockk<ArticleTagRepository>()
+    val commentRepository = mockk<CommentRepository>()
+
+    val service =
+        ArticleService(articleRepository, categoryRepository, tagRepository, articleTagRepository, commentRepository)
+
+    beforeAny { clearAllMocks() }
+
+    "findBy" - {
+        "OK" {
+            val articleRecord = TestModelFactory.articleRecordModel()
+            val tagRecords = TestModelFactory.tagRecordModels(articleRecord.id, 2)
+            val commentRecords = TestModelFactory.commentRecordModels(articleRecord.id, articleRecord.authorId, 10)
+            val paginationProperties = TestModelFactory.paginationPropertiesModel()
+
+            every { articleRepository.findBy(any(), any(), any()) } returns listOf(articleRecord)
+            every { tagRepository.findBy(any<List<ArticleId>>()) } returns tagRecords
+            every { commentRepository.findBy(any<List<ArticleId>>()) } returns commentRecords
+
+            val articles = service.findBy(
+                boardId = articleRecord.boardId,
+                authorId = null,
+                paginationProperties = paginationProperties
+            )
+
+            articles shouldBe listOf(
+                Article(
+                    boardId = articleRecord.boardId,
+                    id = articleRecord.id,
+                    title = articleRecord.title,
+                    content = articleRecord.content,
+                    password = articleRecord.password,
+                    authorId = articleRecord.authorId,
+                    authorName = articleRecord.authorName,
+                    category = Category(
+                        id = articleRecord.categoryId,
+                        name = articleRecord.categoryName
+                    ),
+                    tags = tagRecords.map { Tag.from(it) },
+                    comments = commentRecords.map { Comment.from(it) },
+                    viewCount = articleRecord.viewCount,
+                    likeCount = articleRecord.likeCount,
+                    dislikeCount = articleRecord.dislikeCount,
+                    createdDate = articleRecord.createdDate,
+                    updatedDate = articleRecord.updatedDate
+                )
+            )
+
+            verify(exactly = 1) {
+                articleRepository.findBy(
                     boardId = articleRecord.boardId,
                     authorId = null,
-                    paginationProperties = TestModelFactory.paginationPropertiesModel()
+                    paginationProperties = paginationProperties
                 )
-            } returns listOf(articleRecord)
+                tagRepository.findBy(listOf(articleRecord.id))
+                commentRepository.findBy(listOf(articleRecord.id))
+            }
         }
-        val sensitiveWordService = mockk<SensitiveWordService> {
-            every { findAll(any()) } returns emptySet()
-        }
-        val commentService = mockk<CommentService> {
-            every { findAll(listOf(articleRecord.id)) } returns comments
-        }
-        val tagService = mockk<TagService> {
-            every { findAll(listOf(articleRecord.id)) } returns tags
-        }
-        val service = ArticleService(sensitiveWordService, mockk(), tagService, commentService, repository)
+    }
 
-        val articles = service.findBy(
-            boardId = articleRecord.boardId,
-            authorId = null,
-            paginationProperties = TestModelFactory.paginationPropertiesModel()
-        )
+    "find" - {
+        "OK" {
+            val articleRecord = TestModelFactory.articleRecordModel()
+            val tagRecords = TestModelFactory.tagRecordModels(articleRecord.id, 2)
+            val commentRecords = TestModelFactory.commentRecordModels(articleRecord.id, articleRecord.authorId, 10)
 
-        articles shouldBe listOf(
-            Article(
+            every { articleRepository.find(any(), any()) } returns articleRecord
+            every { tagRepository.findBy(any<ArticleId>()) } returns tagRecords
+            every { commentRepository.findBy(any<ArticleId>()) } returns commentRecords
+
+            val article = service.find(articleRecord.id)
+
+            article shouldBe Article(
                 boardId = articleRecord.boardId,
                 id = articleRecord.id,
                 title = articleRecord.title,
@@ -57,74 +109,32 @@ class ArticleServiceTest : DatabaseFreeSpec({
                     id = articleRecord.categoryId,
                     name = articleRecord.categoryName
                 ),
-                tags = tags,
-                comments = comments,
+                tags = tagRecords.map { Tag.from(it) },
+                comments = commentRecords.map { Comment.from(it) },
                 viewCount = articleRecord.viewCount,
                 likeCount = articleRecord.likeCount,
                 dislikeCount = articleRecord.dislikeCount,
                 createdDate = articleRecord.createdDate,
                 updatedDate = articleRecord.updatedDate
             )
-        )
 
-        verify(exactly = 1) {
-            repository.findBy(
-                boardId = articleRecord.boardId,
-                authorId = null,
-                paginationProperties = TestModelFactory.paginationPropertiesModel()
-            )
-            commentService.findAll(listOf(articleRecord.id))
-            tagService.findAll(listOf(articleRecord.id))
+            verify(exactly = 1) {
+                articleRepository.find(articleRecord.id, false)
+                tagRepository.findBy(articleRecord.id)
+                commentRepository.findBy(articleRecord.id)
+            }
         }
-    }
 
-    "find" {
-        val articleRecord = TestModelFactory.articleRecordModel()
-        val tags = TestModelFactory.tagModels(articleRecord.id, 2)
-        val comments = TestModelFactory.commentModels(articleRecord.id, articleRecord.authorId, 10)
-        val repository = mockk<ArticleRepository> {
-            every { find(articleRecord.id, true) } returns articleRecord
-            every { update(any()) } returns Unit
-        }
-        val sensitiveWordService = mockk<SensitiveWordService> {
-            every { findAll(any()) } returns emptySet()
-        }
-        val commentService = mockk<CommentService> {
-            every { findAll(articleRecord.id) } returns comments
-        }
-        val tagService = mockk<TagService> {
-            every { findAll(listOf(articleRecord.id)) } returns tags
-        }
-        val service = ArticleService(sensitiveWordService, mockk(), tagService, commentService, repository)
+        "NG - Not found" {
+            every { articleRepository.find(any(), any()) } returns null
 
-        val article = service.find(articleRecord.id)
+            shouldThrow<ArticleNotFoundException> {
+                service.find(ArticleId(1))
+            }
 
-        article shouldBe Article(
-            boardId = articleRecord.boardId,
-            id = articleRecord.id,
-            title = articleRecord.title,
-            content = articleRecord.content,
-            password = articleRecord.password,
-            authorId = articleRecord.authorId,
-            authorName = articleRecord.authorName,
-            category = Category(
-                id = articleRecord.categoryId,
-                name = articleRecord.categoryName
-            ),
-            tags = tags,
-            comments = comments,
-            viewCount = articleRecord.viewCount + 1,
-            likeCount = articleRecord.likeCount,
-            dislikeCount = articleRecord.dislikeCount,
-            createdDate = articleRecord.createdDate,
-            updatedDate = articleRecord.updatedDate
-        )
-
-        verify(exactly = 1) {
-            repository.find(articleRecord.id, true)
-            repository.update(any())
-            commentService.findAll(articleRecord.id)
-            tagService.findAll(listOf(articleRecord.id))
+            verify(exactly = 1) {
+                articleRepository.find(ArticleId(1), false)
+            }
         }
     }
 })

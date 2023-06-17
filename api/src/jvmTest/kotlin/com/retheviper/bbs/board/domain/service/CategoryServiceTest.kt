@@ -1,69 +1,92 @@
 package com.retheviper.bbs.board.domain.service
 
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
+import com.retheviper.bbs.common.exception.BadRequestException
+import com.retheviper.bbs.common.exception.CategoryNotFountException
+import com.retheviper.bbs.common.value.BoardId
 import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.TestModelFactory
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.mockk.clearAllMocks
+import io.mockk.clearMocks
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 
 class CategoryServiceTest : DatabaseFreeSpec({
 
-    "findAll" {
-        val record = TestModelFactory.categoryRecordModel(CategoryId(1))
-        val repository = mockk<CategoryRepository> {
-            every { findBy(listOf(CategoryId(1))) } returns listOf(record)
-        }
-        val service = CategoryService(repository)
-        val result = service.findBy(listOf(record.id))
-        result.size shouldBe 1
-        result.first().id shouldBe record.id
-        result.first().name shouldBe record.name
-        result.first().description shouldBe record.description
+    val repository = mockk<CategoryRepository>()
+    val service = CategoryService(repository)
 
-        verify(exactly = 1) { repository.findBy(listOf(record.id)) }
-    }
+    beforeAny { clearAllMocks() }
 
-    "find" - {
-        "by id" {
+    "findBy" - {
+        "OK" {
             val record = TestModelFactory.categoryRecordModel(CategoryId(1))
-            val repository = mockk<CategoryRepository> {
-                every { find(record.id) } returns record
-            }
-            val service = CategoryService(repository)
-            val result = service.find(record.id)
-            result.id shouldBe record.id
-            result.name shouldBe record.name
-            result.description shouldBe record.description
 
-            verify(exactly = 1) { repository.find(record.id) }
+            every { repository.findBy(any()) } returns listOf(record)
+
+            val result = service.findBy(record.boardId!!)
+
+            result.size shouldBe 1
+            result.first().id shouldBe record.id
+            result.first().name shouldBe record.name
+            result.first().description shouldBe record.description
+
+            verify(exactly = 1) { repository.findBy(record.boardId!!) }
         }
 
-        "by name" {
-            val record = TestModelFactory.categoryRecordModel(CategoryId(1))
-            val repository = mockk<CategoryRepository> {
-                every { find(record.name) } returns record
-            }
-            val service = CategoryService(repository)
-            val result = service.find(record.name)
-            result.id shouldBe record.id
-            result.name shouldBe record.name
-            result.description shouldBe record.description
+        "NG - No category found" {
+            every { repository.findBy(any()) } returns emptyList()
 
-            verify(exactly = 1) { repository.find(record.name) }
+            shouldThrow<CategoryNotFountException> { service.findBy(BoardId(1)) }
+
+            verify(exactly = 1) { repository.findBy(BoardId(1)) }
         }
     }
 
-    "create" {
-        val id = CategoryId(1)
-        val category = TestModelFactory.categoryModel()
-        val repository = mockk<CategoryRepository> {
-            every { create(category) } returns id
+    "create" - {
+        "OK" {
+            val id = CategoryId(1)
+            val category = TestModelFactory.categoryModel()
+
+            every { repository.find(any<String>()) } returns null
+            every { repository.create(any()) } returns id
+
+            val result = service.create(category)
+            result shouldBe category.copy(id = id)
         }
-        val service = CategoryService(repository)
-        val result = service.create(category)
-        result shouldBe id
+    }
+
+    "update" - {
+        "OK" {
+            val category = TestModelFactory.categoryModel()
+                .copy(id = CategoryId(1))
+
+            justRun { repository.update(any()) }
+
+            val result = service.update(category)
+
+            result shouldBe category
+        }
+
+        "NG - No category id" {
+            val category = TestModelFactory.categoryModel()
+
+            shouldThrow<BadRequestException> { service.update(category) }
+        }
+    }
+
+    "delete" - {
+        "OK" {
+            val id = CategoryId(1)
+
+            every { repository.delete(any()) } returns Unit
+
+            service.delete(id)
+        }
     }
 })

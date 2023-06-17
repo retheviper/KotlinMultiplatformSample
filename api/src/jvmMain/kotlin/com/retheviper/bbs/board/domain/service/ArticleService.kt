@@ -81,7 +81,7 @@ class ArticleService(
             linkTags(newArticle)
         }
 
-        return newArticle
+        return find(articleId)
     }
 
     @Throws(BadRequestException::class)

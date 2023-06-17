@@ -6,10 +6,13 @@ import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.board.domain.service.ArticleService
 import com.retheviper.bbs.board.domain.service.CategoryService
 import com.retheviper.bbs.board.domain.service.CommentService
+import com.retheviper.bbs.board.domain.usecase.ArticleUseCase
+import com.retheviper.bbs.board.domain.usecase.CommentUseCase
 import com.retheviper.bbs.board.infrastructure.repository.ArticleRepository
 import com.retheviper.bbs.board.infrastructure.repository.ArticleTagRepository
 import com.retheviper.bbs.board.infrastructure.repository.BoardRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
+import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.board.infrastructure.repository.TagRepository
 import com.retheviper.bbs.common.domain.service.SensitiveWordService
 import com.retheviper.bbs.common.extension.getJwtConfigs
@@ -66,13 +69,16 @@ fun koinUserModules(): Module {
 fun koinBoardModules(): Module {
     return module {
         single { BoardRepository() }
+        single { ArticleUseCase(get(), get()) }
         single { ArticleService(get(), get(), get(), get(), get()) }
         single { ArticleRepository() }
         single { CategoryService(get()) }
         single { CategoryRepository() }
         single { TagRepository() }
         single { ArticleTagRepository() }
+        single { CommentUseCase(get()) }
         single { CommentService(get()) }
+        single { CommentRepository() }
     }
 }
 

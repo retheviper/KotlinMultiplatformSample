@@ -6,6 +6,7 @@ import com.retheviper.bbs.board.infrastructure.repository.BoardRepository
 import com.retheviper.bbs.board.infrastructure.repository.CategoryRepository
 import com.retheviper.bbs.board.infrastructure.repository.CommentRepository
 import com.retheviper.bbs.common.extension.getAllTables
+import com.retheviper.bbs.common.value.CategoryId
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.constant.ErrorCode
 import com.retheviper.bbs.model.request.CreateArticleRequest
@@ -34,6 +35,7 @@ class ArticleRouterTest : KtorFreeSpec({
     val urlString = "/api/v1/board/1/article"
     val user = TestModelFactory.userModel()
     val category = TestModelFactory.categoryModel()
+        .copy(id = CategoryId(1))
     val article = TestModelFactory.articleModel(category = category)
     val comment = TestModelFactory.commentModel()
     val token = Credential(UserId(1), user.username, user.password).toToken()
@@ -117,7 +119,7 @@ class ArticleRouterTest : KtorFreeSpec({
             title = "title",
             content = "test content",
             password = "password",
-            categoryName = category.name,
+            categoryId = category.id!!.value,
             tagNames = listOf("tag1", "tag2")
         )
 

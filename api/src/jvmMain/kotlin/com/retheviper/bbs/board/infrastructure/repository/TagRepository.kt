@@ -4,10 +4,12 @@ import com.retheviper.bbs.board.domain.model.Tag
 import com.retheviper.bbs.board.infrastructure.model.TagRecord
 import com.retheviper.bbs.common.extension.insertAuditInfos
 import com.retheviper.bbs.common.infrastructure.table.ArticleTags
+import com.retheviper.bbs.common.infrastructure.table.Articles
 import com.retheviper.bbs.common.infrastructure.table.Tags
 import com.retheviper.bbs.common.value.ArticleId
 import com.retheviper.bbs.common.value.TagId
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -36,6 +38,7 @@ class TagRepository {
 
     fun find(name: String): TagRecord? {
         return Tags.leftJoin(ArticleTags)
+            .slice(Tags.columns + ArticleTags.articleId)
             .select { (Tags.name eq name) and (Tags.deleted eq false) }
             .map { it.toRecord() }
             .firstOrNull()
@@ -43,26 +46,17 @@ class TagRepository {
 
     fun find(id: TagId): TagRecord? {
         return Tags.leftJoin(ArticleTags)
+            .slice(Tags.columns + ArticleTags.articleId)
             .select { (Tags.id eq id.value) and (Tags.deleted eq false) }
             .firstOrNull()
             .let { it?.toRecord() }
-    }
-
-    fun create(tag: Tag): TagRecord {
-        val id = Tags.insertAndGetId {
-            it[name] = tag.name
-            it[description] = tag.description
-            insertAuditInfos(it, requireNotNull(tag.createdBy))
-        }.value
-
-        return checkNotNull(find(TagId(id)))
     }
 
     fun batchCreate(tags: List<Tag>): List<TagRecord> {
         return Tags.batchInsert(tags) { tag ->
             this[Tags.name] = tag.name
             this[Tags.description] = tag.description
-            Tags.insertAuditInfos(this, requireNotNull(tag.createdBy))
+            Tags.insertAuditInfos(this, "system")
         }.map {
             it.toRecord()
         }
@@ -70,7 +64,11 @@ class TagRepository {
 
 
     private fun ResultRow.toRecord() = TagRecord(
-        articleId = ArticleId(this[ArticleTags.articleId].value),
+        articleId = try {
+            ArticleId(this[ArticleTags.articleId].value)
+        } catch (e: Exception) {
+            null
+        },
         id = TagId(this[Tags.id].value),
         name = this[Tags.name],
         description = this[Tags.description],

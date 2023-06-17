@@ -6,21 +6,17 @@ import com.auth0.jwt.exceptions.JWTVerificationException
 import com.retheviper.bbs.auth.domain.model.Credential
 import com.retheviper.bbs.auth.infrastructure.repository.AuthRepository
 import com.retheviper.bbs.common.exception.InvalidTokenException
-import com.retheviper.bbs.common.exception.PasswordNotMatchException
-import com.retheviper.bbs.common.exception.UserNotFoundException
-import com.retheviper.bbs.common.extension.toHashedString
 import com.retheviper.bbs.common.property.JwtConfigs
 import com.retheviper.bbs.common.value.UserId
 import com.retheviper.bbs.testing.DatabaseFreeSpec
 import com.retheviper.bbs.testing.toToken
 import io.kotest.assertions.throwables.shouldNotThrow
-import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import java.util.Date
 
-class JwtServiceTest : DatabaseFreeSpec({
+class AuthServiceTest : DatabaseFreeSpec({
 
     val repository = mockk<AuthRepository>()
     val config = mockk<JwtConfigs> {
@@ -29,18 +25,13 @@ class JwtServiceTest : DatabaseFreeSpec({
         every { audience } returns "audience"
     }
     val algorithm = Algorithm.HMAC256(config.secret)
-    val credential = Credential(userId = UserId(1), username = "username", password = "password")
+    val userId = UserId(1)
+    val credential = Credential(userId = userId, username = "username", password = "password")
     val service = AuthService(config, repository)
 
     "Token creation" - {
         "OK" {
-            every { repository.find(credential.username) } returns Credential(
-                userId = UserId(1),
-                username = credential.username,
-                password = credential.password.toHashedString()
-            )
-
-            val token = service.createToken(credential)
+            val token = service.createToken(userId, credential.username)
 
             shouldNotThrow<JWTVerificationException> {
                 JWT.require(algorithm)
@@ -48,37 +39,6 @@ class JwtServiceTest : DatabaseFreeSpec({
                     .withIssuer(config.issuer)
                     .build()
                     .verify(token)
-            }
-
-            verify {
-                repository.find(credential.username)
-            }
-        }
-
-        "NG - User not found" {
-            every { repository.find(credential.username) } returns null
-
-            shouldThrow<UserNotFoundException> {
-                service.createToken(credential)
-            }
-
-            verify {
-                repository.find(credential.username)
-            }
-        }
-
-        "NG - Password not match" {
-            every { repository.find(credential.username) } returns Credential(
-                username = credential.username,
-                password = "hashed".toHashedString()
-            )
-
-            shouldThrow<PasswordNotMatchException> {
-                service.createToken(credential)
-            }
-
-            verify {
-                repository.find(credential.username)
             }
         }
     }
@@ -91,18 +51,27 @@ class JwtServiceTest : DatabaseFreeSpec({
                 service.refreshToken(token)
             }
         }
+    }
+
+    "Token Validation" - {
+        "OK" {
+            val token = credential.toToken(config)
+
+            val result = service.isValidToken(token)
+            result shouldBe true
+        }
 
         "NG - Token expired" {
             val token = JWT.create()
                 .withAudience(config.audience)
                 .withIssuer(config.issuer)
+                .withClaim("userId", userId.value)
                 .withClaim("username", credential.username)
-                .withExpiresAt(Date(System.currentTimeMillis() - 10 * 60 * 1000))
+                .withExpiresAt(Date(System.currentTimeMillis() - 1))
                 .sign(algorithm)
 
-            shouldThrow<InvalidTokenException> {
-                service.refreshToken(token)
-            }
+            val result = service.isValidToken(token)
+            result shouldBe false
         }
     }
 })
