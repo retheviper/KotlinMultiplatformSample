@@ -25,8 +25,6 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.22")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-apache:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
                 implementation("io.insert-koin:koin-ktor:$koinVersion")
                 implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")

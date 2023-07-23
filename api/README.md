@@ -16,6 +16,9 @@
 ## Run
 
 ```bash
+# Run DB
+docker-compose up db -d
+
 # Run server (client will automatically build when server is run)
 ./gradlew run
 ```
