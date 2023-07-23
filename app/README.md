@@ -18,7 +18,7 @@
 - `iosApp` - Client application by SwiftUI (iOS/iPadOS)
 - `andoroidApp` - Client application by Jetpack Compose (Android)
 - `desktopApp` - Client application by Compose for Desktop (macOS/Windows/Linux)
-- `shared` - Shared code between iOS/iPadOS and Android
+- `shared` - Shared code between iOS/iPadOS/Android/macOS/Windows/Linux by Kotlin Multiplatform
 
 ## Build
 
