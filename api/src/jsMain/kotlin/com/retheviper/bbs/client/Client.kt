@@ -17,12 +17,13 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.core.use
 import kotlinx.browser.window
 import kotlinx.serialization.json.Json
 
 val API_URL = "${window.location.origin}$API_BASE_PATH"
 
-val jsonClient = HttpClient {
+private fun getJsonClient() = HttpClient {
     install(ContentNegotiation) {
         json(Json {
             prettyPrint = true
@@ -37,28 +38,33 @@ val jsonClient = HttpClient {
 }
 
 suspend fun postCount(number: Int) {
-    jsonClient.post("$API_URL$COUNT") {
-        setBody(
-            CountRequest(
-                platform = "Web", number = number
+    getJsonClient().use {
+        it.post("$API_URL$COUNT") {
+            setBody(
+                CountRequest(
+                    platform = "Web", number = number
+                )
             )
-        )
+        }
     }
 }
 
 suspend fun postLogin(username: String, password: String): String? {
-    return jsonClient.post("$API_URL$AUTH$LOGIN") {
-        setBody(
-            LoginRequest(
-                username = username,
-                password = password
+    return getJsonClient().use {
+        it.post("$API_URL$AUTH$LOGIN") {
+            setBody(
+                LoginRequest(
+                    username = username, password = password
+                )
             )
-        )
-    }.call.response.headers["Authorization"]
+        }.call.response.headers["Authorization"]
+    }
 }
 
 suspend fun getRefresh(token: String): String? {
-    return jsonClient.get("$API_URL$AUTH$REFRESH") {
-        header("Authorization", token)
-    }.call.response.headers["Authorization"]
+    return getJsonClient().use {
+        it.get("$API_URL$AUTH$REFRESH") {
+            header("Authorization", token)
+        }.call.response.headers["Authorization"]
+    }
 }
