@@ -1,4 +1,4 @@
-package com.retheviper.bbs.board.infrastructure.model.request
+package com.retheviper.bbs.infrastructure.model.request
 
 import kotlinx.serialization.Serializable
 
@@ -6,7 +6,5 @@ import kotlinx.serialization.Serializable
 data class CreateCommentRequest(
     val content: String,
     val authorId: Int,
-    val password: String,
-    val authorName: String,
-    val boardId: Int
+    val password: String
 )

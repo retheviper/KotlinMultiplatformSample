@@ -1,6 +1,6 @@
-package com.retheviper.bbs.board.infrastructure.model.response
+package com.retheviper.bbs.infrastructure.model.response
 
-import com.retheviper.bbs.model.common.PaginationProperties
+import com.retheviper.bbs.infrastructure.model.common.PaginationProperties
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -15,7 +15,7 @@ data class ListArticleResponse(
         val authorName: String,
         val categoryName: String,
         val comments: Int,
-        val viewCount: Int,
+        val viewCount: UInt,
         val createdDate: String
     )
 }

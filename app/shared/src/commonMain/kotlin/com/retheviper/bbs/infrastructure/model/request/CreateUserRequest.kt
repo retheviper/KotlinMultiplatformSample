@@ -1,4 +1,4 @@
-package com.retheviper.bbs.model.request
+package com.retheviper.bbs.infrastructure.model.request
 
 import kotlinx.serialization.Serializable
 

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.retheviper.bbs.infrastructure.api.UserApi
 import com.retheviper.bbs.infrastructure.client.ApiCaller
 import kotlinx.coroutines.launch
 
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 @Preview
 fun App() {
     val (text, textOnChange) = remember { mutableStateOf("") }
+    var user by remember { mutableStateOf("") }
     var count by remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -71,7 +73,17 @@ fun App() {
                 onValueChange = textOnChange
             )
 
-            Text(text)
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val response = UserApi.getUser(text.toInt())
+                        user = response.toString()
+                    }
+                }) {
+                Text("Send")
+            }
+
+            Text(user)
         }
     }
 }
