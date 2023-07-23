@@ -48,24 +48,26 @@ fun Route.routeUser() {
         }
 
         authenticate("auth-jwt") {
-            put("/{userId}") {
-                val id = call.getIdFromPathParameter<UserId>()
-                val request = call.receive<UpdateUserRequest>()
+            route("/{userId}") {
+                put {
+                    val id = call.getIdFromPathParameter<UserId>()
+                    val request = call.receive<UpdateUserRequest>()
 
-                val response = transaction { usecase.update(User.from(id, request)) }
-                    .let { UserResponse.from(it) }
+                    val response = transaction { usecase.update(User.from(id, request)) }
+                        .let { UserResponse.from(it) }
 
-                call.application.log.info("User updated: ${response.username}")
-                call.respond(response)
-            }
+                    call.application.log.info("User updated: ${response.username}")
+                    call.respond(response)
+                }
 
-            delete("/{userId|") {
-                val id = call.getIdFromPathParameter<UserId>()
+                delete {
+                    val id = call.getIdFromPathParameter<UserId>()
 
-                transaction { usecase.delete(id) }
+                    transaction { usecase.delete(id) }
 
-                call.application.log.info("User deleted: $id")
-                call.respond("User deleted: $id")
+                    call.application.log.info("User deleted: $id")
+                    call.respond("User deleted: $id")
+                }
             }
         }
     }

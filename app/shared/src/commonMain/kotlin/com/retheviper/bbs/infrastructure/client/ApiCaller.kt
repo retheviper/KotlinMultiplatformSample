@@ -15,6 +15,7 @@ object ApiCaller {
         get() = when (platform.name) {
             PlatformName.ANDROID -> "http://10.0.2.2:8080/api/v1"
             PlatformName.IOS -> "http://0.0.0.0:8080/api/v1"
+            PlatformName.DESKTOP -> "http://0.0.0.0:8080/api/v1"
             else -> ""
         }
 
