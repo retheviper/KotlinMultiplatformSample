@@ -1,13 +1,13 @@
-# BBS-MOBILE / BBS-DESKTOP
+# BBS-APP
 
 ## Target platform
 
-### BBS-MOBILE
+### Mobile
 
 - android
 - iOS
 
-### BBS-DESKTOP
+### Desktop
 
 - macOS
 - Windows
