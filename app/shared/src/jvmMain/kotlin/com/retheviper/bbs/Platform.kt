@@ -15,14 +15,3 @@ class IOSPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
-
-actual fun getHttpClient(): HttpClient {
-    return HttpClient(Apache) {
-        install(ContentNegotiation) {
-            json()
-        }
-        defaultRequest {
-            contentType(ContentType.Application.Json)
-        }
-    }
-}

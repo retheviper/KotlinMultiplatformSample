@@ -1,6 +1,6 @@
 package com.retheviper.bbs.infrastructure.api
 
-import com.retheviper.bbs.getHttpClient
+import com.retheviper.bbs.infrastructure.client.getHttpClient
 import com.retheviper.bbs.infrastructure.model.request.CreateUserRequest
 import com.retheviper.bbs.infrastructure.model.response.UserResponse
 import io.ktor.client.call.body

@@ -76,7 +76,8 @@ fun App() {
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val response = UserApi.getUser(text.toInt())
+                        val response = runCatching { UserApi.getUser(text.toInt()) }
+                            .getOrElse { it.toString() }
                         user = response.toString()
                     }
                 }) {

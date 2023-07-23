@@ -1,9 +1,8 @@
 package com.retheviper.bbs.infrastructure.client
 
 import com.retheviper.bbs.constant.PlatformName
-import com.retheviper.bbs.getHttpClient
 import com.retheviper.bbs.getPlatform
-import com.retheviper.bbs.infrastructure.model.Count
+import com.retheviper.bbs.infrastructure.model.request.CountRequest
 import io.ktor.client.request.*
 import io.ktor.utils.io.core.use
 
@@ -23,7 +22,7 @@ object ApiCaller {
         getHttpClient().use {
             it.post("$apiUrl/count") {
                 setBody(
-                    Count(
+                    CountRequest(
                         platform = platform.name.value,
                         number = number
                     )

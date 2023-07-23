@@ -14,14 +14,3 @@ class AndroidPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()
-
-actual fun getHttpClient(): HttpClient {
-    return HttpClient(Android) {
-        install(ContentNegotiation) {
-            json()
-        }
-        defaultRequest {
-            contentType(ContentType.Application.Json)
-        }
-    }
-}

@@ -15,19 +15,3 @@ class IOSPlatform: Platform {
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
-
-actual fun getHttpClient(): HttpClient {
-    return HttpClient(Darwin) {
-        install(ContentNegotiation) {
-            json()
-        }
-        defaultRequest {
-            contentType(ContentType.Application.Json)
-        }
-        engine {
-            configureRequest {
-                setAllowsCellularAccess(true)
-            }
-        }
-    }
-}
