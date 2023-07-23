@@ -16,6 +16,10 @@ actual fun getHttpClient(): HttpClient {
         }
         defaultRequest {
             contentType(ContentType.Application.Json)
+            url {
+                host = "10.0.2.2"
+                port = 8080
+            }
         }
     }
 }

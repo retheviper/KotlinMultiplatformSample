@@ -9,6 +9,7 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.path
 import io.ktor.serialization.kotlinx.json.json
 
 
@@ -19,6 +20,10 @@ actual fun getHttpClient(): HttpClient {
         }
         defaultRequest {
             contentType(ContentType.Application.Json)
+            url {
+                host = "localhost"
+                port = 8080
+            }
         }
         expectSuccess = true
         HttpResponseValidator {

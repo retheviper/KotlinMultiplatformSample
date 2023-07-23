@@ -12,7 +12,7 @@ import io.ktor.utils.io.core.use
 
 object UserApi : Api {
 
-    private val endpoint = "$apiBaseUrl/user"
+    private val endpoint = "$basePath/user"
 
     suspend fun getUser(id: Int): UserResponse {
         return getHttpClient().use {

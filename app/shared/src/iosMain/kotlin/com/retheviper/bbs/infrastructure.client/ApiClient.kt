@@ -16,6 +16,10 @@ actual fun getHttpClient(): HttpClient {
         }
         defaultRequest {
             contentType(ContentType.Application.Json)
+            url {
+                host = "localhost"
+                port = 8080
+            }
         }
         engine {
             configureRequest {
