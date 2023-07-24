@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("org.jetbrains.compose")
     id("com.android.library")
 }
 
@@ -64,6 +65,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
+                implementation(compose.desktop.currentOs)
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
             }

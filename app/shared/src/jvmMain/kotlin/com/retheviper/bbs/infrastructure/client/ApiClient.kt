@@ -1,11 +1,13 @@
 package com.retheviper.bbs.infrastructure.client
 
+import com.retheviper.bbs.getPlatform
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -19,6 +21,7 @@ actual fun getHttpClient(): HttpClient {
             json()
         }
         defaultRequest {
+            header("X-Platform", getPlatform().nameWithVersion)
             contentType(ContentType.Application.Json)
             url {
                 host = "localhost"
