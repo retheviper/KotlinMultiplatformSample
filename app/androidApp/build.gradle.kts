@@ -19,7 +19,7 @@ android {
     compileSdk = (findProperty("android.compileSdk") as String).toInt()
     namespace = "com.retheviper.bbs.android"
 
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    sourceSets["main"].manifest.srcFile("src/main/AndroidManifest.xml")
 
     defaultConfig {
         applicationId = "com.retheviper.bbs.android"
@@ -32,6 +32,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildToolsVersion = "32.0.0"
     kotlin {
         jvmToolchain(11)
     }
