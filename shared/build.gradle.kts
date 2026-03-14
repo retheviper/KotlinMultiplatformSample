@@ -37,6 +37,7 @@ kotlin {
                 implementation(libs.compose.resources)
                 implementation(libs.coil.compose)
                 implementation(libs.coil.network.ktor3)
+                implementation(libs.coil.svg)
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.client.websockets)

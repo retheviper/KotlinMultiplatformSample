@@ -48,9 +48,7 @@ class LinkPreviewResolver(
         if (response != null && response.status.isSuccess() && contentType?.startsWith("image/") == true) {
             return LinkPreview(
                 url = normalizedUrl,
-                title = imageTitle(uri),
-                imageUrl = normalizedUrl,
-                siteName = host
+                imageUrl = normalizedUrl
             )
         }
 
@@ -149,11 +147,5 @@ class LinkPreviewResolver(
             bytes = body(),
             contentType = contentType
         )
-    }
-
-    private fun imageTitle(uri: URI?): String {
-        val path = uri?.path.orEmpty()
-        val fileName = path.substringAfterLast('/').substringBefore('?').substringBefore('#')
-        return fileName.takeIf { it.isNotBlank() } ?: "Image"
     }
 }

@@ -47,9 +47,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -1776,6 +1778,7 @@ private fun ComposerLinkPreviewCard(
     preview: LinkPreviewResponse,
     onDismiss: () -> Unit
 ) {
+    val imageOnly = isImageOnlyPreview(preview)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -1784,11 +1787,17 @@ private fun ComposerLinkPreviewCard(
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(preview.siteName ?: "Link preview", color = DarkText, fontWeight = FontWeight.SemiBold)
+                if (!imageOnly) {
+                    Text(preview.siteName ?: "Link preview", color = DarkText, fontWeight = FontWeight.SemiBold)
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
                 Text("x", color = Accent, modifier = Modifier.clickable(onClick = onDismiss))
             }
             LinkPreviewImage(preview)
-            LinkPreviewSummary(preview)
+            if (!imageOnly) {
+                LinkPreviewSummary(preview)
+            }
         }
     }
 }
@@ -1803,7 +1812,9 @@ private fun LinkPreviewCard(preview: LinkPreviewResponse) {
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             LinkPreviewImage(preview)
-            LinkPreviewSummary(preview)
+            if (!isImageOnlyPreview(preview)) {
+                LinkPreviewSummary(preview)
+            }
         }
     }
 }
@@ -1811,8 +1822,9 @@ private fun LinkPreviewCard(preview: LinkPreviewResponse) {
 @Composable
 private fun LinkPreviewImage(preview: LinkPreviewResponse) {
     val imageUrl = preview.imageUrl?.takeIf { it.isNotBlank() } ?: return
+    var dialogOpen by remember(imageUrl) { mutableStateOf(false) }
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { dialogOpen = true },
         shape = RoundedCornerShape(12.dp),
         backgroundColor = Color(0xFFEAE4F6),
         elevation = 0.dp
@@ -1822,6 +1834,14 @@ private fun LinkPreviewImage(preview: LinkPreviewResponse) {
             contentDescription = preview.title ?: preview.siteName ?: "Link preview image",
             modifier = Modifier.fillMaxWidth().height(180.dp),
             contentScale = ContentScale.Crop
+        )
+    }
+
+    if (dialogOpen) {
+        ImageAssetDialog(
+            imageUrl = imageUrl,
+            title = preview.title,
+            onDismiss = { dialogOpen = false }
         )
     }
 }
@@ -1837,6 +1857,68 @@ private fun LinkPreviewSummary(preview: LinkPreviewResponse) {
     if (!preview.description.isNullOrBlank()) {
         Text(preview.description, color = DimText)
     }
+}
+
+@Composable
+private fun ImageAssetDialog(
+    imageUrl: String,
+    title: String?,
+    onDismiss: () -> Unit
+) {
+    val clipboardManager = LocalClipboardManager.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(title ?: "Image", color = DarkText, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                backgroundColor = Color(0xFFF3F0FA),
+                elevation = 0.dp
+            ) {
+                AsyncImage(
+                    model = previewImageProxyUrl(imageUrl),
+                    contentDescription = title ?: "Image preview",
+                    modifier = Modifier.fillMaxWidth().height(320.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        },
+        buttons = {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+            ) {
+                Button(
+                    onClick = {
+                        clipboardManager.setText(buildAnnotatedString { append(imageUrl) })
+                    },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = DarkText),
+                    elevation = null
+                ) {
+                    Text("Copy URL")
+                }
+                Button(
+                    onClick = {
+                        LinkAssetActions.saveRemoteFile(imageUrl, suggestedName = imageUrl.suggestedDownloadName())
+                    },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Accent, contentColor = LightText),
+                    elevation = null
+                ) {
+                    Text("Download")
+                }
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = DarkText),
+                    elevation = null
+                ) {
+                    Text("Close")
+                }
+            }
+        }
+    )
 }
 
 @Composable
@@ -2077,6 +2159,20 @@ private fun rememberAppFontFamily(): FontFamily {
 
 private fun previewImageProxyUrl(imageUrl: String): String {
     return "${PlatformClientConfig.baseUrl}/api/v1/link-preview/image?url=${imageUrl.encodeURLParameter()}"
+}
+
+private fun isImageOnlyPreview(preview: LinkPreviewResponse): Boolean {
+    return !preview.imageUrl.isNullOrBlank() &&
+        preview.imageUrl == preview.url &&
+        preview.title.isNullOrBlank() &&
+        preview.description.isNullOrBlank() &&
+        preview.siteName.isNullOrBlank()
+}
+
+private fun String.suggestedDownloadName(): String {
+    val withoutQuery = substringBefore('?').substringBefore('#')
+    val fileName = withoutQuery.substringAfterLast('/')
+    return fileName.ifBlank { "image" }
 }
 
 private fun buildDesktopWindowTitle(
