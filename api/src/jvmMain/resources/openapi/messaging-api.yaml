@@ -14,7 +14,22 @@ paths:
       responses:
         '200':
           description: Health response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
   /api/v1/workspaces:
+    get:
+      summary: List workspaces
+      responses:
+        '200':
+          description: Workspace list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkspaceResponse'
     post:
       summary: Create a workspace
       requestBody:
@@ -26,6 +41,22 @@ paths:
       responses:
         '201':
           description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceResponse'
+  /api/v1/workspaces/by-slug/{slug}:
+    get:
+      summary: Get a workspace by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workspace details
           content:
             application/json:
               schema:
@@ -88,6 +119,29 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkspaceMemberResponse'
+  /api/v1/members/{memberId}:
+    put:
+      summary: Update a workspace member
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkspaceMemberRequest'
+      responses:
+        '200':
+          description: Member updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceMemberResponse'
   /api/v1/workspaces/{workspaceId}/channels:
     post:
       summary: Create a channel
@@ -197,6 +251,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
+  /api/v1/members/{memberId}/notifications:
+    get:
+      summary: List member notifications
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: unreadOnly
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MentionNotificationResponse'
+  /api/v1/members/{memberId}/notifications/stream:
+    get:
+      summary: Stream notification refresh events
+      description: |
+        Server-Sent Events endpoint. The server emits `data: connected` once and then
+        `data: refresh` whenever the client should refresh notifications.
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /api/v1/members/{memberId}/notifications/read:
+    post:
+      summary: Mark notifications as read
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkNotificationsReadRequest'
+      responses:
+        '200':
+          description: Notifications marked as read
   /api/v1/link-preview/resolve:
     post:
       summary: Resolve an Open Graph link preview
@@ -213,6 +329,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResolveLinkPreviewResponse'
+  /api/v1/link-preview/image:
+    get:
+      summary: Proxy a link preview image
+      parameters:
+        - in: query
+          name: url
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image bytes
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
   /ws/channels/{channelId}:
     get:
       summary: WebSocket chat endpoint
@@ -231,6 +364,12 @@ paths:
           description: Switching Protocols
 components:
   schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status: { type: string }
+        service: { type: string }
+        version: { type: string }
     WorkspaceMemberRole:
       type: string
       enum: [OWNER, ADMIN, MEMBER]
@@ -261,6 +400,11 @@ components:
         displayName: { type: string }
         role:
           $ref: '#/components/schemas/WorkspaceMemberRole'
+    UpdateWorkspaceMemberRequest:
+      type: object
+      required: [displayName]
+      properties:
+        displayName: { type: string }
     WorkspaceMemberResponse:
       type: object
       properties:
@@ -325,6 +469,15 @@ components:
       properties:
         memberId: { type: string, format: uuid }
         emoji: { type: string }
+    MarkNotificationsReadRequest:
+      type: object
+      required: [notificationIds]
+      properties:
+        notificationIds:
+          type: array
+          items:
+            type: string
+            format: uuid
     MessageReactionResponse:
       type: object
       properties:
@@ -352,6 +505,23 @@ components:
           items:
             $ref: '#/components/schemas/MessageReactionResponse'
         createdAt: { type: string, format: date-time }
+    NotificationKind:
+      type: string
+      enum: [MENTION, THREAD_ACTIVITY]
+    MentionNotificationResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind:
+          $ref: '#/components/schemas/NotificationKind'
+        memberId: { type: string, format: uuid }
+        channelId: { type: string, format: uuid }
+        messageId: { type: string, format: uuid }
+        threadRootMessageId: { type: string, format: uuid, nullable: true }
+        authorDisplayName: { type: string }
+        messagePreview: { type: string }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: string, format: date-time, nullable: true }
     MessagePageResponse:
       type: object
       properties:

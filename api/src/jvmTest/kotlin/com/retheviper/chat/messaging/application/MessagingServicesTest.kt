@@ -639,9 +639,6 @@ private fun messagingFixture(): MessagingFixture {
     val messageRepository = InMemoryMessageRepository()
     val messageReactionRepository = InMemoryMessageReactionRepository()
     val mentionNotificationRepository = InMemoryMentionNotificationRepository()
-    val transactionRunner = object : TransactionRunner {
-        override suspend fun <T> run(block: suspend () -> T): T = block()
-    }
 
     return MessagingFixture(
         commandService = MessagingCommandService(
@@ -650,7 +647,8 @@ private fun messagingFixture(): MessagingFixture {
             messageRepository = messageRepository,
             messageReactionRepository = messageReactionRepository,
             mentionNotificationRepository = mentionNotificationRepository,
-            transactionRunner = transactionRunner
+            notificationEventBus = NotificationEventBus(),
+            transactionsEnabled = false
         ),
         queryService = MessagingQueryService(
             workspaceRepository = workspaceRepository,
@@ -658,7 +656,7 @@ private fun messagingFixture(): MessagingFixture {
             messageRepository = messageRepository,
             messageReactionRepository = messageReactionRepository,
             mentionNotificationRepository = mentionNotificationRepository,
-            transactionRunner = transactionRunner
+            transactionsEnabled = false
         )
     )
 }
@@ -753,6 +751,21 @@ private class InMemoryMessageRepository : MessageRepository {
 
     override suspend fun listThread(rootMessageId: Uuid): List<Message> {
         return messages.values.filter { it.threadRootMessageId == rootMessageId }
+    }
+
+    override suspend fun listThreadReplyCounts(rootMessageIds: List<Uuid>): Map<Uuid, Int> {
+        return messages.values
+            .mapNotNull { it.threadRootMessageId }
+            .filter { it in rootMessageIds }
+            .groupingBy { it }
+            .eachCount()
+    }
+
+    override suspend fun listThreadParticipantIds(rootMessageId: Uuid, beforeCreatedAt: Instant): Set<Uuid> {
+        return messages.values
+            .asSequence()
+            .filter { it.threadRootMessageId == rootMessageId && it.createdAt < beforeCreatedAt }
+            .mapTo(linkedSetOf()) { it.authorMemberId }
     }
 }
 

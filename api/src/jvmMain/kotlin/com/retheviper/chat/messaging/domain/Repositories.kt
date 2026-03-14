@@ -32,6 +32,8 @@ interface MessageRepository {
     suspend fun findMessage(id: Uuid): Message?
     suspend fun listChannelMessages(channelId: Uuid, beforeMessageId: Uuid?, limit: Int): List<Message>
     suspend fun listThread(rootMessageId: Uuid): List<Message>
+    suspend fun listThreadReplyCounts(rootMessageIds: List<Uuid>): Map<Uuid, Int>
+    suspend fun listThreadParticipantIds(rootMessageId: Uuid, beforeCreatedAt: Instant): Set<Uuid>
 }
 
 @OptIn(ExperimentalUuidApi::class)

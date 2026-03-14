@@ -35,7 +35,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.update
 
 @OptIn(ExperimentalUuidApi::class)
-class DatabaseWorkspaceRepository : WorkspaceRepository {
+class WorkspacePersistenceRepository : WorkspaceRepository {
     override suspend fun existsBySlug(slug: String): Boolean =
         WorkspacesTable.selectAll()
             .where { WorkspacesTable.slug eq slug }
@@ -130,7 +130,7 @@ class DatabaseWorkspaceRepository : WorkspaceRepository {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-class DatabaseChannelRepository : ChannelRepository {
+class ChannelPersistenceRepository : ChannelRepository {
     override suspend fun existsBySlug(workspaceId: Uuid, slug: String): Boolean =
         ChannelsTable.selectAll()
             .where { (ChannelsTable.workspaceId eq workspaceId) and (ChannelsTable.slug eq slug) }
@@ -178,7 +178,7 @@ class DatabaseChannelRepository : ChannelRepository {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-class DatabaseMessageRepository : MessageRepository {
+class MessagePersistenceRepository : MessageRepository {
     override suspend fun saveMessage(message: Message) {
         MessagesTable.insert { statement ->
             statement[id] = message.id
@@ -227,19 +227,16 @@ class DatabaseMessageRepository : MessageRepository {
                 (MessagesTable.createdAtEpochMillis less beforeTimestamp)
         }
 
-        return join.selectAll()
+        val rootMessages = join.selectAll()
             .where { filter }
             .orderBy(MessagesTable.createdAtEpochMillis to SortOrder.DESC)
             .limit(limit)
             .toList()
             .map { it.toMessage() }
-            .map { message ->
-                if (message.threadRootMessageId == null) {
-                    message.copy(threadReplyCount = listThread(message.id).size)
-                } else {
-                    message
-                }
-            }
+        val replyCounts = listThreadReplyCounts(rootMessages.map { it.id })
+
+        return rootMessages
+            .map { message -> message.copy(threadReplyCount = replyCounts[message.id] ?: 0) }
             .reversed()
     }
 
@@ -255,6 +252,29 @@ class DatabaseMessageRepository : MessageRepository {
             .orderBy(MessagesTable.createdAtEpochMillis to SortOrder.ASC)
             .toList()
             .map { it.toMessage() }
+    }
+
+    override suspend fun listThreadReplyCounts(rootMessageIds: List<Uuid>): Map<Uuid, Int> {
+        if (rootMessageIds.isEmpty()) {
+            return emptyMap()
+        }
+
+        return MessagesTable.selectAll()
+            .where { MessagesTable.threadRootMessageId inList rootMessageIds }
+            .toList()
+            .mapNotNull { it[MessagesTable.threadRootMessageId] }
+            .groupingBy { it }
+            .eachCount()
+    }
+
+    override suspend fun listThreadParticipantIds(rootMessageId: Uuid, beforeCreatedAt: Instant): Set<Uuid> {
+        return MessagesTable.selectAll()
+            .where {
+                (MessagesTable.threadRootMessageId eq rootMessageId) and
+                    (MessagesTable.createdAtEpochMillis less beforeCreatedAt.toEpochMilli())
+            }
+            .toList()
+            .mapTo(linkedSetOf()) { it[MessagesTable.authorMemberId] }
     }
 
     private fun ResultRow.toMessage(): Message = Message(
@@ -279,7 +299,7 @@ class DatabaseMessageRepository : MessageRepository {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-class DatabaseMessageReactionRepository : MessageReactionRepository {
+class MessageReactionPersistenceRepository : MessageReactionRepository {
     override suspend fun saveReaction(reaction: MessageReaction) {
         MessageReactionsTable.insert { statement ->
             statement[id] = reaction.id
@@ -327,7 +347,7 @@ class DatabaseMessageReactionRepository : MessageReactionRepository {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-class DatabaseMentionNotificationRepository : MentionNotificationRepository {
+class MentionNotificationPersistenceRepository : MentionNotificationRepository {
     override suspend fun saveNotifications(notifications: List<MentionNotification>) {
         notifications.forEach { notification ->
             MentionNotificationsTable.insert { statement ->
@@ -390,7 +410,9 @@ class DatabaseMentionNotificationRepository : MentionNotificationRepository {
         }
 
         MentionNotificationsTable.update({
-            (MentionNotificationsTable.memberId eq memberId) and (MentionNotificationsTable.id inList notificationIds)
+            (MentionNotificationsTable.memberId eq memberId) and
+                (MentionNotificationsTable.id inList notificationIds) and
+                MentionNotificationsTable.readAtEpochMillis.isNull()
         }) { statement ->
             statement[readAtEpochMillis] = readAt.toEpochMilli()
         }

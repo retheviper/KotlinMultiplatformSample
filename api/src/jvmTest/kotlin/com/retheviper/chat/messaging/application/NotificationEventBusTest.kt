@@ -1,11 +1,16 @@
 package com.retheviper.chat.messaging.application
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.yield
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -52,6 +57,27 @@ class NotificationEventBusTest : FunSpec({
 
             firstSignal.await() shouldBe Unit
             secondSignal.await() shouldBe Unit
+        }
+    }
+
+    test("publish iterable suppresses duplicate member ids") {
+        val bus = NotificationEventBus()
+        val memberId = Uuid.generateV7()
+
+        runBlocking {
+            val received = mutableListOf<Unit>()
+            val collector = launch {
+                withTimeoutOrNull(250) {
+                    bus.stream(memberId).take(2).toList(received)
+                }
+            }
+
+            yield()
+            bus.publish(listOf(memberId, memberId))
+            yield()
+            collector.cancel()
+
+            received shouldContainExactly listOf(Unit)
         }
     }
 })

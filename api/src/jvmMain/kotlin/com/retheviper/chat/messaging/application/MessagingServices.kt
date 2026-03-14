@@ -9,11 +9,9 @@ import com.retheviper.chat.contract.WorkspaceMemberRole
 import com.retheviper.chat.messaging.domain.Channel
 import com.retheviper.chat.messaging.domain.ChannelRepository
 import com.retheviper.chat.messaging.domain.DomainValidationException
-import com.retheviper.chat.messaging.domain.LinkPreview
 import com.retheviper.chat.messaging.domain.Message
 import com.retheviper.chat.messaging.domain.MessageReaction
 import com.retheviper.chat.messaging.domain.MessageReactionRepository
-import com.retheviper.chat.messaging.domain.MessageReactionSummary
 import com.retheviper.chat.messaging.domain.MessageRepository
 import com.retheviper.chat.messaging.domain.MentionNotification
 import com.retheviper.chat.messaging.domain.MentionNotificationRepository
@@ -25,6 +23,7 @@ import com.retheviper.chat.messaging.domain.WorkspaceRepository
 import java.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 @OptIn(ExperimentalUuidApi::class)
 class MessagingCommandService(
@@ -33,11 +32,11 @@ class MessagingCommandService(
     private val messageRepository: MessageRepository,
     private val messageReactionRepository: MessageReactionRepository,
     private val mentionNotificationRepository: MentionNotificationRepository,
-    private val notificationEventBus: NotificationEventBus = NotificationEventBus(),
-    private val transactionRunner: TransactionRunner = ExposedTransactionRunner
+    private val notificationEventBus: NotificationEventBus,
+    private val transactionsEnabled: Boolean
 ) {
     suspend fun createWorkspace(request: CreateWorkspaceRequest): Workspace {
-        return transactional {
+        return inTransaction {
             validateSlug(request.slug)
             requireNotBlank(request.name, "workspace name")
             requireNotBlank(request.ownerUserId, "owner user id")
@@ -84,7 +83,7 @@ class MessagingCommandService(
     }
 
     suspend fun addMember(workspaceId: Uuid, request: AddWorkspaceMemberRequest): WorkspaceMember {
-        return transactional {
+        return inTransaction {
             requireWorkspace(workspaceId)
             requireNotBlank(request.userId, "user id")
             requireNotBlank(request.displayName, "display name")
@@ -108,7 +107,7 @@ class MessagingCommandService(
     }
 
     suspend fun updateMember(memberId: Uuid, request: UpdateWorkspaceMemberRequest): WorkspaceMember {
-        return transactional {
+        return inTransaction {
             val existing = requireMember(memberId)
             requireNotBlank(request.displayName, "display name")
             val updated = existing.copy(displayName = request.displayName.trim())
@@ -118,7 +117,7 @@ class MessagingCommandService(
     }
 
     suspend fun createChannel(workspaceId: Uuid, request: CreateChannelRequest): Channel {
-        return transactional {
+        return inTransaction {
             validateSlug(request.slug)
             requireNotBlank(request.name, "channel name")
             val workspace = requireWorkspace(workspaceId)
@@ -147,11 +146,12 @@ class MessagingCommandService(
     }
 
     suspend fun postChannelMessage(channelId: Uuid, request: PostMessageRequest): Message {
-        return transactional {
+        return inTransaction {
             val channel = requireChannel(channelId)
             val author = requireMember(Uuid.parse(request.authorMemberId))
             requireMemberInWorkspace(author, channel.workspaceId)
             requireNotBlank(request.body, "message body")
+            val workspaceMembers = workspaceRepository.listMembers(channel.workspaceId)
 
             val message = Message(
                 id = Uuid.generateV7(),
@@ -166,20 +166,21 @@ class MessagingCommandService(
             messageRepository.saveMessage(message)
             saveMentionNotifications(
                 message = message,
-                workspaceId = channel.workspaceId,
-                author = author
+                author = author,
+                workspaceMembers = workspaceMembers
             )
             hydrateMessage(message)
         }
     }
 
     suspend fun replyToMessage(messageId: Uuid, request: PostMessageRequest): Message {
-        return transactional {
+        return inTransaction {
             val parent = requireMessage(messageId)
             val channel = requireChannel(parent.channelId)
             val author = requireMember(Uuid.parse(request.authorMemberId))
             requireMemberInWorkspace(author, channel.workspaceId)
             requireNotBlank(request.body, "message body")
+            val workspaceMembers = workspaceRepository.listMembers(channel.workspaceId)
 
             val rootId = parent.threadRootMessageId ?: parent.id
             val reply = Message(
@@ -195,21 +196,21 @@ class MessagingCommandService(
             messageRepository.saveMessage(reply)
             saveMentionNotifications(
                 message = reply,
-                workspaceId = channel.workspaceId,
-                author = author
+                author = author,
+                workspaceMembers = workspaceMembers
             )
             saveThreadActivityNotifications(
                 reply = reply,
                 rootMessageId = rootId,
-                workspaceId = channel.workspaceId,
-                author = author
+                author = author,
+                workspaceMembers = workspaceMembers
             )
             hydrateMessage(reply)
         }
     }
 
     suspend fun toggleReaction(messageId: Uuid, memberId: Uuid, emoji: String): Message {
-        return transactional {
+        return inTransaction {
             val message = requireMessage(messageId)
             val channel = requireChannel(message.channelId)
             val member = requireMember(memberId)
@@ -237,7 +238,7 @@ class MessagingCommandService(
     }
 
     suspend fun markNotificationsRead(memberId: Uuid, notificationIds: List<Uuid>) {
-        transactional {
+        inTransaction {
             requireMember(memberId)
             mentionNotificationRepository.markRead(memberId, notificationIds)
         }
@@ -293,30 +294,21 @@ class MessagingCommandService(
         }
     }
 
-    private fun sanitizePreview(body: String, preview: LinkPreview?): LinkPreview? {
-        val candidate = preview ?: return null
-        val normalizedUrl = candidate.url.trim()
-        if (normalizedUrl.isBlank() || !body.contains(normalizedUrl)) {
-            return null
-        }
-        return candidate.copy(url = normalizedUrl)
-    }
-
     companion object {
         private val SLUG_REGEX = Regex("^[a-z0-9]+(?:-[a-z0-9]+)*$")
         private val MENTION_REGEX = Regex("(^|\\s)@([a-zA-Z0-9._-]+)")
     }
 
-    private suspend fun <T> transactional(block: suspend () -> T): T {
-        return transactionRunner.run(block)
+    private suspend fun <T> inTransaction(block: suspend () -> T): T {
+        return if (transactionsEnabled) suspendTransaction { block() } else block()
     }
 
     private suspend fun saveMentionNotifications(
         message: Message,
-        workspaceId: Uuid,
-        author: WorkspaceMember
+        author: WorkspaceMember,
+        workspaceMembers: List<WorkspaceMember>
     ) {
-        val mentionedMembers = workspaceRepository.listMembers(workspaceId)
+        val mentionedMembers = workspaceMembers
             .associateBy { it.userId }
             .let { membersByUserId ->
                 MENTION_REGEX.findAll(message.body)
@@ -351,16 +343,13 @@ class MessagingCommandService(
     private suspend fun saveThreadActivityNotifications(
         reply: Message,
         rootMessageId: Uuid,
-        workspaceId: Uuid,
-        author: WorkspaceMember
+        author: WorkspaceMember,
+        workspaceMembers: List<WorkspaceMember>
     ) {
         val rootMessage = requireMessage(rootMessageId)
         val participants = buildSet {
             add(rootMessage.authorMemberId)
-            messageRepository.listThread(rootMessageId)
-                .asSequence()
-                .filter { it.createdAt < reply.createdAt }
-                .mapTo(this) { it.authorMemberId }
+            addAll(messageRepository.listThreadParticipantIds(rootMessageId, reply.createdAt))
             addAll(mentionNotificationRepository.listThreadSubscriberIds(rootMessageId))
         }.filter { it != author.id }
 
@@ -371,7 +360,7 @@ class MessagingCommandService(
         val mentionedUserIds = MENTION_REGEX.findAll(reply.body)
             .map { it.groupValues[2] }
             .toSet()
-        val workspaceMembersById = workspaceRepository.listMembers(workspaceId).associateBy { it.id }
+        val workspaceMembersById = workspaceMembers.associateBy { it.id }
         val notifications = participants.mapNotNull { participantId ->
             val participant = workspaceMembersById[participantId] ?: return@mapNotNull null
             if (participant.userId in mentionedUserIds) {
@@ -398,144 +387,6 @@ class MessagingCommandService(
     }
 
     private suspend fun hydrateMessage(message: Message): Message {
-        return hydrateMessages(listOf(message)).single()
+        return hydrateMessages(listOf(message), messageReactionRepository).single()
     }
-
-    private suspend fun hydrateMessages(messages: List<Message>): List<Message> {
-        if (messages.isEmpty()) {
-            return messages
-        }
-
-        val reactionsByMessageId = messageReactionRepository.listReactions(messages.map { it.id })
-            .groupBy { it.messageId }
-
-        return messages.map { message ->
-            message.copy(reactions = reactionsByMessageId[message.id].toReactionSummaries())
-        }
-    }
-}
-
-@OptIn(ExperimentalUuidApi::class)
-class MessagingQueryService(
-    private val workspaceRepository: WorkspaceRepository,
-    private val channelRepository: ChannelRepository,
-    private val messageRepository: MessageRepository,
-    private val messageReactionRepository: MessageReactionRepository,
-    private val mentionNotificationRepository: MentionNotificationRepository,
-    private val transactionRunner: TransactionRunner = ExposedTransactionRunner
-) {
-    suspend fun getWorkspace(workspaceId: Uuid): Workspace {
-        return transactional {
-            requireWorkspace(workspaceId)
-        }
-    }
-
-    suspend fun listWorkspaces(): List<Workspace> {
-        return transactional {
-            workspaceRepository.listWorkspaces()
-        }
-    }
-
-    suspend fun getWorkspaceBySlug(slug: String): Workspace {
-        return transactional {
-            val normalizedSlug = slug.trim()
-            if (normalizedSlug.isBlank()) {
-                throw DomainValidationException("workspace slug must not be blank")
-            }
-            workspaceRepository.findWorkspaceBySlug(normalizedSlug)
-                ?: throw NotFoundException("workspace not found")
-        }
-    }
-
-    suspend fun listMembers(workspaceId: Uuid): List<WorkspaceMember> {
-        return transactional {
-            requireWorkspace(workspaceId)
-            workspaceRepository.listMembers(workspaceId)
-        }
-    }
-
-    suspend fun listChannels(workspaceId: Uuid): List<Channel> {
-        return transactional {
-            requireWorkspace(workspaceId)
-            channelRepository.listChannels(workspaceId)
-        }
-    }
-
-    suspend fun listChannelMessages(channelId: Uuid, beforeMessageId: Uuid?, limit: Int): List<Message> {
-        return transactional {
-            if (limit !in 1..100) {
-                throw DomainValidationException("limit must be between 1 and 100")
-            }
-            hydrateMessages(messageRepository.listChannelMessages(channelId, beforeMessageId, limit))
-        }
-    }
-
-    suspend fun getThread(messageId: Uuid): Pair<Message, List<Message>> {
-        return transactional {
-            val target = messageRepository.findMessage(messageId)
-                ?: throw NotFoundException("message not found")
-            val root = target.threadRootMessageId?.let { messageRepository.findMessage(it) ?: throw NotFoundException("thread root not found") }
-                ?: target
-            val hydrated = hydrateMessages(listOf(root) + messageRepository.listThread(root.id))
-            hydrated.first() to hydrated.drop(1)
-        }
-    }
-
-    suspend fun listMemberNotifications(memberId: Uuid, unreadOnly: Boolean): List<MentionNotification> {
-        return transactional {
-            requireMember(memberId)
-            mentionNotificationRepository.listMemberNotifications(memberId, unreadOnly)
-        }
-    }
-
-    private suspend fun requireWorkspace(workspaceId: Uuid): Workspace {
-        return workspaceRepository.findWorkspace(workspaceId)
-            ?: throw NotFoundException("workspace not found")
-    }
-
-    private suspend fun requireMember(memberId: Uuid): WorkspaceMember {
-        return workspaceRepository.findMember(memberId)
-            ?: throw NotFoundException("member not found")
-    }
-
-    private suspend fun <T> transactional(block: suspend () -> T): T {
-        return transactionRunner.run(block)
-    }
-
-    private suspend fun hydrateMessages(messages: List<Message>): List<Message> {
-        if (messages.isEmpty()) {
-            return messages
-        }
-
-        val reactionsByMessageId = messageReactionRepository.listReactions(messages.map { it.id })
-            .groupBy { it.messageId }
-
-        return messages.map { message ->
-            message.copy(reactions = reactionsByMessageId[message.id].toReactionSummaries())
-        }
-    }
-}
-
-@OptIn(ExperimentalUuidApi::class)
-private fun List<MessageReaction>?.toReactionSummaries(): List<MessageReactionSummary> {
-    return this.orEmpty()
-        .groupBy { it.emoji }
-        .map { (emoji, reactions) ->
-            MessageReactionSummary(
-                emoji = emoji,
-                count = reactions.size,
-                memberIds = reactions.map { it.memberId }
-            )
-        }
-        .sortedWith(compareByDescending<MessageReactionSummary> { it.count }.thenBy { it.emoji })
-}
-
-private fun com.retheviper.chat.contract.LinkPreviewResponse.toDomain(): LinkPreview {
-    return LinkPreview(
-        url = url,
-        title = title,
-        description = description,
-        imageUrl = imageUrl,
-        siteName = siteName
-    )
 }

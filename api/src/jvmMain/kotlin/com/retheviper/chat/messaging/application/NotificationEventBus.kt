@@ -1,6 +1,7 @@
 package com.retheviper.chat.messaging.application
 
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlin.uuid.ExperimentalUuidApi
@@ -12,7 +13,11 @@ class NotificationEventBus {
 
     fun stream(memberId: Uuid): SharedFlow<Unit> =
         streams.computeIfAbsent(memberId) {
-            MutableSharedFlow(extraBufferCapacity = 32)
+            MutableSharedFlow(
+                replay = 0,
+                extraBufferCapacity = 1,
+                onBufferOverflow = BufferOverflow.DROP_OLDEST
+            )
         }
 
     fun publish(memberId: Uuid) {
@@ -20,6 +25,6 @@ class NotificationEventBus {
     }
 
     fun publish(memberIds: Iterable<Uuid>) {
-        memberIds.forEach(::publish)
+        memberIds.toSet().forEach(::publish)
     }
 }
