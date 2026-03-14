@@ -169,6 +169,59 @@ class MessagingUiModelTest : FunSpec({
         ids shouldContainExactly listOf("n-root", "n-reply-1", "n-reply-2")
     }
 
+    test("shouldLoadNotificationHistory loads full history only when needed") {
+        shouldLoadNotificationHistory(
+            centerView = WorkspaceCenterView.CHANNEL,
+            allNotifications = listOf(notification(id = "n-1", messageId = "m-1", threadRootMessageId = null))
+        ) shouldBe false
+
+        shouldLoadNotificationHistory(
+            centerView = WorkspaceCenterView.NOTIFICATIONS,
+            allNotifications = emptyList()
+        ) shouldBe true
+    }
+
+    test("applyNotificationRead removes unread notifications and marks history as read") {
+        val initial = NotificationRefreshState(
+            unreadNotifications = listOf(
+                notification(id = "n-1", messageId = "m-1", threadRootMessageId = null),
+                notification(id = "n-2", messageId = "m-2", threadRootMessageId = null)
+            ),
+            allNotifications = listOf(
+                notification(id = "n-1", messageId = "m-1", threadRootMessageId = null),
+                notification(id = "n-2", messageId = "m-2", threadRootMessageId = null)
+            )
+        )
+
+        val updated = applyNotificationRead(initial, setOf("n-1"))
+
+        updated.unreadNotifications.map { it.id } shouldContainExactly listOf("n-2")
+        updated.allNotifications.first { it.id == "n-1" }.readAt shouldBe "2026-03-14T00:00:00Z"
+    }
+
+    test("applyNotificationRead keeps existing read timestamp unchanged") {
+        val initial = NotificationRefreshState(
+            unreadNotifications = emptyList(),
+            allNotifications = listOf(
+                notification(id = "n-1", messageId = "m-1", threadRootMessageId = null).copy(readAt = "2026-03-14T01:00:00Z")
+            )
+        )
+
+        val updated = applyNotificationRead(initial, setOf("n-1"))
+
+        updated.allNotifications.single().readAt shouldBe "2026-03-14T01:00:00Z"
+    }
+
+    test("findNewUnreadNotifications returns only unseen notifications") {
+        val previous = listOf(notification(id = "n-1", messageId = "m-1", threadRootMessageId = null))
+        val latest = listOf(
+            notification(id = "n-1", messageId = "m-1", threadRootMessageId = null),
+            notification(id = "n-2", messageId = "m-2", threadRootMessageId = null)
+        )
+
+        findNewUnreadNotifications(previous, latest).map { it.id } shouldContainExactly listOf("n-2")
+    }
+
     test("planWorkspaceJoin returns existing member when user id already exists") {
         val existing = member(userId = "alice", displayName = "Alice")
 

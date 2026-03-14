@@ -117,6 +117,7 @@ internal fun WorkspaceScreen(
     onSaveProfile: () -> Unit
 ) {
     val palette = appPalette()
+    val mentionUserIds = remember(workspaceMembers) { workspaceMembers.mapTo(linkedSetOf()) { it.userId } }
     var createChannelDialogOpen by remember { mutableStateOf(false) }
     var reactionPickerTarget by remember { mutableStateOf<MessageResponse?>(null) }
     var editProfileDialogOpen by remember { mutableStateOf(false) }
@@ -148,7 +149,7 @@ internal fun WorkspaceScreen(
             Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(workspace?.name ?: "Workspace", style = MaterialTheme.typography.h5, color = palette.lightText)
+                        Text(workspace?.name ?: AppLabels.workspace, style = MaterialTheme.typography.h5, color = palette.lightText)
                         Card(
                             modifier = Modifier.clickable(onClick = onSwitchWorkspace),
                             shape = CircleShape,
@@ -162,13 +163,13 @@ internal fun WorkspaceScreen(
                     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), backgroundColor = palette.sidebarCard, elevation = 0.dp) {
                         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             SidebarMenuItem(
-                                label = "Notifications",
+                                label = AppLabels.notifications,
                                 badge = notificationCount,
                                 selected = centerView == WorkspaceCenterView.NOTIFICATIONS,
                                 onClick = onOpenNotifications
                             )
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Channels", color = palette.lightText, fontWeight = FontWeight.Bold)
+                                Text(AppLabels.channels, color = palette.lightText, fontWeight = FontWeight.Bold)
                                 Card(
                                     modifier = Modifier.clickable { createChannelDialogOpen = true },
                                     shape = RoundedCornerShape(12.dp),
@@ -202,10 +203,10 @@ internal fun WorkspaceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(currentMember?.displayName ?: "No member", color = palette.lightText, fontWeight = FontWeight.Bold)
+                            Text(currentMember?.displayName ?: AppLabels.noMember, color = palette.lightText, fontWeight = FontWeight.Bold)
                             Text(currentMember?.userId ?: "", color = palette.mutedText)
                         }
-                        Text("Edit", color = palette.accentSoft, fontWeight = FontWeight.SemiBold)
+                        Text(AppLabels.edit, color = palette.accentSoft, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -215,11 +216,11 @@ internal fun WorkspaceScreen(
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
                 Row(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text(channel?.let { "# ${it.slug}" } ?: "Choose a channel", style = MaterialTheme.typography.h5, color = palette.darkText)
-                        Text(channel?.topic ?: "Select a channel to start chatting.", color = palette.dimText)
+                        Text(channel?.let { "# ${it.slug}" } ?: AppLabels.chooseChannel, style = MaterialTheme.typography.h5, color = palette.darkText)
+                        Text(channel?.topic ?: AppLabels.selectChannelBody, color = palette.dimText)
                     }
                     Column {
-                        Text(currentMember?.displayName ?: "No member", fontWeight = FontWeight.Bold, color = palette.darkText)
+                        Text(currentMember?.displayName ?: AppLabels.noMember, fontWeight = FontWeight.Bold, color = palette.darkText)
                         Text(currentMember?.userId ?: "", color = palette.dimText)
                     }
                 }
@@ -231,13 +232,13 @@ internal fun WorkspaceScreen(
                         if (centerView == WorkspaceCenterView.NOTIFICATIONS) {
                             NotificationListPanel(notifications = allNotifications, onOpenNotification = onOpenNotificationItem)
                         } else if (channel == null) {
-                            EmptyConversationState("Open a channel", "Pick #general or another channel from the sidebar.")
+                            EmptyConversationState(AppLabels.openChannel, AppLabels.openChannelBody)
                         } else {
                             LazyColumn(state = messageListState, modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 if (hasOlderMessages) {
                                     item(key = "read-more") {
                                         OutlineActionButton(
-                                            text = if (loadingOlderMessages) "Loading..." else "Read more",
+                                            text = if (loadingOlderMessages) AppLabels.loading else AppLabels.readMore,
                                             onClick = onLoadOlderMessages,
                                             modifier = Modifier.fillMaxWidth(),
                                             contentColor = palette.accent
@@ -249,7 +250,7 @@ internal fun WorkspaceScreen(
                                         message = item,
                                         selected = selectedRootId == item.id || focusedMessageId == item.id,
                                         currentMemberId = currentMember?.id,
-                                        mentionUserIds = workspaceMembers.mapTo(linkedSetOf()) { it.userId },
+                                        mentionUserIds = mentionUserIds,
                                         onOpenThread = { onOpenThread(item) },
                                         onToggleReaction = { emoji -> onToggleReaction(item, emoji) },
                                         onOpenReactionPicker = { reactionPickerTarget = item }
@@ -276,6 +277,7 @@ internal fun WorkspaceScreen(
                     ) {
                         ThreadPane(
                             currentMember = currentMember,
+                            mentionUserIds = mentionUserIds,
                             workspaceMembers = workspaceMembers,
                             threadMessages = threadMessages,
                             listState = threadListState,
@@ -298,19 +300,19 @@ internal fun WorkspaceScreen(
     if (createChannelDialogOpen) {
         AlertDialog(
             onDismissRequest = { createChannelDialogOpen = false },
-            title = { Text("Create a channel", color = palette.darkText) },
+            title = { Text(AppLabels.createChannel, color = palette.darkText) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FormField("Slug", channelSlug, textColor = palette.darkText, onValueChange = onChannelSlugChange)
-                    FormField("Name", channelName, textColor = palette.darkText, onValueChange = onChannelNameChange)
-                    FormField("Topic", channelTopic, textColor = palette.darkText, onValueChange = onChannelTopicChange)
+                    FormField(AppLabels.slug, channelSlug, textColor = palette.darkText, onValueChange = onChannelSlugChange)
+                    FormField(AppLabels.name, channelName, textColor = palette.darkText, onValueChange = onChannelNameChange)
+                    FormField(AppLabels.topic, channelTopic, textColor = palette.darkText, onValueChange = onChannelTopicChange)
                 }
             },
             confirmButton = {
-                FilledActionButton("Create", onClick = { createChannelDialogOpen = false; onCreateChannel() })
+                FilledActionButton(AppLabels.create, onClick = { createChannelDialogOpen = false; onCreateChannel() })
             },
             dismissButton = {
-                OutlineActionButton("Cancel", onClick = { createChannelDialogOpen = false }, contentColor = palette.darkText)
+                OutlineActionButton(AppLabels.cancel, onClick = { createChannelDialogOpen = false }, contentColor = palette.darkText)
             },
             shape = RoundedCornerShape(24.dp),
             backgroundColor = palette.mainCard
@@ -320,19 +322,19 @@ internal fun WorkspaceScreen(
     if (editProfileDialogOpen) {
         AlertDialog(
             onDismissRequest = { editProfileDialogOpen = false },
-            title = { Text("Update profile", color = palette.darkText) },
+            title = { Text(AppLabels.updateProfile, color = palette.darkText) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FormField("Display name", profileDisplayName, textColor = palette.darkText, onValueChange = onProfileDisplayNameChange)
-                    currentMember?.userId?.let { userId -> Text("User ID: $userId", color = palette.dimText) }
+                    FormField(AppLabels.displayName, profileDisplayName, textColor = palette.darkText, onValueChange = onProfileDisplayNameChange)
+                    currentMember?.userId?.let { userId -> Text("${AppLabels.userId}: $userId", color = palette.dimText) }
                 }
             },
             confirmButton = {
-                FilledActionButton("Save", onClick = { editProfileDialogOpen = false; onSaveProfile() })
+                FilledActionButton(AppLabels.save, onClick = { editProfileDialogOpen = false; onSaveProfile() })
             },
             dismissButton = {
                 OutlineActionButton(
-                    "Cancel",
+                    AppLabels.cancel,
                     onClick = {
                         onProfileDisplayNameChange(currentMember?.displayName.orEmpty())
                         editProfileDialogOpen = false
@@ -359,6 +361,7 @@ internal fun WorkspaceScreen(
 @Composable
 internal fun ThreadPane(
     currentMember: WorkspaceMemberResponse?,
+    mentionUserIds: Set<String>,
     workspaceMembers: List<WorkspaceMemberResponse>,
     threadMessages: List<MessageResponse>,
     listState: LazyListState,
@@ -381,8 +384,8 @@ internal fun ThreadPane(
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Thread", style = MaterialTheme.typography.h6, color = palette.darkText)
-                Text("Close", color = palette.accent, modifier = Modifier.clickable(onClick = onCloseThread))
+                Text(AppLabels.thread, style = MaterialTheme.typography.h6, color = palette.darkText)
+                Text(AppLabels.close, color = palette.accent, modifier = Modifier.clickable(onClick = onCloseThread))
             }
             LazyColumn(state = listState, modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 itemsIndexed(threadMessages, key = { _, item -> item.id }) { index, item ->
@@ -400,7 +403,7 @@ internal fun ThreadPane(
                     ) {
                         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(item.authorDisplayName, fontWeight = FontWeight.Bold, color = palette.darkText)
-                            MessageBodyText(text = item.body, mentionUserIds = workspaceMembers.mapTo(linkedSetOf()) { it.userId })
+                            MessageBodyText(text = item.body, mentionUserIds = mentionUserIds)
                             item.linkPreview?.let { LinkPreviewCard(preview = it) }
                             ReactionBar(
                                 reactions = item.reactions,
@@ -420,8 +423,8 @@ internal fun ThreadPane(
                 onMessageBodyChange = onMessageBodyChange,
                 onDismissPreview = onDismissPreview,
                 onSend = onSend,
-                sendLabel = "Reply in thread",
-                placeholder = "Reply to this thread"
+                sendLabel = AppLabels.replyInThread,
+                placeholder = AppLabels.replyToThread
             )
         }
     }
@@ -437,10 +440,10 @@ internal suspend fun loadThread(
     runCatching { client.getThread(rootId) }
         .onSuccess {
             threadMessages.replaceWith(toThreadMessages(it))
-            updateStatus("Thread loaded")
+            updateStatus(AppStatus.threadLoaded)
         }
         .onFailure {
-            updateStatus(it.message ?: "Failed to load thread")
+            updateStatus(it.message ?: AppStatus.failedLoadThread)
         }
 }
 
@@ -474,7 +477,7 @@ internal fun SidebarChannelItem(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text("# ${channel.slug}", color = palette.lightText, fontWeight = FontWeight.SemiBold)
-                Text(channel.topic ?: "No topic", color = palette.mutedText)
+                Text(channel.topic ?: AppLabels.generalNoTopic, color = palette.mutedText)
             }
             if (mentionCount > 0) {
                 Card(shape = RoundedCornerShape(999.dp), backgroundColor = palette.accent, elevation = 0.dp) {
@@ -557,8 +560,8 @@ internal fun ComposerPanel(
     onDismissPreview: () -> Unit,
     onFocus: () -> Unit = {},
     onSend: () -> Unit,
-    sendLabel: String = "Send",
-    placeholder: String = "Message"
+    sendLabel: String = AppLabels.send,
+    placeholder: String = AppLabels.message
 ) {
     val palette = appPalette()
     val suggestions = suggestMentionCandidates(mentionCandidates, messageBody)
@@ -593,7 +596,7 @@ internal fun ComposerLinkPreviewCard(preview: LinkPreviewResponse, onDismiss: ()
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                if (!imageOnly) Text(preview.siteName ?: "Link preview", color = palette.darkText, fontWeight = FontWeight.SemiBold)
+                if (!imageOnly) Text(preview.siteName ?: AppLabels.linkPreview, color = palette.darkText, fontWeight = FontWeight.SemiBold)
                 else Spacer(modifier = Modifier.width(1.dp))
                 Text("x", color = palette.accent, modifier = Modifier.clickable(onClick = onDismiss))
             }
@@ -622,7 +625,7 @@ internal fun LinkPreviewImage(preview: LinkPreviewResponse) {
     Card(modifier = Modifier.fillMaxWidth().clickable { dialogOpen = true }, shape = RoundedCornerShape(12.dp), backgroundColor = palette.subtleSurface, elevation = 0.dp) {
         AsyncImage(
             model = previewImageProxyUrl(imageUrl),
-            contentDescription = preview.title ?: preview.siteName ?: "Link preview image",
+            contentDescription = preview.title ?: preview.siteName ?: AppLabels.linkPreviewImage,
             modifier = Modifier.fillMaxWidth().height(180.dp),
             contentScale = ContentScale.Crop
         )
@@ -645,12 +648,12 @@ internal fun ImageAssetDialog(imageUrl: String, title: String?, onDismiss: () ->
     val palette = appPalette()
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title ?: "Image", color = palette.darkText, fontWeight = FontWeight.Bold) },
+        title = { Text(title ?: AppDefaults.imageName, color = palette.darkText, fontWeight = FontWeight.Bold) },
         text = {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), backgroundColor = palette.overlayCard, elevation = 0.dp) {
                 AsyncImage(
                     model = previewImageProxyUrl(imageUrl),
-                    contentDescription = title ?: "Image preview",
+                    contentDescription = title ?: AppLabels.imagePreview,
                     modifier = Modifier.fillMaxWidth().height(320.dp),
                     contentScale = ContentScale.Fit
                 )
@@ -662,17 +665,17 @@ internal fun ImageAssetDialog(imageUrl: String, title: String?, onDismiss: () ->
                     onClick = { LinkAssetActions.copyText(imageUrl) },
                     colors = ButtonDefaults.buttonColors(backgroundColor = palette.mainCard, contentColor = palette.darkText),
                     elevation = null
-                ) { Text("Copy URL") }
+                ) { Text(AppLabels.copyUrl) }
                 Button(
                     onClick = { LinkAssetActions.saveRemoteFile(imageUrl, suggestedName = imageUrl.suggestedDownloadName()) },
                     colors = ButtonDefaults.buttonColors(backgroundColor = palette.accent, contentColor = Color.White),
                     elevation = null
-                ) { Text("Download") }
+                ) { Text(AppLabels.download) }
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(backgroundColor = palette.mainCard, contentColor = palette.darkText),
                     elevation = null
-                ) { Text("Close") }
+                ) { Text(AppLabels.close) }
             }
         }
     )
@@ -724,7 +727,7 @@ internal fun EmojiPickerDialog(onDismiss: () -> Unit, onSelect: (String) -> Unit
     val emojiFontFamily = rememberEmojiFontFamily()
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add reaction", color = palette.darkText) },
+        title = { Text(AppLabels.addReaction, color = palette.darkText) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 ReactionDefaults.chunked(3).forEach { row ->
@@ -747,7 +750,7 @@ internal fun EmojiPickerDialog(onDismiss: () -> Unit, onSelect: (String) -> Unit
             }
         },
         confirmButton = {},
-        dismissButton = { OutlineActionButton("Close", onClick = onDismiss, contentColor = palette.darkText) },
+        dismissButton = { OutlineActionButton(AppLabels.close, onClick = onDismiss, contentColor = palette.darkText) },
         shape = RoundedCornerShape(24.dp),
         backgroundColor = palette.mainCard
     )
@@ -760,7 +763,7 @@ internal fun NotificationListPanel(
 ) {
     val palette = appPalette()
     if (notifications.isEmpty()) {
-        EmptyConversationState("No notifications", "Mentions and thread replies will show up here.")
+        EmptyConversationState(AppLabels.noNotifications, AppLabels.noNotificationsBody)
         return
     }
     LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -784,7 +787,7 @@ internal fun NotificationListPanel(
 internal fun notificationTitle(notification: MentionNotificationResponse): String =
     when (notification.kind) {
         NotificationKind.MENTION -> notification.authorDisplayName
-        NotificationKind.THREAD_ACTIVITY -> "${notification.authorDisplayName} replied in a thread"
+        NotificationKind.THREAD_ACTIVITY -> AppStatus.notificationTitleThread(notification.authorDisplayName)
     }
 
 internal fun buildMessageAnnotatedText(text: String, mentionUserIds: Set<String>, palette: AppPalette) = buildAnnotatedString {
@@ -857,7 +860,7 @@ internal fun isImageOnlyPreview(preview: LinkPreviewResponse): Boolean {
 internal fun String.suggestedDownloadName(): String {
     val withoutQuery = substringBefore('?').substringBefore('#')
     val fileName = withoutQuery.substringAfterLast('/')
-    return fileName.ifBlank { "image" }
+    return fileName.ifBlank { AppDefaults.imageFallbackFileName }
 }
 
 @Composable

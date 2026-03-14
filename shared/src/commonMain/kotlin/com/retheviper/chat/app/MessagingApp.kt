@@ -34,6 +34,8 @@ import com.retheviper.chat.contract.NotificationKind
 import com.retheviper.chat.contract.UpdateWorkspaceMemberRequest
 import com.retheviper.chat.contract.WorkspaceMemberResponse
 import com.retheviper.chat.contract.WorkspaceResponse
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,7 +67,7 @@ fun MessagingApp(
     val appFontFamily = rememberAppFontFamily()
 
     var screen by remember { mutableStateOf(AppScreen.LANDING) }
-    var status by remember { mutableStateOf("Choose a workspace or create one.") }
+    var status by remember { mutableStateOf(AppDefaults.initialStatus) }
     val workspaces = remember { mutableStateListOf<WorkspaceResponse>() }
     var workspace by remember { mutableStateOf<WorkspaceResponse?>(null) }
     var currentMember by remember { mutableStateOf<WorkspaceMemberResponse?>(null) }
@@ -87,17 +89,17 @@ fun MessagingApp(
     var loadingOlderMessages by remember { mutableStateOf(false) }
     var scrollToLatestOnNextSnapshot by remember { mutableStateOf(false) }
 
-    var createWorkspaceSlug by remember { mutableStateOf("acme") }
-    var createWorkspaceName by remember { mutableStateOf("Acme Product") }
-    var createOwnerUserId by remember { mutableStateOf("alice") }
-    var createOwnerDisplayName by remember { mutableStateOf("Alice") }
+    var createWorkspaceSlug by remember { mutableStateOf(AppDefaults.workspaceSlug) }
+    var createWorkspaceName by remember { mutableStateOf(AppDefaults.workspaceName) }
+    var createOwnerUserId by remember { mutableStateOf(AppDefaults.ownerUserId) }
+    var createOwnerDisplayName by remember { mutableStateOf(AppDefaults.ownerDisplayName) }
 
-    var joinUserId by remember { mutableStateOf("bob") }
-    var joinDisplayName by remember { mutableStateOf("Bob") }
+    var joinUserId by remember { mutableStateOf(AppDefaults.memberUserId) }
+    var joinDisplayName by remember { mutableStateOf(AppDefaults.memberDisplayName) }
 
-    var channelSlug by remember { mutableStateOf("design") }
-    var channelName by remember { mutableStateOf("design") }
-    var channelTopic by remember { mutableStateOf("Work in progress and design reviews") }
+    var channelSlug by remember { mutableStateOf(AppDefaults.channelSlug) }
+    var channelName by remember { mutableStateOf(AppDefaults.channelName) }
+    var channelTopic by remember { mutableStateOf(AppDefaults.channelTopic) }
 
     var messageBody by remember { mutableStateOf("") }
     var threadMessageBody by remember { mutableStateOf("") }
@@ -105,7 +107,7 @@ fun MessagingApp(
     var threadLinkPreview by remember { mutableStateOf<LinkPreviewResponse?>(null) }
     var dismissedMessagePreviewUrl by remember { mutableStateOf<String?>(null) }
     var dismissedThreadPreviewUrl by remember { mutableStateOf<String?>(null) }
-    var profileDisplayName by remember { mutableStateOf("Bob") }
+    var profileDisplayName by remember { mutableStateOf(AppDefaults.memberDisplayName) }
 
     suspend fun refreshWorkspaceList() {
         workspaces.replaceWith(client.listWorkspaces())
@@ -162,7 +164,7 @@ fun MessagingApp(
         dismissedThreadPreviewUrl = null
         disconnectChatAsync()
         disconnectNotificationStreamAsync()
-        status = "Choose a workspace or create one."
+        status = AppDefaults.initialStatus
     }
 
     suspend fun resolvePreviewForBody(
@@ -201,13 +203,21 @@ fun MessagingApp(
 
     suspend fun refreshNotifications(showToast: Boolean) {
         val member = currentMember ?: return
-        val latest = client.listNotifications(member.id, unreadOnly = true)
-        val latestAll = client.listNotifications(member.id, unreadOnly = false)
-        val previousUnreadIds = unreadNotifications.mapTo(linkedSetOf()) { it.id }
+        val previousUnread = unreadNotifications.toList()
+        val includeHistory = shouldLoadNotificationHistory(centerView, allNotifications)
+        val (latest, latestAll) = coroutineScope {
+            val unreadDeferred = async { client.listNotifications(member.id, unreadOnly = true) }
+            val allDeferred = if (includeHistory) {
+                async { client.listNotifications(member.id, unreadOnly = false) }
+            } else {
+                null
+            }
+            unreadDeferred.await() to (allDeferred?.await() ?: allNotifications.toList())
+        }
         unreadNotifications.replaceWith(latest)
         allNotifications.replaceWith(latestAll)
         if (showToast) {
-            val newUnread = latest.filter { it.id !in previousUnreadIds }
+            val newUnread = findNewUnreadNotifications(previousUnread, latest)
             if (newUnread.isNotEmpty()) {
                 newUnread.take(3).forEach { notification ->
                     enqueueToast(
@@ -229,11 +239,20 @@ fun MessagingApp(
     suspend fun markNotificationsRead(notificationIds: List<String>) {
         val member = currentMember ?: return
         if (notificationIds.isEmpty()) return
+        val readIds = notificationIds.toHashSet()
         runCatching {
             client.markNotificationsRead(member.id, notificationIds)
-            refreshNotifications(showToast = false)
+            val updated = applyNotificationRead(
+                current = NotificationRefreshState(
+                    unreadNotifications = unreadNotifications.toList(),
+                    allNotifications = allNotifications.toList()
+                ),
+                readIds = readIds
+            )
+            unreadNotifications.replaceWith(updated.unreadNotifications)
+            allNotifications.replaceWith(updated.allNotifications)
         }.onFailure {
-            status = it.message ?: "Failed to update notifications"
+            status = it.message ?: AppStatus.failedUpdateNotifications
         }
     }
 
@@ -244,7 +263,7 @@ fun MessagingApp(
         workspaceMembers.replaceWith(workspaceMembers.map { existing -> if (existing.id == updated.id) updated else existing })
         if (joinUserId == updated.userId) joinDisplayName = updated.displayName
         profileDisplayName = updated.displayName
-        status = "Profile updated"
+        status = AppStatus.profileUpdated
     }
 
     suspend fun connectChannel(targetChannel: ChannelResponse) {
@@ -265,7 +284,7 @@ fun MessagingApp(
         focusedMessageId = null
         focusedThreadMessageId = null
         disconnectChat()
-        status = "Connecting #${targetChannel.slug}..."
+        status = AppStatus.connectingChannel(targetChannel.slug)
 
         runCatching {
             val session = client.openChat(targetChannel.id)
@@ -311,7 +330,7 @@ fun MessagingApp(
                                         refreshNotifications(showToast = true)
                                     }
                                 }
-                                ChatEventType.ERROR -> status = event.error?.message ?: "Socket error"
+                                ChatEventType.ERROR -> status = event.error?.message ?: AppStatus.socketError
                             }
                         }
                     }
@@ -322,9 +341,9 @@ fun MessagingApp(
         }.onSuccess {
             val unreadIds = unreadNotifications.filter { it.channelId == targetChannel.id }.map { it.id }
             markNotificationsRead(unreadIds)
-            status = "#${targetChannel.slug} connected"
+            status = AppStatus.channelConnected(targetChannel.slug)
         }.onFailure {
-            status = it.message ?: "Channel connection failed"
+            status = it.message ?: AppStatus.channelConnectionFailed
         }
     }
 
@@ -348,7 +367,7 @@ fun MessagingApp(
         refreshWorkspaceContext(targetWorkspace)
         screen = if (member == null) AppScreen.JOIN_WORKSPACE else AppScreen.WORKSPACE
         centerView = WorkspaceCenterView.CHANNEL
-        status = if (member == null) "Sign in with an existing member or create a new profile." else "Workspace opened"
+        status = if (member == null) AppStatus.signInPrompt else AppStatus.workspaceOpened
         if (member != null) {
             refreshNotifications(showToast = false)
             workspaceChannels.firstOrNull()?.let { connectChannel(it) }
@@ -389,13 +408,13 @@ fun MessagingApp(
             if (olderMessages.isNotEmpty()) messages.replaceWith(olderMessages + messages)
             hasOlderMessages = olderMessages.size >= 50
         }.onFailure {
-            status = it.message ?: "Failed to load older messages"
+            status = it.message ?: AppStatus.failedLoadOlderMessages
         }
         loadingOlderMessages = false
     }
 
     LaunchedEffect(Unit) {
-        runCatching { refreshWorkspaceList() }.onFailure { status = it.message ?: "Failed to load workspaces" }
+        runCatching { refreshWorkspaceList() }.onFailure { status = it.message ?: AppStatus.failedLoadWorkspaces }
     }
 
     DisposableEffect(Unit) {
@@ -417,12 +436,12 @@ fun MessagingApp(
                 onNotificationSignal = {
                     scope.launch {
                         runCatching { refreshNotifications(showToast = true) }
-                            .onFailure { status = it.message ?: "Failed to refresh notifications" }
+                            .onFailure { status = it.message ?: AppStatus.failedRefreshNotifications }
                     }
                 },
                 onFailure = {
                     scope.launch {
-                        status = it.message ?: "Notification stream disconnected"
+                        status = it.message ?: AppStatus.notificationStreamDisconnected
                     }
                 }
             )
@@ -441,12 +460,12 @@ fun MessagingApp(
         }
         if (notificationStreamHandle != null) {
             runCatching { refreshNotifications(showToast = false) }
-                .onFailure { status = it.message ?: "Failed to load notifications" }
+                .onFailure { status = it.message ?: AppStatus.failedLoadNotifications }
             return@LaunchedEffect
         }
         while (true) {
             runCatching { refreshNotifications(showToast = true) }
-                .onFailure { status = it.message ?: "Failed to load notifications" }
+                .onFailure { status = it.message ?: AppStatus.failedLoadNotifications }
             delay(5000)
         }
     }
@@ -491,7 +510,7 @@ fun MessagingApp(
                         onOpenWorkspace = { target -> scope.launch { openWorkspace(target, member = null) } },
                         onCreateWorkspace = {
                             scope.launch {
-                                status = "Creating workspace..."
+                                status = AppStatus.creatingWorkspace
                                 runCatching {
                                     client.createWorkspace(
                                         CreateWorkspaceRequest(
@@ -505,9 +524,9 @@ fun MessagingApp(
                                     refreshWorkspaceList()
                                     val owner = client.listWorkspaceMembers(created.id).firstOrNull { it.id == created.ownerMemberId }
                                     openWorkspace(created, owner)
-                                    status = "Workspace created with #general"
+                                    status = AppStatus.workspaceCreated
                                 }.onFailure {
-                                    status = it.message ?: "Workspace creation failed"
+                                    status = it.message ?: AppStatus.workspaceCreateFailed
                                 }
                             }
                         }
@@ -528,7 +547,7 @@ fun MessagingApp(
                                 workspaceMembers.clear()
                                 workspaceChannels.clear()
                                 screen = AppScreen.LANDING
-                                status = "Choose a workspace or create one."
+                                status = AppDefaults.initialStatus
                             }
                         },
                         onJoin = {
@@ -539,11 +558,11 @@ fun MessagingApp(
                                     currentMember = member
                                     profileDisplayName = member.displayName
                                     screen = AppScreen.WORKSPACE
-                                    status = "Signed in as ${member.displayName}"
+                                    status = AppStatus.signedInAs(member.displayName)
                                     workspaceChannels.firstOrNull()?.let { connectChannel(it) }
                                     return@launch
                                 }
-                                status = "Creating member profile..."
+                                status = AppStatus.creatingMemberProfile
                                 runCatching {
                                     client.addWorkspaceMember(targetWorkspace.id, requireNotNull(joinPlan.createRequest))
                                 }.onSuccess { member ->
@@ -551,10 +570,10 @@ fun MessagingApp(
                                     profileDisplayName = member.displayName
                                     refreshWorkspaceContext(targetWorkspace)
                                     screen = AppScreen.WORKSPACE
-                                    status = "Joined as ${member.displayName}"
+                                    status = AppStatus.joinedAs(member.displayName)
                                     workspaceChannels.firstOrNull()?.let { connectChannel(it) }
                                 }.onFailure {
-                                    status = it.message ?: "Join failed"
+                                    status = it.message ?: AppStatus.joinFailed
                                 }
                             }
                         },
@@ -563,7 +582,7 @@ fun MessagingApp(
                                 currentMember = member
                                 profileDisplayName = member.displayName
                                 screen = AppScreen.WORKSPACE
-                                status = "Signed in as ${member.displayName}"
+                                status = AppStatus.signedInAs(member.displayName)
                                 workspaceChannels.firstOrNull()?.let { connectChannel(it) }
                             }
                         }
@@ -635,7 +654,7 @@ fun MessagingApp(
                             scope.launch { runCatching { disconnectChat() } }
                             scope.launch {
                                 runCatching { refreshWorkspaceList() }
-                                    .onFailure { status = it.message ?: "Failed to load workspaces" }
+                                    .onFailure { status = it.message ?: AppStatus.failedLoadWorkspaces }
                             }
                         },
                         onOpenChannel = { target -> scope.launch { connectChannel(target) } },
@@ -664,7 +683,7 @@ fun MessagingApp(
                             val targetWorkspace = workspace ?: return@WorkspaceScreen
                             val member = currentMember ?: return@WorkspaceScreen
                             scope.launch {
-                                status = "Creating channel..."
+                                status = AppStatus.creatingChannel
                                 runCatching {
                                     client.createChannel(
                                         targetWorkspace.id,
@@ -680,7 +699,7 @@ fun MessagingApp(
                                     refreshWorkspaceContext(targetWorkspace)
                                     connectChannel(it)
                                 }.onFailure {
-                                    status = it.message ?: "Channel creation failed"
+                                    status = it.message ?: AppStatus.channelCreateFailed
                                 }
                             }
                         },
@@ -715,7 +734,7 @@ fun MessagingApp(
                                             emoji = emoji
                                         )
                                     )
-                                }.onFailure { status = it.message ?: "Reaction failed" }
+                                }.onFailure { status = it.message ?: AppStatus.reactionFailed }
                             }
                         },
                         onSendChannelMessage = {
@@ -733,8 +752,8 @@ fun MessagingApp(
                                         messageBody = ""
                                         messageLinkPreview = null
                                         dismissedMessagePreviewUrl = null
-                                        status = "Message sent"
-                                    }.onFailure { status = it.message ?: "Send failed" }
+                                        status = AppStatus.messageSent
+                                    }.onFailure { status = it.message ?: AppStatus.sendFailed }
                             }
                         },
                         onSendThreadMessage = {
@@ -753,15 +772,15 @@ fun MessagingApp(
                                         threadMessageBody = ""
                                         threadLinkPreview = null
                                         dismissedThreadPreviewUrl = null
-                                        status = "Reply sent"
-                                    }.onFailure { status = it.message ?: "Reply failed" }
+                                        status = AppStatus.replySent
+                                    }.onFailure { status = it.message ?: AppStatus.replyFailed }
                             }
                         },
                         onProfileDisplayNameChange = { profileDisplayName = it },
                         onSaveProfile = {
                             scope.launch {
                                 runCatching { updateCurrentMemberDisplayName(profileDisplayName) }
-                                    .onFailure { status = it.message ?: "Profile update failed" }
+                                    .onFailure { status = it.message ?: AppStatus.profileUpdateFailed }
                             }
                         }
                     )

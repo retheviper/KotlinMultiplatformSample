@@ -25,6 +25,11 @@ data class ChatFeedState(
     val messages: List<MessageResponse> = emptyList()
 )
 
+internal data class NotificationRefreshState(
+    val unreadNotifications: List<MentionNotificationResponse> = emptyList(),
+    val allNotifications: List<MentionNotificationResponse> = emptyList()
+)
+
 fun reduceChatFeed(current: ChatFeedState, event: ChatEvent): ChatFeedState {
     val nextMessages = when (event.type) {
         ChatEventType.SNAPSHOT -> event.messages
@@ -104,6 +109,41 @@ fun threadNotificationIdsToMarkRead(
         .filter { it.threadRootMessageId == rootMessageId || it.messageId == rootMessageId }
         .map { it.id }
         .toList()
+}
+
+internal fun shouldLoadNotificationHistory(
+    centerView: WorkspaceCenterView,
+    allNotifications: List<MentionNotificationResponse>
+): Boolean {
+    return centerView == WorkspaceCenterView.NOTIFICATIONS || allNotifications.isEmpty()
+}
+
+internal fun applyNotificationRead(
+    current: NotificationRefreshState,
+    readIds: Set<String>
+): NotificationRefreshState {
+    if (readIds.isEmpty()) {
+        return current
+    }
+
+    return NotificationRefreshState(
+        unreadNotifications = current.unreadNotifications.filterNot { it.id in readIds },
+        allNotifications = current.allNotifications.map { notification ->
+            if (notification.id in readIds && notification.readAt == null) {
+                notification.copy(readAt = notification.createdAt)
+            } else {
+                notification
+            }
+        }
+    )
+}
+
+internal fun findNewUnreadNotifications(
+    previousUnreadNotifications: List<MentionNotificationResponse>,
+    latestUnreadNotifications: List<MentionNotificationResponse>
+): List<MentionNotificationResponse> {
+    val previousUnreadIds = previousUnreadNotifications.mapTo(linkedSetOf()) { it.id }
+    return latestUnreadNotifications.filter { it.id !in previousUnreadIds }
 }
 
 fun findActiveMention(text: String): MentionDraft? {

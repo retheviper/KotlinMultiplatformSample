@@ -47,13 +47,13 @@ final class ChatStore: ObservableObject {
     @Published var composerPreview: LinkPreviewResponse?
     @Published var threadComposerPreview: LinkPreviewResponse?
 
-    private var client: APIClient
-    private var webSocket: URLSessionWebSocketTask?
-    private var receiveTask: Task<Void, Never>?
-    private var connectedChannelId: String?
-    private var notificationStreamTask: Task<Void, Never>?
-    private var notificationStreamMemberId: String?
-    private var seenUnreadNotificationIds = Set<String>()
+    var client: APIClient
+    var webSocket: URLSessionWebSocketTask?
+    var receiveTask: Task<Void, Never>?
+    var connectedChannelId: String?
+    var notificationStreamTask: Task<Void, Never>?
+    var notificationStreamMemberId: String?
+    var seenUnreadNotificationIds = Set<String>()
 
     init(baseURLString: String) {
         self.baseURLString = baseURLString
@@ -336,7 +336,7 @@ final class ChatStore: ObservableObject {
         screen = .landing
     }
 
-    private func enterInitialChannel() async throws {
+    func enterInitialChannel() async throws {
         if channels.isEmpty, let workspace = selectedWorkspace {
             channels = try await client.listChannels(workspaceId: workspace.id)
         }
@@ -345,117 +345,22 @@ final class ChatStore: ObservableObject {
         }
     }
 
-    private func resolvePreview(text: String) async -> LinkPreviewResponse? {
+    func resolvePreview(text: String) async -> LinkPreviewResponse? {
         guard let url = firstURL(in: text) else { return nil }
         return try? await client.resolveLinkPreview(url: url)
     }
 
-    private func firstURL(in text: String) -> String? {
+    func firstURL(in text: String) -> String? {
         let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         return detector?.matches(in: text, range: range).first?.url?.absoluteString
     }
 
-    private func refreshNotifications(unreadOnly: Bool) async throws {
-        guard let member = selectedMember else { return }
-        notifications = try await client.listNotifications(memberId: member.id, unreadOnly: unreadOnly)
-        let unread = try await client.listNotifications(memberId: member.id, unreadOnly: true)
-        let snapshot = deriveNotificationSnapshot(
-            unreadNotifications: unread,
-            previousSeenUnreadNotificationIds: seenUnreadNotificationIds,
-            existingToasts: toastNotifications,
-            showingNotifications: showingNotifications,
-            selectedChannelId: selectedChannel?.id,
-            selectedThreadRootId: threadRoot?.id
-        )
-        unreadNotificationCount = snapshot.unreadCount
-        channelUnreadCounts = snapshot.channelUnreadCounts
-        toastNotifications = snapshot.toastNotifications
-        let newUnread = unread.filter { !seenUnreadNotificationIds.contains($0.id) && snapshot.toastNotifications.contains($0) }
-        if !newUnread.isEmpty {
-            newUnread.forEach { notification in
-                NotificationManager.shared.show(notification: notification)
-                Task { [weak self] in
-                    try? await Task.sleep(nanoseconds: 4_000_000_000)
-                    await MainActor.run {
-                        self?.dismissToast(notification.id)
-                    }
-                }
-            }
-        }
-        seenUnreadNotificationIds = snapshot.seenUnreadNotificationIds
-        NotificationManager.shared.updateBadge(count: unreadNotificationCount)
-    }
-
-    private func refreshClient() {
+    func refreshClient() {
         client = APIClient(baseURL: Self.normalizeBaseURL(baseURLString))
     }
 
-    private func startNotificationStreamIfNeeded() {
-        guard screen == .workspace, let member = selectedMember else {
-            stopNotificationStream()
-            return
-        }
-        if notificationStreamMemberId == member.id, notificationStreamTask != nil {
-            return
-        }
-
-        stopNotificationStream()
-
-        do {
-            let request = try client.notificationStreamRequest(memberId: member.id)
-            notificationStreamMemberId = member.id
-            notificationStreamTask = Task { [weak self] in
-                do {
-                    try await Self.consumeNotificationStream(request: request) { [weak self] in
-                        guard let self else { return }
-                        await self.handleNotificationSignal()
-                    }
-                } catch is CancellationError {
-                    // Ignore cancellation while switching sessions or screens.
-                } catch {
-                    guard let self else { return }
-                    await self.handleNotificationStreamFailure(error)
-                }
-            }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func stopNotificationStream() {
-        notificationStreamTask?.cancel()
-        notificationStreamTask = nil
-        notificationStreamMemberId = nil
-    }
-
-    private func handleNotificationSignal() async {
-        do {
-            try await refreshVisibleNotifications()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func handleNotificationStreamFailure(_ error: Error) async {
-        _ = error
-        if Task.isCancelled {
-            return
-        }
-        notificationStreamTask = nil
-        notificationStreamMemberId = nil
-        do {
-            try await refreshVisibleNotifications()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func refreshVisibleNotifications() async throws {
-        try await refreshNotifications(unreadOnly: !showingNotifications)
-    }
-
-    private func perform(_ work: @escaping () async throws -> Void) async {
+    func perform(_ work: @escaping () async throws -> Void) async {
         isLoading = true
         errorMessage = nil
         do {
@@ -468,187 +373,10 @@ final class ChatStore: ObservableObject {
         isLoading = false
     }
 
-    private func connectWebSocket(channelId: String) async throws {
-        disconnectWebSocket()
-        let socket = URLSession.shared.webSocketTask(with: client.webSocketURL(channelId: channelId))
-        socket.resume()
-        webSocket = socket
-        connectedChannelId = channelId
-        receiveTask = Task { [weak self] in
-            await self?.receiveLoop(socket: socket)
-        }
-        try await sendRaw(ChatCommand(type: .loadRecent, authorMemberId: nil, body: nil, linkPreview: nil, parentMessageId: nil, messageId: nil, emoji: nil, limit: 50))
-    }
-
-    private func disconnectWebSocket() {
-        receiveTask?.cancel()
-        receiveTask = nil
-        webSocket?.cancel(with: .goingAway, reason: nil)
-        webSocket = nil
-        connectedChannelId = nil
-    }
-
-    private func send(_ command: ChatCommand) async {
-        do {
-            try await ensureSocketConnectedForSelectedChannel()
-            try await sendRaw(command)
-        } catch {
-            do {
-                try await reconnectSelectedChannelSocket()
-                try await sendRaw(command)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-
-    private func sendRaw(_ command: ChatCommand) async throws {
-        guard let webSocket else {
-            throw ApiErrorResponse(code: "socket_not_connected", message: "Socket is not connected")
-        }
-        let payload = String(decoding: try JSONEncoder().encode(command), as: UTF8.self)
-        try await webSocket.send(.string(payload))
-    }
-
-    private func ensureSocketConnectedForSelectedChannel() async throws {
-        guard let channel = selectedChannel else { return }
-        if webSocket == nil || connectedChannelId != channel.id {
-            try await connectWebSocket(channelId: channel.id)
-        }
-    }
-
-    private func reconnectSelectedChannelSocket() async throws {
-        guard let channel = selectedChannel else {
-            throw ApiErrorResponse(code: "socket_not_connected", message: "Socket is not connected")
-        }
-        try await connectWebSocket(channelId: channel.id)
-    }
-
-    private func receiveLoop(socket: URLSessionWebSocketTask) async {
-        while !Task.isCancelled {
-            do {
-                let message = try await socket.receive()
-                let data: Data
-                switch message {
-                case .data(let payload):
-                    data = payload
-                case .string(let text):
-                    data = Data(text.utf8)
-                @unknown default:
-                    continue
-                }
-                let event = try JSONDecoder().decode(ChatEvent.self, from: data)
-                apply(event: event)
-                if selectedMember != nil {
-                    try? await refreshVisibleNotifications()
-                }
-            } catch {
-                if !Task.isCancelled {
-                    if webSocket === socket {
-                        webSocket = nil
-                        connectedChannelId = nil
-                    }
-                    errorMessage = error.localizedDescription
-                }
-                break
-            }
-        }
-    }
-
-    private func apply(event: ChatEvent) {
-        switch event.type {
-        case .snapshot:
-            messages = event.messages
-        case .messagePosted:
-            guard let message = event.message else { return }
-            messages.append(message)
-        case .replyPosted:
-            guard let message = event.message else { return }
-            if threadRoot?.id == message.threadRootMessageId {
-                threadReplies.append(message)
-            }
-            if let rootId = message.threadRootMessageId,
-               let index = messages.firstIndex(where: { $0.id == rootId }) {
-                let root = messages[index]
-                messages[index] = MessageResponse(
-                    id: root.id,
-                    channelId: root.channelId,
-                    authorMemberId: root.authorMemberId,
-                    authorDisplayName: root.authorDisplayName,
-                    body: root.body,
-                    linkPreview: root.linkPreview,
-                    threadRootMessageId: root.threadRootMessageId,
-                    threadReplyCount: root.threadReplyCount + 1,
-                    reactions: root.reactions,
-                    createdAt: root.createdAt
-                )
-            }
-        case .reactionUpdated:
-            guard let updated = event.message else { return }
-            if let index = messages.firstIndex(where: { $0.id == updated.id }) {
-                messages[index] = updated
-            }
-            if threadRoot?.id == updated.id {
-                threadRoot = updated
-            }
-            if let index = threadReplies.firstIndex(where: { $0.id == updated.id }) {
-                threadReplies[index] = updated
-            }
-        case .error:
-            errorMessage = event.error?.message ?? "WebSocket error"
-        }
-    }
-
     private static func normalizeBaseURL(_ raw: String) -> URL {
         if raw.contains("://"), let url = URL(string: raw) {
             return url
         }
         return URL(string: "http://\(raw)") ?? URL(string: "http://localhost:8080")!
-    }
-
-    private func markChannelNotificationsRead(channelId: String) async throws {
-        guard let member = selectedMember else { return }
-        let ids = notifications.filter { $0.channelId == channelId && $0.threadRootMessageId == nil }.map(\.id)
-        guard !ids.isEmpty else { return }
-        try await client.markNotificationsRead(memberId: member.id, ids: ids)
-        try await refreshVisibleNotifications()
-    }
-
-    private func markThreadNotificationsRead(rootMessageId: String) async throws {
-        guard let member = selectedMember else { return }
-        let ids = notifications.filter {
-            $0.threadRootMessageId == rootMessageId || $0.messageId == rootMessageId
-        }.map(\.id)
-        guard !ids.isEmpty else { return }
-        try await client.markNotificationsRead(memberId: member.id, ids: ids)
-        try await refreshVisibleNotifications()
-    }
-
-    private nonisolated static func consumeNotificationStream(
-        request: URLRequest,
-        onSignal: @escaping @Sendable () async -> Void
-    ) async throws {
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
-        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
-        guard (200..<300).contains(statusCode) else {
-            throw ApiErrorResponse(code: "http_\(statusCode)", message: "Notification stream request failed.")
-        }
-
-        var initialized = false
-        for try await line in bytes.lines {
-            if Task.isCancelled {
-                break
-            }
-            switch notificationStreamLineResult(for: line, initialized: initialized) {
-            case .ignore:
-                continue
-            case .initializeOnly:
-                initialized = true
-                continue
-            case .signal:
-                initialized = true
-                await onSignal()
-            }
-        }
     }
 }

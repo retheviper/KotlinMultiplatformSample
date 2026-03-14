@@ -157,19 +157,19 @@ internal fun buildWindowTitle(
     centerView: WorkspaceCenterView
 ): String {
     return when (screen) {
-        AppScreen.LANDING -> "Chat Desktop"
-        AppScreen.JOIN_WORKSPACE -> listOfNotNull(workspaceName, "Join").joinToString(" • ").ifBlank { "Chat Desktop" }
+        AppScreen.LANDING -> AppDefaults.appTitle
+        AppScreen.JOIN_WORKSPACE -> listOfNotNull(workspaceName, AppLabels.join).joinToString(" • ").ifBlank { AppDefaults.appTitle }
         AppScreen.WORKSPACE -> when (centerView) {
             WorkspaceCenterView.CHANNEL -> listOfNotNull(
                 channelName?.let { "#$it" },
                 workspaceName,
                 memberDisplayName
-            ).joinToString(" • ").ifBlank { "Chat Desktop" }
+            ).joinToString(" • ").ifBlank { AppDefaults.appTitle }
             WorkspaceCenterView.NOTIFICATIONS -> listOfNotNull(
-                "Notifications",
+                AppLabels.notifications,
                 workspaceName,
                 memberDisplayName
-            ).joinToString(" • ").ifBlank { "Chat Desktop" }
+            ).joinToString(" • ").ifBlank { AppDefaults.appTitle }
         }
     }
 }

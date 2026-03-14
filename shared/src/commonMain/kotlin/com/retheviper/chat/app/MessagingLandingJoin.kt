@@ -65,7 +65,7 @@ internal fun LandingScreen(
                 modifier = Modifier.fillMaxSize().padding(28.dp),
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
-                Text("Chat Workspace", style = MaterialTheme.typography.h3, color = palette.lightText)
+                Text(AppLabels.chatWorkspace, style = MaterialTheme.typography.h3, color = palette.lightText)
                 Text(status, color = palette.mutedText)
                 Row(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -73,12 +73,12 @@ internal fun LandingScreen(
                 ) {
                     SplitPanelCard(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        title = "Join",
-                        subtitle = "Choose an existing workspace",
+                        title = AppLabels.join,
+                        subtitle = AppLabels.joinSubtitle,
                         dark = true
                     ) {
                         if (workspaces.isEmpty()) {
-                            EmptyConversationState("No workspaces yet", "Create the first one to get started.")
+                            EmptyConversationState(AppLabels.noWorkspaces, AppLabels.noWorkspacesBody)
                         } else {
                             LazyColumn(
                                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -100,16 +100,16 @@ internal fun LandingScreen(
 
                     SplitPanelCard(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        title = "Create",
-                        subtitle = "A #general channel is created automatically.",
+                        title = AppLabels.create,
+                        subtitle = AppLabels.createWorkspaceSubtitle,
                         dark = false
                     ) {
-                        FormField("Workspace slug", workspaceSlug, textColor = palette.darkText, onValueChange = onWorkspaceSlugChange)
-                        FormField("Workspace name", workspaceName, textColor = palette.darkText, onValueChange = onWorkspaceNameChange)
-                        FormField("Owner user id", ownerUserId, textColor = palette.darkText, onValueChange = onOwnerUserIdChange)
-                        FormField("Owner display name", ownerDisplayName, textColor = palette.darkText, onValueChange = onOwnerDisplayNameChange)
+                        FormField(AppLabels.workspaceSlugField, workspaceSlug, textColor = palette.darkText, onValueChange = onWorkspaceSlugChange)
+                        FormField(AppLabels.workspaceNameField, workspaceName, textColor = palette.darkText, onValueChange = onWorkspaceNameChange)
+                        FormField(AppLabels.ownerUserIdField, ownerUserId, textColor = palette.darkText, onValueChange = onOwnerUserIdChange)
+                        FormField(AppLabels.ownerDisplayNameField, ownerDisplayName, textColor = palette.darkText, onValueChange = onOwnerDisplayNameChange)
                         Spacer(modifier = Modifier.weight(1f))
-                        FilledActionButton("Create workspace", onCreateWorkspace, modifier = Modifier.fillMaxWidth())
+                        FilledActionButton(AppLabels.createWorkspace, onCreateWorkspace, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -150,10 +150,10 @@ internal fun JoinWorkspaceScreen(
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
                 SplitPanelHeader(
-                    title = "Join ${workspace?.name ?: "workspace"}",
+                    title = AppStatus.joinWorkspaceTitle(workspace?.name),
                     subtitle = status,
                     dark = false,
-                    backLabel = "Back",
+                    backLabel = AppLabels.back,
                     onBack = onBack
                 )
                 Row(
@@ -162,12 +162,12 @@ internal fun JoinWorkspaceScreen(
                 ) {
                     SplitPanelCard(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        title = "Select",
-                        subtitle = "Continue as an existing member",
+                        title = AppLabels.select,
+                        subtitle = AppLabels.selectMemberSubtitle,
                         dark = true
                     ) {
                         if (existingMembers.isEmpty()) {
-                            EmptyConversationState("No members yet", "Create the first member profile on the right.")
+                            EmptyConversationState(AppLabels.noMembers, AppLabels.noMembersBody)
                         } else {
                             LazyColumn(
                                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -188,7 +188,7 @@ internal fun JoinWorkspaceScreen(
                                                 Text(member.displayName, color = palette.lightText, fontWeight = FontWeight.Bold)
                                                 Text("@${member.userId}", color = palette.mutedText)
                                             }
-                                            Text("Continue", color = palette.accentSoft, fontWeight = FontWeight.Medium)
+                                            Text(AppLabels.continueLabel, color = palette.accentSoft, fontWeight = FontWeight.Medium)
                                         }
                                     }
                                 }
@@ -205,14 +205,14 @@ internal fun JoinWorkspaceScreen(
 
                     SplitPanelCard(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        title = "Create",
-                        subtitle = "Pick the identity you will use in this workspace.",
+                        title = AppLabels.create,
+                        subtitle = AppLabels.createMemberSubtitle,
                         dark = false
                     ) {
-                        FormField("User id", userId, textColor = palette.darkText, onValueChange = onUserIdChange)
-                        FormField("Display name", displayName, textColor = palette.darkText, onValueChange = onDisplayNameChange)
+                        FormField(AppLabels.userIdField, userId, textColor = palette.darkText, onValueChange = onUserIdChange)
+                        FormField(AppLabels.displayNameField, displayName, textColor = palette.darkText, onValueChange = onDisplayNameChange)
                         Spacer(modifier = Modifier.weight(1f))
-                        FilledActionButton("Continue", onJoin, modifier = Modifier.fillMaxWidth())
+                        FilledActionButton(AppLabels.continueLabel, onJoin, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -237,7 +237,7 @@ internal fun WorkspaceListItem(workspace: WorkspaceResponse, onClick: () -> Unit
                 Text(workspace.name, color = palette.lightText, fontWeight = FontWeight.Bold)
                 Text(workspace.slug, color = palette.mutedText)
             }
-            Text("Open", color = palette.accentSoft, fontWeight = FontWeight.Medium)
+            Text(AppLabels.open, color = palette.accentSoft, fontWeight = FontWeight.Medium)
         }
     }
 }
