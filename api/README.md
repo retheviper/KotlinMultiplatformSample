@@ -3,6 +3,10 @@
 ## Project structure
 
 - `src/jvmMain` - Ktor API server
+  - `messaging/domain` - domain model and repository ports
+  - `messaging/application` - command/query orchestration and transaction boundaries
+  - `messaging/infrastructure/persistence` - Exposed R2DBC persistence
+  - `messaging/presentation` - HTTP, SSE, and WebSocket routes
 - `src/jvmTest` - JVM tests
 
 Shared request/response models, client code, and shared UI contracts are provided by the root `:shared` module.
@@ -23,3 +27,10 @@ docker compose up -d db
 # From repository root
 ./gradlew :api:run
 ```
+
+At startup the API:
+
+- applies Flyway migrations
+- serves the OpenAPI document and Swagger UI
+- serves the Wasm web client from `/`
+- exposes WebSocket chat transport and notification SSE streams

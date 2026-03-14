@@ -1,24 +1,19 @@
-# BBS-APP
+# CHAT-APP
 
-## Target platform
+## Platform shells
 
-### Mobile
-
-- android
-- iOS
-
-### Desktop
-
-- macOS
-- Windows
-- Linux
+- `androidApp` - Android placeholder shell
+- `desktopApp` - Compose Desktop shell for macOS, Windows, and Linux
+- `macosApp` - macOS SwiftUI native shell
+- `iosApp` - iOS placeholder shell
 
 ## Project structure
 
-- `androidApp` - Android application by Jetpack Compose
-- `desktopApp` - Desktop application by Compose Multiplatform
+- `androidApp` - Android placeholder module
+- `desktopApp` - Compose Multiplatform desktop launcher
+- `macosApp` - Swift package for the native macOS shell
 - `../shared` - Shared Kotlin Multiplatform client code
-- `iosApp` - SwiftUI host app consuming the shared framework
+- `iosApp` - iOS placeholder module
 
 Shared request/response models, UI, and client code are provided by the root `:shared` module.
 
@@ -36,4 +31,11 @@ Shared request/response models, UI, and client code are provided by the root `:s
 ```bash
 # From repository root (requires server to be running)
 ./gradlew :app:desktopApp:run
+```
+
+### macOS native
+
+```bash
+# Requires server to be running
+swift run --package-path app/macosApp
 ```

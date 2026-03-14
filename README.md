@@ -16,6 +16,7 @@ This repository contains:
 - placeholder mobile shells for future Android and iOS work
 
 The current implementation is a Slack-like vertical slice with workspaces, channels, threaded replies, mentions, notifications, reactions, and link previews.
+Notifications are push-driven on Web, Compose Desktop, and the macOS SwiftUI shell.
 
 ## Project Structure
 
@@ -58,6 +59,7 @@ compose.yaml
 - Exposed
 - Flyway
 - WebSocket chat transport
+- Server-Sent Events for notification refresh
 - Testcontainers for API integration tests
 
 ## Platform Status
