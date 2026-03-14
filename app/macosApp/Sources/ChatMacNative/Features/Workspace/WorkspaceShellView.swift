@@ -18,10 +18,7 @@ struct WorkspaceShellView: View {
                 if store.threadRoot != nil {
                     ThreadView(store: store)
                         .frame(width: 360)
-                        .background(.ultraThinMaterial)
-                        .overlay(alignment: .leading) {
-                            Divider()
-                        }
+                        .background(Color(nsColor: .windowBackgroundColor))
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                         .shadow(color: .black.opacity(0.12), radius: 18, x: -4, y: 0)
                 }

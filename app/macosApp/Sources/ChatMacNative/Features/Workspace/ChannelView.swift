@@ -77,7 +77,7 @@ struct ChannelView: View {
                 }
                 TextEditor(text: $store.composerText)
                     .font(.body)
-                    .frame(minHeight: 88)
+                    .frame(minHeight: 58, maxHeight: 104)
                     .padding(8)
                     .background(Color(nsColor: .textBackgroundColor))
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

@@ -68,7 +68,7 @@ struct ThreadView: View {
                     }
                 }
                 TextEditor(text: $store.threadComposerText)
-                    .frame(minHeight: 88)
+                    .frame(minHeight: 58, maxHeight: 104)
                     .padding(8)
                     .background(Color(nsColor: .textBackgroundColor))
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
