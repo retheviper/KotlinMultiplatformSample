@@ -6,8 +6,19 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
 }
 
+sourceSets {
+    main {
+        java.setSrcDirs(listOf("src/jvmMain/kotlin"))
+        resources.setSrcDirs(listOf("src/jvmMain/resources"))
+    }
+    test {
+        java.setSrcDirs(listOf("src/jvmTest/kotlin"))
+        resources.setSrcDirs(listOf("src/jvmTest/resources"))
+    }
+}
+
 dependencies {
-    implementation(project(":app:shared"))
+    implementation(project(":shared"))
     implementation(compose.desktop.currentOs)
     implementation(libs.koin.core)
 
@@ -19,10 +30,10 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.retheviper.bbs.MainKt"
+        mainClass = "com.retheviper.chat.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "bbs-app-desktop"
+            packageName = "chat-desktop"
             packageVersion = "1.0.0"
         }
     }

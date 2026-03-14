@@ -17,16 +17,16 @@
 
 - `androidApp` - Android application by Jetpack Compose
 - `desktopApp` - Desktop application by Compose Multiplatform
-- `shared` - Shared Kotlin Multiplatform client code
+- `../shared` - Shared Kotlin Multiplatform client code
 - `iosApp` - SwiftUI host app consuming the shared framework
 
-Shared request/response models and constants are provided by the root `:contract` module.
+Shared request/response models, UI, and client code are provided by the root `:shared` module.
 
 ## Build
 
 ```bash
 # From repository root
-./gradlew :app:shared:build :app:desktopApp:build
+./gradlew :shared:build :app:desktopApp:build
 ```
 
 ## Run

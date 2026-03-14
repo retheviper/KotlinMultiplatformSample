@@ -7,13 +7,13 @@ plugins {
 }
 
 android {
-    namespace = "com.retheviper.bbs.android"
+    namespace = "com.retheviper.chat.android"
     compileSdk = providers.gradleProperty("android.compileSdk").get().toInt()
 
     sourceSets["main"].manifest.srcFile("src/main/AndroidManifest.xml")
 
     defaultConfig {
-        applicationId = "com.retheviper.bbs.android"
+        applicationId = "com.retheviper.chat.android"
         minSdk = providers.gradleProperty("android.minSdk").get().toInt()
         targetSdk = providers.gradleProperty("android.targetSdk").get().toInt()
         versionCode = 1
@@ -31,7 +31,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":app:shared"))
+    implementation(project(":shared"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
