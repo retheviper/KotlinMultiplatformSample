@@ -1,5 +1,17 @@
 package com.retheviper.chat
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -10,8 +22,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
@@ -36,7 +52,6 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Path
 import java.util.prefs.Preferences
-import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -63,61 +78,269 @@ fun main() {
     val runner = when (resolveShellMode(shellMode)) {
         DesktopShellMode.COMPOSE -> ComposeDesktopShellRunner
         DesktopShellMode.MAC_NATIVE -> MacNativeDesktopShellRunner
-        DesktopShellMode.AUTO,
-        DesktopShellMode.CHOOSER -> ComposeDesktopShellRunner
+        DesktopShellMode.CHOOSER -> ChooserDesktopShellRunner
+        DesktopShellMode.AUTO -> ComposeDesktopShellRunner
     }
     runner.run()
 }
 
-private object ComposeDesktopShellRunner : DesktopShellRunner {
+private object ChooserDesktopShellRunner : DesktopShellRunner {
     override fun run() = application {
-        val preferences = remember { Preferences.userRoot().node(PreferencesNode) }
-        val windowState = rememberDesktopWindowState(preferences)
-        val desktopBridge = remember { DesktopBridge() }
+        var selectedMode by remember { mutableStateOf<DesktopShellMode?>(null) }
 
-        var isWindowVisible by rememberSaveable { mutableStateOf(true) }
-        var windowTitle by rememberSaveable { mutableStateOf("Chat Desktop") }
-        var unreadNotificationCount by rememberSaveable { mutableStateOf(0) }
-        var openWindowRequest by remember { mutableStateOf(0L) }
-        var quitRequested by remember { mutableStateOf(false) }
-        var awtWindow by remember { mutableStateOf<java.awt.Window?>(null) }
-
-        fun showWindow() {
-            isWindowVisible = true
-            openWindowRequest += 1
+        when (selectedMode) {
+            null -> DialogWindow(
+                onCloseRequest = ::exitApplication,
+                title = "Choose Shell",
+                resizable = false
+            ) {
+                MaterialTheme {
+                    Surface(
+                        modifier = Modifier.background(ComposeColor(0xFF17131F)),
+                        color = ComposeColor(0xFF17131F)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(560.dp)
+                                .padding(28.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            Text(
+                                text = "Choose desktop shell",
+                                style = MaterialTheme.typography.h5,
+                                color = ComposeColor(0xFFF6F2FF)
+                            )
+                            Text(
+                                text = "Pick the shell to launch for this session.",
+                                style = MaterialTheme.typography.body2,
+                                color = ComposeColor(0xFFB7ADCC)
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                DesktopShellChoiceCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "Compose Desktop",
+                                    description = "Full multiplatform shell with tray integration and shared UI.",
+                                    accent = ComposeColor(0xFF8C62FF),
+                                    actionLabel = "Open Compose",
+                                    onClick = {
+                                        selectedMode = DesktopShellMode.COMPOSE
+                                    }
+                                )
+                                DesktopShellChoiceCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "Mac Native",
+                                    description = "SwiftUI shell for macOS with native windowing and notifications.",
+                                    accent = ComposeColor(0xFF45C2A7),
+                                    actionLabel = "Open Native",
+                                    onClick = {
+                                        val launched = MacNativeDesktopShellRunner.launch(background = true)
+                                        if (launched != null) {
+                                            exitApplication()
+                                        } else {
+                                            selectedMode = DesktopShellMode.COMPOSE
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            DesktopShellMode.COMPOSE -> ComposeDesktopShellApp(onExitApplication = ::exitApplication)
+            else -> Unit
         }
+    }
+}
 
-        fun hideWindow() {
-            isWindowVisible = false
-        }
-
-        fun requestQuit() {
-            persistWindowState(preferences, windowState)
-            desktopBridge.dispose()
-            quitRequested = true
-        }
-
-        if (quitRequested) {
-            exitApplication()
-            return@application
-        }
-
-        LaunchedEffect(windowState) {
-            snapshotFlow {
-                DesktopWindowSnapshot(
-                    width = windowState.size.width.value,
-                    height = windowState.size.height.value,
-                    x = (windowState.position as? WindowPosition.Absolute)?.x?.value,
-                    y = (windowState.position as? WindowPosition.Absolute)?.y?.value,
-                    maximized = windowState.placement == WindowPlacement.Maximized
+@Composable
+private fun DesktopShellChoiceCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    description: String,
+    accent: ComposeColor,
+    actionLabel: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier.heightIn(min = 220.dp),
+        color = ComposeColor(0xFF231C30),
+        elevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                modifier = Modifier.width(44.dp),
+                color = accent.copy(alpha = 0.18f),
+                elevation = 0.dp
+            ) {
+                Text(
+                    text = "•",
+                    modifier = Modifier.padding(vertical = 10.dp),
+                    color = accent,
+                    style = MaterialTheme.typography.h6,
+                    fontWeight = FontWeight.Bold
                 )
-            }.distinctUntilChanged().collect {
-                persistWindowState(preferences, windowState)
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.h6,
+                color = ComposeColor(0xFFF6F2FF),
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.body2,
+                color = ComposeColor(0xFFB7ADCC)
+            )
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onClick
+            ) {
+                Text(actionLabel)
             }
         }
+    }
+}
 
-        LaunchedEffect(unreadNotificationCount, awtWindow, windowTitle) {
-            desktopBridge.updateBadge(windowTitle, unreadNotificationCount)
+private object ComposeDesktopShellRunner : DesktopShellRunner {
+    override fun run() = application {
+        ComposeDesktopShellApp(onExitApplication = ::exitApplication)
+    }
+}
+
+@Composable
+private fun ComposeDesktopShellApp(onExitApplication: () -> Unit) {
+    val preferences = remember { Preferences.userRoot().node(PreferencesNode) }
+    val windowState = rememberDesktopWindowState(preferences)
+    val desktopBridge = remember { DesktopBridge() }
+
+    var isWindowVisible by rememberSaveable { mutableStateOf(true) }
+    var windowTitle by rememberSaveable { mutableStateOf("Chat Desktop") }
+    var unreadNotificationCount by rememberSaveable { mutableStateOf(0) }
+    var openWindowRequest by remember { mutableStateOf(0L) }
+    var quitRequested by remember { mutableStateOf(false) }
+    var awtWindow by remember { mutableStateOf<java.awt.Window?>(null) }
+
+    fun showWindow() {
+        isWindowVisible = true
+        openWindowRequest += 1
+    }
+
+    fun hideWindow() {
+        isWindowVisible = false
+    }
+
+    fun requestQuit() {
+        persistWindowState(preferences, windowState)
+        desktopBridge.dispose()
+        quitRequested = true
+    }
+
+    if (quitRequested) {
+        onExitApplication()
+        return
+    }
+
+    LaunchedEffect(windowState) {
+        snapshotFlow {
+            DesktopWindowSnapshot(
+                width = windowState.size.width.value,
+                height = windowState.size.height.value,
+                x = (windowState.position as? WindowPosition.Absolute)?.x?.value,
+                y = (windowState.position as? WindowPosition.Absolute)?.y?.value,
+                maximized = windowState.placement == WindowPlacement.Maximized
+            )
+        }.distinctUntilChanged().collect {
+            persistWindowState(preferences, windowState)
+        }
+    }
+
+    LaunchedEffect(unreadNotificationCount, awtWindow, windowTitle) {
+        desktopBridge.updateBadge(windowTitle, unreadNotificationCount)
+        desktopBridge.ensureTray(
+            title = windowTitle,
+            unreadCount = unreadNotificationCount,
+            onOpen = {
+                SwingUtilities.invokeLater { showWindow() }
+            },
+            onHide = {
+                SwingUtilities.invokeLater { hideWindow() }
+            },
+            onQuit = {
+                SwingUtilities.invokeLater { requestQuit() }
+            }
+        )
+    }
+
+    if (isWindowVisible) {
+        Window(
+            onCloseRequest = {
+                if (desktopBridge.isTraySupported) {
+                    hideWindow()
+                } else {
+                    requestQuit()
+                }
+            },
+            title = windowTitle,
+            state = windowState
+        ) {
+            awtWindow = window
+            window.minimumSize = Dimension(1180, 760)
+
+            LaunchedEffect(openWindowRequest) {
+                window.isVisible = true
+                window.toFront()
+                window.requestFocus()
+            }
+
+            MenuBar {
+                Menu("App") {
+                    Item(
+                        text = "Hide Window",
+                        enabled = desktopBridge.isTraySupported,
+                        shortcut = menuShortcut(Key.M),
+                        onClick = { hideWindow() }
+                    )
+                    Item(
+                        text = "Show Window",
+                        shortcut = menuShortcut(Key.O),
+                        onClick = { showWindow() }
+                    )
+                    Item(
+                        text = "Quit",
+                        shortcut = menuShortcut(Key.Q),
+                        onClick = { requestQuit() }
+                    )
+                }
+            }
+
+            DisposableEffect(Unit) {
+                onDispose {
+                    persistWindowState(preferences, windowState)
+                }
+            }
+
+            MessagingApp(
+                onUnreadNotificationCountChange = { unreadNotificationCount = it },
+                onNotificationEvent = { event ->
+                    desktopBridge.showNotification(
+                        event = event,
+                        window = awtWindow,
+                        unreadCount = unreadNotificationCount
+                    )
+                },
+                onWindowTitleChange = { title -> windowTitle = title }
+            )
+        }
+    } else {
+        LaunchedEffect(openWindowRequest) {
             desktopBridge.ensureTray(
                 title = windowTitle,
                 unreadCount = unreadNotificationCount,
@@ -132,104 +355,38 @@ private object ComposeDesktopShellRunner : DesktopShellRunner {
                 }
             )
         }
+    }
 
-        if (isWindowVisible) {
-            Window(
-                onCloseRequest = {
-                    if (desktopBridge.isTraySupported) {
-                        hideWindow()
-                    } else {
-                        requestQuit()
-                    }
-                },
-                title = windowTitle,
-                state = windowState
-            ) {
-                awtWindow = window
-                window.minimumSize = Dimension(1180, 760)
-
-                LaunchedEffect(openWindowRequest) {
-                    window.isVisible = true
-                    window.toFront()
-                    window.requestFocus()
-                }
-
-                MenuBar {
-                    Menu("App") {
-                        Item(
-                            text = "Hide Window",
-                            enabled = desktopBridge.isTraySupported,
-                            shortcut = menuShortcut(Key.M),
-                            onClick = { hideWindow() }
-                        )
-                        Item(
-                            text = "Show Window",
-                            shortcut = menuShortcut(Key.O),
-                            onClick = { showWindow() }
-                        )
-                        Item(
-                            text = "Quit",
-                            shortcut = menuShortcut(Key.Q),
-                            onClick = { requestQuit() }
-                        )
-                    }
-                }
-
-                DisposableEffect(Unit) {
-                    onDispose {
-                        persistWindowState(preferences, windowState)
-                    }
-                }
-
-                MessagingApp(
-                    onUnreadNotificationCountChange = { unreadNotificationCount = it },
-                    onNotificationEvent = { event ->
-                        desktopBridge.showNotification(
-                            event = event,
-                            window = awtWindow,
-                            unreadCount = unreadNotificationCount
-                        )
-                    },
-                    onWindowTitleChange = { title -> windowTitle = title }
-                )
-            }
-        } else {
-            LaunchedEffect(openWindowRequest) {
-                desktopBridge.ensureTray(
-                    title = windowTitle,
-                    unreadCount = unreadNotificationCount,
-                    onOpen = {
-                        SwingUtilities.invokeLater { showWindow() }
-                    },
-                    onHide = {
-                        SwingUtilities.invokeLater { hideWindow() }
-                    },
-                    onQuit = {
-                        SwingUtilities.invokeLater { requestQuit() }
-                    }
-                )
-            }
-        }
-
-        DisposableEffect(Unit) {
-            onDispose {
-                persistWindowState(preferences, windowState)
-                desktopBridge.dispose()
-            }
+    DisposableEffect(Unit) {
+        onDispose {
+            persistWindowState(preferences, windowState)
+            desktopBridge.dispose()
         }
     }
 }
 
 private object MacNativeDesktopShellRunner : DesktopShellRunner {
     override fun run() {
-        val packageManifest = locateMacNativePackage()
-        if (packageManifest == null) {
-            System.err.println("Unable to locate app/macosApp/Package.swift. Falling back to Compose Desktop.")
+        val process = launch(background = false)
+        if (process == null) {
             ComposeDesktopShellRunner.run()
             return
         }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            System.err.println("SwiftUI shell exited with code $exitCode. Falling back to Compose Desktop.")
+            ComposeDesktopShellRunner.run()
+        }
+    }
 
-        val process = runCatching {
+    fun launch(background: Boolean): Process? {
+        val packageManifest = locateMacNativePackage()
+        if (packageManifest == null) {
+            System.err.println("Unable to locate app/macosApp/Package.swift.")
+            return null
+        }
+
+        return runCatching {
             ProcessBuilder(
                 "swift",
                 "run",
@@ -245,15 +402,11 @@ private object MacNativeDesktopShellRunner : DesktopShellRunner {
                         ?: "http://localhost:8080"
             }.start()
         }.getOrElse { error ->
-            System.err.println("Failed to launch SwiftUI shell: ${error.message}. Falling back to Compose Desktop.")
-            ComposeDesktopShellRunner.run()
-            return
-        }
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            System.err.println("SwiftUI shell exited with code $exitCode. Falling back to Compose Desktop.")
-            ComposeDesktopShellRunner.run()
+            System.err.println("Failed to launch SwiftUI shell: ${error.message}.")
+            if (!background) {
+                System.err.println("Falling back to Compose Desktop.")
+            }
+            null
         }
     }
 }
@@ -433,32 +586,7 @@ private fun resolveShellMode(mode: DesktopShellMode): DesktopShellMode {
         DesktopShellMode.AUTO -> if (isMacOs()) DesktopShellMode.CHOOSER else DesktopShellMode.COMPOSE
         DesktopShellMode.COMPOSE -> DesktopShellMode.COMPOSE
         DesktopShellMode.MAC_NATIVE -> if (isMacOs()) DesktopShellMode.MAC_NATIVE else DesktopShellMode.COMPOSE
-        DesktopShellMode.CHOOSER -> chooseShellMode()
-    }
-}
-
-private fun chooseShellMode(): DesktopShellMode {
-    if (!isMacOs()) {
-        return DesktopShellMode.COMPOSE
-    }
-
-    val options = arrayOf("Compose Desktop", "Mac Native (SwiftUI)")
-    val selected = runCatching {
-        JOptionPane.showOptionDialog(
-            null,
-            "Choose the desktop shell for this run.",
-            "Chat Desktop",
-            JOptionPane.DEFAULT_OPTION,
-            JOptionPane.QUESTION_MESSAGE,
-            null,
-            options,
-            options.first()
-        )
-    }.getOrDefault(0)
-
-    return when (selected) {
-        1 -> DesktopShellMode.MAC_NATIVE
-        else -> DesktopShellMode.COMPOSE
+        DesktopShellMode.CHOOSER -> if (isMacOs()) DesktopShellMode.CHOOSER else DesktopShellMode.COMPOSE
     }
 }
 
