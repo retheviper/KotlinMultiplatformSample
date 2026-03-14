@@ -1,0 +1,2 @@
+ALTER TABLE mention_notifications
+    ADD COLUMN kind VARCHAR(32) NOT NULL DEFAULT 'MENTION';
