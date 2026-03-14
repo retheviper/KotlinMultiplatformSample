@@ -17,4 +17,13 @@ final class APIClientTests: XCTestCase {
 
         XCTAssertEqual(url.absoluteString, "wss://chat.example.com/ws/channels/channel-1")
     }
+
+    func testNotificationStreamRequestUsesMemberStreamEndpoint() throws {
+        let client = APIClient(baseURL: URL(string: "https://chat.example.com")!)
+
+        let request = try client.notificationStreamRequest(memberId: "member-1")
+
+        XCTAssertEqual(request.url?.absoluteString, "https://chat.example.com/api/v1/members/member-1/notifications/stream")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "text/event-stream")
+    }
 }

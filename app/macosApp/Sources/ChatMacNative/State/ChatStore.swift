@@ -51,6 +51,8 @@ final class ChatStore: ObservableObject {
     private var webSocket: URLSessionWebSocketTask?
     private var receiveTask: Task<Void, Never>?
     private var connectedChannelId: String?
+    private var notificationStreamTask: Task<Void, Never>?
+    private var notificationStreamMemberId: String?
     private var seenUnreadNotificationIds = Set<String>()
 
     init(baseURLString: String) {
@@ -59,6 +61,7 @@ final class ChatStore: ObservableObject {
     }
 
     func connectServer() async {
+        stopNotificationStream()
         refreshClient()
         await loadWorkspaces()
     }
@@ -70,6 +73,7 @@ final class ChatStore: ObservableObject {
     }
 
     func openWorkspace(_ workspace: WorkspaceResponse) async {
+        stopNotificationStream()
         selectedWorkspace = workspace
         showingNotifications = false
         await perform { [self] in
@@ -102,6 +106,7 @@ final class ChatStore: ObservableObject {
             self.screen = .workspace
             try await self.enterInitialChannel()
             try await self.refreshNotifications(unreadOnly: true)
+            self.startNotificationStreamIfNeeded()
         }
     }
 
@@ -111,6 +116,7 @@ final class ChatStore: ObservableObject {
         await perform { [self] in
             try await self.enterInitialChannel()
             try await self.refreshNotifications(unreadOnly: true)
+            self.startNotificationStreamIfNeeded()
         }
     }
 
@@ -127,6 +133,7 @@ final class ChatStore: ObservableObject {
             self.screen = .workspace
             try await self.enterInitialChannel()
             try await self.refreshNotifications(unreadOnly: true)
+            self.startNotificationStreamIfNeeded()
         }
     }
 
@@ -311,6 +318,7 @@ final class ChatStore: ObservableObject {
 
     func signOutWorkspace() {
         disconnectWebSocket()
+        stopNotificationStream()
         selectedWorkspace = nil
         selectedMember = nil
         selectedChannel = nil
@@ -381,6 +389,66 @@ final class ChatStore: ObservableObject {
 
     private func refreshClient() {
         client = APIClient(baseURL: Self.normalizeBaseURL(baseURLString))
+    }
+
+    private func startNotificationStreamIfNeeded() {
+        guard screen == .workspace, let member = selectedMember else {
+            stopNotificationStream()
+            return
+        }
+        if notificationStreamMemberId == member.id, notificationStreamTask != nil {
+            return
+        }
+
+        stopNotificationStream()
+
+        do {
+            let request = try client.notificationStreamRequest(memberId: member.id)
+            notificationStreamMemberId = member.id
+            notificationStreamTask = Task { [weak self] in
+                do {
+                    try await Self.consumeNotificationStream(request: request) { [weak self] in
+                        guard let self else { return }
+                        await self.handleNotificationSignal()
+                    }
+                } catch is CancellationError {
+                    // Ignore cancellation while switching sessions or screens.
+                } catch {
+                    guard let self else { return }
+                    await self.handleNotificationStreamFailure(error)
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func stopNotificationStream() {
+        notificationStreamTask?.cancel()
+        notificationStreamTask = nil
+        notificationStreamMemberId = nil
+    }
+
+    private func handleNotificationSignal() async {
+        do {
+            try await refreshVisibleNotifications()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func handleNotificationStreamFailure(_ error: Error) async {
+        _ = error
+        if Task.isCancelled {
+            return
+        }
+        notificationStreamTask = nil
+        notificationStreamMemberId = nil
+        do {
+            try await refreshVisibleNotifications()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func refreshVisibleNotifications() async throws {
@@ -554,5 +622,33 @@ final class ChatStore: ObservableObject {
         guard !ids.isEmpty else { return }
         try await client.markNotificationsRead(memberId: member.id, ids: ids)
         try await refreshVisibleNotifications()
+    }
+
+    private nonisolated static func consumeNotificationStream(
+        request: URLRequest,
+        onSignal: @escaping @Sendable () async -> Void
+    ) async throws {
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 500
+        guard (200..<300).contains(statusCode) else {
+            throw ApiErrorResponse(code: "http_\(statusCode)", message: "Notification stream request failed.")
+        }
+
+        var initialized = false
+        for try await line in bytes.lines {
+            if Task.isCancelled {
+                break
+            }
+            switch notificationStreamLineResult(for: line, initialized: initialized) {
+            case .ignore:
+                continue
+            case .initializeOnly:
+                initialized = true
+                continue
+            case .signal:
+                initialized = true
+                await onSignal()
+            }
+        }
     }
 }

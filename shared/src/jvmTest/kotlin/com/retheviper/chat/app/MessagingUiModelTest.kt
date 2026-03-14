@@ -6,6 +6,8 @@ import com.retheviper.chat.contract.ChatEventType
 import com.retheviper.chat.contract.LinkPreviewResponse
 import com.retheviper.chat.contract.MessageReactionResponse
 import com.retheviper.chat.contract.MessageResponse
+import com.retheviper.chat.contract.MentionNotificationResponse
+import com.retheviper.chat.contract.NotificationKind
 import com.retheviper.chat.contract.ThreadResponse
 import com.retheviper.chat.contract.WorkspaceMemberResponse
 import com.retheviper.chat.contract.WorkspaceMemberRole
@@ -153,6 +155,20 @@ class MessagingUiModelTest : FunSpec({
         ) shouldContainExactly listOf(root, reply)
     }
 
+    test("threadNotificationIdsToMarkRead includes the root notification and all thread replies") {
+        val ids = threadNotificationIdsToMarkRead(
+            notifications = listOf(
+                notification(id = "n-root", messageId = "root-1", threadRootMessageId = null),
+                notification(id = "n-reply-1", messageId = "reply-1", threadRootMessageId = "root-1"),
+                notification(id = "n-reply-2", messageId = "reply-2", threadRootMessageId = "root-1"),
+                notification(id = "n-other", messageId = "reply-3", threadRootMessageId = "other-root")
+            ),
+            rootMessageId = "root-1"
+        )
+
+        ids shouldContainExactly listOf("n-root", "n-reply-1", "n-reply-2")
+    }
+
     test("planWorkspaceJoin returns existing member when user id already exists") {
         val existing = member(userId = "alice", displayName = "Alice")
 
@@ -245,5 +261,24 @@ private fun member(
         displayName = displayName,
         role = WorkspaceMemberRole.MEMBER,
         joinedAt = "2026-03-14T00:00:00Z"
+    )
+}
+
+private fun notification(
+    id: String,
+    messageId: String,
+    threadRootMessageId: String?
+): MentionNotificationResponse {
+    return MentionNotificationResponse(
+        id = id,
+        kind = NotificationKind.MENTION,
+        memberId = "member-1",
+        channelId = "channel-1",
+        messageId = messageId,
+        threadRootMessageId = threadRootMessageId,
+        authorDisplayName = "Alice",
+        messagePreview = "hello",
+        createdAt = "2026-03-14T00:00:00Z",
+        readAt = null
     )
 }

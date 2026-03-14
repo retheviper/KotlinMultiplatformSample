@@ -6,6 +6,7 @@ import com.retheviper.chat.contract.ChatCommandType
 import com.retheviper.chat.contract.ChatEvent
 import com.retheviper.chat.contract.ChatEventType
 import com.retheviper.chat.contract.LinkPreviewResponse
+import com.retheviper.chat.contract.MentionNotificationResponse
 import com.retheviper.chat.contract.MessageResponse
 import com.retheviper.chat.contract.ThreadResponse
 import com.retheviper.chat.contract.WorkspaceMemberResponse
@@ -92,6 +93,17 @@ fun toThreadMessages(thread: ThreadResponse): List<MessageResponse> {
         add(thread.root)
         addAll(thread.replies)
     }
+}
+
+fun threadNotificationIdsToMarkRead(
+    notifications: List<MentionNotificationResponse>,
+    rootMessageId: String
+): List<String> {
+    return notifications
+        .asSequence()
+        .filter { it.threadRootMessageId == rootMessageId || it.messageId == rootMessageId }
+        .map { it.id }
+        .toList()
 }
 
 fun findActiveMention(text: String): MentionDraft? {

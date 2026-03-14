@@ -27,20 +27,41 @@ final class NotificationManager: NSObject {
     }
 
     func show(notification: MentionNotificationResponse) {
-        guard let notificationCenter else { return }
-        let content = UNMutableNotificationContent()
-        content.title = notification.kind == .mention ? "Mention" : "Thread activity"
-        content.body = "\(notification.authorDisplayName): \(notification.messagePreview)"
-        let request = UNNotificationRequest(
-            identifier: notification.id,
-            content: content,
-            trigger: nil
-        )
-        notificationCenter.add(request)
+        if let notificationCenter {
+            let content = UNMutableNotificationContent()
+            content.title = notification.kind == .mention ? "Mention" : "Thread activity"
+            content.body = "\(notification.authorDisplayName): \(notification.messagePreview)"
+            let request = UNNotificationRequest(
+                identifier: notification.id,
+                content: content,
+                trigger: nil
+            )
+            notificationCenter.add(request)
+            return
+        }
+
+        showFallbackNotification(notification: notification)
     }
 
     func updateBadge(count: Int) {
         NSApp.dockTile.badgeLabel = count > 0 ? String(count) : nil
+    }
+
+    private func showFallbackNotification(notification: MentionNotificationResponse) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = [
+            "-e",
+            "display notification \(appleScriptString("\(notification.authorDisplayName): \(notification.messagePreview)")) with title \(appleScriptString(notification.kind == .mention ? "Mention" : "Thread activity"))"
+        ]
+        try? process.run()
+    }
+
+    private func appleScriptString(_ value: String) -> String {
+        let escaped = value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        return "\"\(escaped)\""
     }
 
     private static var supportsSystemNotifications: Bool {

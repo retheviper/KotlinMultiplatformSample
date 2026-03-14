@@ -46,5 +46,6 @@ interface MessageReactionRepository {
 interface MentionNotificationRepository {
     suspend fun saveNotifications(notifications: List<MentionNotification>)
     suspend fun listMemberNotifications(memberId: Uuid, unreadOnly: Boolean): List<MentionNotification>
+    suspend fun listThreadSubscriberIds(rootMessageId: Uuid): Set<Uuid>
     suspend fun markRead(memberId: Uuid, notificationIds: List<Uuid>, readAt: Instant = Instant.now())
 }

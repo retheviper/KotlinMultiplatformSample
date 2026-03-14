@@ -33,6 +33,7 @@ class MessagingCommandService(
     private val messageRepository: MessageRepository,
     private val messageReactionRepository: MessageReactionRepository,
     private val mentionNotificationRepository: MentionNotificationRepository,
+    private val notificationEventBus: NotificationEventBus = NotificationEventBus(),
     private val transactionRunner: TransactionRunner = ExposedTransactionRunner
 ) {
     suspend fun createWorkspace(request: CreateWorkspaceRequest): Workspace {
@@ -240,6 +241,7 @@ class MessagingCommandService(
             requireMember(memberId)
             mentionNotificationRepository.markRead(memberId, notificationIds)
         }
+        notificationEventBus.publish(memberId)
     }
 
     private suspend fun requireWorkspace(workspaceId: Uuid): Workspace {
@@ -343,6 +345,7 @@ class MessagingCommandService(
                 )
             }
         )
+        notificationEventBus.publish(mentionedMembers.map { it.id })
     }
 
     private suspend fun saveThreadActivityNotifications(
@@ -358,6 +361,7 @@ class MessagingCommandService(
                 .asSequence()
                 .filter { it.createdAt < reply.createdAt }
                 .mapTo(this) { it.authorMemberId }
+            addAll(mentionNotificationRepository.listThreadSubscriberIds(rootMessageId))
         }.filter { it != author.id }
 
         if (participants.isEmpty()) {
@@ -389,6 +393,7 @@ class MessagingCommandService(
 
         if (notifications.isNotEmpty()) {
             mentionNotificationRepository.saveNotifications(notifications)
+            notificationEventBus.publish(notifications.map { it.memberId })
         }
     }
 

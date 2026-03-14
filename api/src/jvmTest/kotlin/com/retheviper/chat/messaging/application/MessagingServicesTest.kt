@@ -394,6 +394,125 @@ class MessagingServicesTest : FunSpec({
         unread.single().messagePreview shouldBe "follow-up"
     }
 
+    test("thread replies notify members who were previously mentioned on the root message") {
+        val fixture = messagingFixture()
+        val workspace = runBlocking {
+            fixture.commandService.createWorkspace(
+                CreateWorkspaceRequest(
+                    slug = "acme",
+                    name = "Acme",
+                    ownerUserId = "alice",
+                    ownerDisplayName = "Alice"
+                )
+            )
+        }
+        val bob = runBlocking {
+            fixture.commandService.addMember(
+                workspace.id,
+                com.retheviper.chat.contract.AddWorkspaceMemberRequest(
+                    userId = "bob",
+                    displayName = "Bob"
+                )
+            )
+        }
+        val channel = runBlocking { fixture.queryService.listChannels(workspace.id).single() }
+        val root = runBlocking {
+            fixture.commandService.postChannelMessage(
+                channel.id,
+                PostMessageRequest(
+                    authorMemberId = workspace.ownerMemberId.toString(),
+                    body = "hello @bob"
+                )
+            )
+        }
+
+        runBlocking {
+            fixture.commandService.markNotificationsRead(
+                bob.id,
+                fixture.queryService.listMemberNotifications(bob.id, unreadOnly = true).map { it.id }
+            )
+        }
+        runBlocking {
+            fixture.commandService.replyToMessage(
+                root.id,
+                PostMessageRequest(
+                    authorMemberId = workspace.ownerMemberId.toString(),
+                    body = "thread follow-up"
+                )
+            )
+        }
+
+        val unread = runBlocking { fixture.queryService.listMemberNotifications(bob.id, unreadOnly = true) }
+        unread.size shouldBe 1
+        unread.single().kind shouldBe NotificationKind.THREAD_ACTIVITY
+        unread.single().threadRootMessageId shouldBe root.id
+        unread.single().messagePreview shouldBe "thread follow-up"
+    }
+
+    test("thread replies notify members who were previously mentioned inside the thread") {
+        val fixture = messagingFixture()
+        val workspace = runBlocking {
+            fixture.commandService.createWorkspace(
+                CreateWorkspaceRequest(
+                    slug = "acme",
+                    name = "Acme",
+                    ownerUserId = "alice",
+                    ownerDisplayName = "Alice"
+                )
+            )
+        }
+        val bob = runBlocking {
+            fixture.commandService.addMember(
+                workspace.id,
+                com.retheviper.chat.contract.AddWorkspaceMemberRequest(
+                    userId = "bob",
+                    displayName = "Bob"
+                )
+            )
+        }
+        val channel = runBlocking { fixture.queryService.listChannels(workspace.id).single() }
+        val root = runBlocking {
+            fixture.commandService.postChannelMessage(
+                channel.id,
+                PostMessageRequest(
+                    authorMemberId = workspace.ownerMemberId.toString(),
+                    body = "root"
+                )
+            )
+        }
+
+        runBlocking {
+            fixture.commandService.replyToMessage(
+                root.id,
+                PostMessageRequest(
+                    authorMemberId = workspace.ownerMemberId.toString(),
+                    body = "hello @bob"
+                )
+            )
+        }
+        runBlocking {
+            fixture.commandService.markNotificationsRead(
+                bob.id,
+                fixture.queryService.listMemberNotifications(bob.id, unreadOnly = true).map { it.id }
+            )
+        }
+        runBlocking {
+            fixture.commandService.replyToMessage(
+                root.id,
+                PostMessageRequest(
+                    authorMemberId = workspace.ownerMemberId.toString(),
+                    body = "another follow-up"
+                )
+            )
+        }
+
+        val unread = runBlocking { fixture.queryService.listMemberNotifications(bob.id, unreadOnly = true) }
+        unread.size shouldBe 1
+        unread.single().kind shouldBe NotificationKind.THREAD_ACTIVITY
+        unread.single().threadRootMessageId shouldBe root.id
+        unread.single().messagePreview shouldBe "another follow-up"
+    }
+
     test("updateMember changes the display name") {
         val fixture = messagingFixture()
         val workspace = runBlocking {
@@ -650,6 +769,12 @@ private class InMemoryMentionNotificationRepository : MentionNotificationReposit
             .filter { it.memberId == memberId }
             .filter { !unreadOnly || it.readAt == null }
             .sortedByDescending { it.createdAt }
+    }
+
+    override suspend fun listThreadSubscriberIds(rootMessageId: Uuid): Set<Uuid> {
+        return notifications.values
+            .filter { it.messageId == rootMessageId || it.threadRootMessageId == rootMessageId }
+            .mapTo(linkedSetOf()) { it.memberId }
     }
 
     override suspend fun markRead(memberId: Uuid, notificationIds: List<Uuid>, readAt: Instant) {

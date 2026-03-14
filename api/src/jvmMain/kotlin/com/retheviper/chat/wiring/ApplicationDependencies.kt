@@ -1,6 +1,7 @@
 package com.retheviper.chat.wiring
 
 import com.retheviper.chat.messaging.application.MessagingCommandService
+import com.retheviper.chat.messaging.application.NotificationEventBus
 import com.retheviper.chat.messaging.application.MessagingQueryService
 import com.retheviper.chat.messaging.application.LinkPreviewResolver
 import com.retheviper.chat.messaging.infrastructure.persistence.DatabaseChannelRepository
@@ -12,7 +13,8 @@ import com.retheviper.chat.messaging.infrastructure.persistence.DatabaseWorkspac
 data class ApplicationDependencies(
     val commandService: MessagingCommandService,
     val queryService: MessagingQueryService,
-    val linkPreviewResolver: LinkPreviewResolver
+    val linkPreviewResolver: LinkPreviewResolver,
+    val notificationEventBus: NotificationEventBus
 ) {
     companion object {
         fun create(): ApplicationDependencies {
@@ -22,6 +24,7 @@ data class ApplicationDependencies(
             val messageReactionRepository = DatabaseMessageReactionRepository()
             val mentionNotificationRepository = DatabaseMentionNotificationRepository()
             val linkPreviewResolver = LinkPreviewResolver()
+            val notificationEventBus = NotificationEventBus()
 
             return ApplicationDependencies(
                 commandService = MessagingCommandService(
@@ -29,7 +32,8 @@ data class ApplicationDependencies(
                     channelRepository = channelRepository,
                     messageRepository = messageRepository,
                     messageReactionRepository = messageReactionRepository,
-                    mentionNotificationRepository = mentionNotificationRepository
+                    mentionNotificationRepository = mentionNotificationRepository,
+                    notificationEventBus = notificationEventBus
                 ),
                 queryService = MessagingQueryService(
                     workspaceRepository = workspaceRepository,
@@ -38,7 +42,8 @@ data class ApplicationDependencies(
                     messageReactionRepository = messageReactionRepository,
                     mentionNotificationRepository = mentionNotificationRepository
                 ),
-                linkPreviewResolver = linkPreviewResolver
+                linkPreviewResolver = linkPreviewResolver,
+                notificationEventBus = notificationEventBus
             )
         }
     }

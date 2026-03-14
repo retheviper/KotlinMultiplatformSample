@@ -98,6 +98,21 @@ struct APIClient {
         return components.url!
     }
 
+    func notificationStreamRequest(memberId: String) throws -> URLRequest {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        components.path = "/api/v1/members/\(memberId)/notifications/stream"
+        components.query = nil
+        guard let url = components.url else {
+            throw ApiErrorResponse(code: "invalid_url", message: "Unable to build notification stream URL.")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 60 * 60
+        return request
+    }
+
     private func requestInternal<Response: Decodable>(
         path: String,
         method: String = "GET",

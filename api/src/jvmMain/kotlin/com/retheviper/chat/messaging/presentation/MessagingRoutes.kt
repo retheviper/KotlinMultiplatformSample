@@ -36,6 +36,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.request.receive
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondTextWriter
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
@@ -49,6 +50,7 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.flow.collect
 import kotlin.uuid.Uuid
 
 fun Application.configureMessagingRouting(dependencies: ApplicationDependencies) {
@@ -122,6 +124,20 @@ fun Application.configureMessagingRouting(dependencies: ApplicationDependencies)
                 call.respond(
                     dependencies.queryService.listMemberNotifications(call.memberId(), unreadOnly).map { it.toResponse() }
                 )
+            }
+
+            get("/members/{memberId}/notifications/stream") {
+                val memberId = call.memberId()
+                dependencies.queryService.listMemberNotifications(memberId, unreadOnly = false)
+                call.respondTextWriter(contentType = ContentType.Text.EventStream) {
+                    write("data: connected\n\n")
+                    flush()
+
+                    dependencies.notificationEventBus.stream(memberId).collect {
+                        write("data: refresh\n\n")
+                        flush()
+                    }
+                }
             }
 
             post("/members/{memberId}/notifications/read") {

@@ -28,6 +28,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -369,6 +370,18 @@ class DatabaseMentionNotificationRepository : MentionNotificationRepository {
                     readAt = row[MentionNotificationsTable.readAtEpochMillis]?.let(Instant::ofEpochMilli)
                 )
             }
+    }
+
+    override suspend fun listThreadSubscriberIds(rootMessageId: Uuid): Set<Uuid> {
+        return MentionNotificationsTable
+            .selectAll()
+            .where {
+                (MentionNotificationsTable.messageId eq rootMessageId) or
+                    (MentionNotificationsTable.threadRootMessageId eq rootMessageId)
+            }
+            .toList()
+            .map { it[MentionNotificationsTable.memberId] }
+            .toSet()
     }
 
     override suspend fun markRead(memberId: Uuid, notificationIds: List<Uuid>, readAt: Instant) {
