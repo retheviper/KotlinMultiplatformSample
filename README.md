@@ -11,17 +11,11 @@ This repository contains:
 - a Ktor API server
 - a Compose Multiplatform shared UI
 - a Compose Wasm web client served by the API
-- thin Android and Desktop shells
+- a Compose Desktop shell
+- a macOS SwiftUI shell
+- placeholder mobile shells for future Android and iOS work
 
 The current implementation is a Slack-like vertical slice with workspaces, channels, threaded replies, mentions, notifications, reactions, and link previews.
-
-## Audience
-
-This README is written for:
-
-- developers extending the product
-- testers running the stack locally
-- reviewers who need a quick picture of the architecture and startup flow
 
 ## Project Structure
 
@@ -39,10 +33,16 @@ shared/
   Compose Wasm entry point
 
 app/androidApp/
-  Android launcher shell
+  Android placeholder shell
 
 app/desktopApp/
-  Desktop launcher shell
+  Compose Desktop shell
+
+app/macosApp/
+  macOS SwiftUI shell
+
+app/iosApp/
+  iOS placeholder shell
 
 compose.yaml
   Local PostgreSQL service definition
@@ -60,6 +60,14 @@ compose.yaml
 - WebSocket chat transport
 - Testcontainers for API integration tests
 
+## Platform Status
+
+- Web: implemented and served by the API
+- Desktop: implemented with Compose Desktop
+- macOS native: implemented with SwiftUI in `app/macosApp`
+- Android: module exists, but the product UI is not implemented yet
+- iOS: module exists, but the product UI is not implemented yet
+
 ## Prerequisites
 
 Required:
@@ -70,6 +78,7 @@ Required:
 Optional:
 
 - Android SDK for `:app:androidApp`
+- Xcode and Swift 6 toolchain for `app/macosApp`
 
 Verified toolchain in this repository:
 
@@ -160,25 +169,40 @@ Start the API first, then launch the desktop shell:
 ./gradlew :app:desktopApp:run
 ```
 
-The desktop client connects to `http://localhost:8080` by default.
+The Compose Desktop client connects to `http://localhost:8080` by default.
 
 To point it at a different server:
 
 ```bash
-./gradlew :app:desktopApp:run -Dmessaging.baseUrl=http://localhost:8080
+./gradlew -Dmessaging.baseUrl=http://localhost:8080 :app:desktopApp:run
 ```
 
-On macOS, the desktop launcher also leaves room for a future native shell alongside the current Compose shell.
+On macOS, the desktop launcher can run either the Compose Desktop shell or the SwiftUI native shell.
 
 Shell selection options:
 
 ```bash
-./gradlew :app:desktopApp:run -Dchat.desktop.shell=compose
-./gradlew :app:desktopApp:run -Dchat.desktop.shell=chooser
-./gradlew :app:desktopApp:run -Dchat.desktop.shell=mac-native
+./gradlew -Dchat.desktop.shell=compose :app:desktopApp:run
+./gradlew -Dchat.desktop.shell=chooser :app:desktopApp:run
+./gradlew -Dchat.desktop.shell=mac-native :app:desktopApp:run
 ```
 
-Today, `compose` is the implemented shell. `mac-native` is a reserved future path for a SwiftUI-based shell and currently falls back to Compose.
+`compose` runs the Compose Desktop shell. On macOS, `mac-native` launches the SwiftUI shell from `app/macosApp`.
+
+You can also use environment variables instead of JVM system properties:
+
+```bash
+CHAT_DESKTOP_SHELL=mac-native ./gradlew :app:desktopApp:run
+MESSAGING_BASE_URL=http://localhost:8080 ./gradlew :app:desktopApp:run
+```
+
+You can also run the SwiftUI shell directly:
+
+```bash
+swift run --package-path app/macosApp
+```
+
+Android and iOS modules are not part of the runnable product path yet. They are reserved for future native client work.
 
 ## Test and Verification
 
@@ -188,30 +212,13 @@ Core verification commands:
 ./gradlew :shared:jvmTest
 ./gradlew :api:test
 ./gradlew :app:desktopApp:compileKotlin
+swift test --package-path app/macosApp
 ```
 
 Notes:
 
 - `:api:test` uses Testcontainers and requires Docker
-- Android compilation is not included in the commands above
-
-## Functional Scope Today
-
-Implemented:
-
-- workspace creation and listing
-- workspace join through existing or new member identity
-- automatic `#general` channel creation
-- channel creation and switching
-- WebSocket message posting
-- threaded replies
-- mentions and mention notifications
-- notification center and toast notifications
-- emoji reactions
-- clickable links in messages
-- OG-based link previews
-- Compose Wasm frontend served by the API
-- shared image and font resources for the frontend
+- Android and iOS builds are not included in the commands above
 
 ## Common Local Issues
 
@@ -223,7 +230,3 @@ Implemented:
   - Provide a valid Android SDK via `ANDROID_HOME` or `local.properties`.
 - `API tests fail on container startup`
   - Check Docker availability and container permissions.
-
-## Repository Policy
-
-Internal working notes such as `AGENT.md` and the `docs/` directory are intentionally excluded from the public repository flow and are not part of this README navigation.
