@@ -34,6 +34,7 @@ import com.retheviper.chat.contract.NotificationKind
 import com.retheviper.chat.contract.UpdateWorkspaceMemberRequest
 import com.retheviper.chat.contract.WorkspaceMemberResponse
 import com.retheviper.chat.contract.WorkspaceResponse
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -116,8 +117,52 @@ fun MessagingApp(
     }
 
     suspend fun disconnectChat() {
-        chatRuntime?.close()
+        val runtime = chatRuntime ?: return
         chatRuntime = null
+        runtime.close()
+    }
+
+    fun disconnectChatAsync() {
+        val runtime = chatRuntime ?: return
+        chatRuntime = null
+        scope.launch(Dispatchers.Default) {
+            runCatching { runtime.close() }
+        }
+    }
+
+    fun disconnectNotificationStreamAsync() {
+        val handle = notificationStreamHandle ?: return
+        notificationStreamHandle = null
+        scope.launch(Dispatchers.Default) {
+            runCatching { handle.close() }
+        }
+    }
+
+    fun resetWorkspaceSession() {
+        screen = AppScreen.LANDING
+        workspace = null
+        currentMember = null
+        channel = null
+        workspaceMembers.clear()
+        workspaceChannels.clear()
+        messages.clear()
+        threadMessages.clear()
+        unreadNotifications.clear()
+        allNotifications.clear()
+        toastNotifications.clear()
+        selectedRootId = null
+        focusedMessageId = null
+        focusedThreadMessageId = null
+        centerView = WorkspaceCenterView.CHANNEL
+        threadMessageBody = ""
+        messageBody = ""
+        messageLinkPreview = null
+        threadLinkPreview = null
+        dismissedMessagePreviewUrl = null
+        dismissedThreadPreviewUrl = null
+        disconnectChatAsync()
+        disconnectNotificationStreamAsync()
+        status = "Choose a workspace or create one."
     }
 
     suspend fun resolvePreviewForBody(
@@ -184,8 +229,12 @@ fun MessagingApp(
     suspend fun markNotificationsRead(notificationIds: List<String>) {
         val member = currentMember ?: return
         if (notificationIds.isEmpty()) return
-        client.markNotificationsRead(member.id, notificationIds)
-        refreshNotifications(showToast = false)
+        runCatching {
+            client.markNotificationsRead(member.id, notificationIds)
+            refreshNotifications(showToast = false)
+        }.onFailure {
+            status = it.message ?: "Failed to update notifications"
+        }
     }
 
     suspend fun updateCurrentMemberDisplayName(displayName: String) {
@@ -351,7 +400,7 @@ fun MessagingApp(
 
     DisposableEffect(Unit) {
         onDispose {
-            notificationStreamHandle?.close()
+            disconnectNotificationStreamAsync()
             scope.launch {
                 disconnectChat()
                 client.close()
@@ -360,8 +409,7 @@ fun MessagingApp(
     }
 
     DisposableEffect(screen, currentMember?.id, workspace?.id) {
-        notificationStreamHandle?.close()
-        notificationStreamHandle = null
+        disconnectNotificationStreamAsync()
         if (screen == AppScreen.WORKSPACE && currentMember != null && workspace != null) {
             notificationStreamHandle = NotificationStreamClient.connect(
                 baseUrl = PlatformClientConfig.baseUrl,
@@ -380,8 +428,7 @@ fun MessagingApp(
             )
         }
         onDispose {
-            notificationStreamHandle?.close()
-            notificationStreamHandle = null
+            disconnectNotificationStreamAsync()
         }
     }
 
@@ -410,7 +457,7 @@ fun MessagingApp(
 
     LaunchedEffect(screen, workspace?.name, channel?.name, currentMember?.displayName, centerView) {
         onWindowTitleChange(
-            buildDesktopWindowTitle(
+            buildWindowTitle(
                 screen = screen,
                 workspaceName = workspace?.name,
                 channelName = channel?.name,
@@ -584,30 +631,11 @@ fun MessagingApp(
                             threadLinkPreview = null
                         },
                         onSwitchWorkspace = {
+                            resetWorkspaceSession()
+                            scope.launch { runCatching { disconnectChat() } }
                             scope.launch {
-                                disconnectChat()
-                                screen = AppScreen.LANDING
-                                workspace = null
-                                currentMember = null
-                                channel = null
-                                workspaceMembers.clear()
-                                workspaceChannels.clear()
-                                messages.clear()
-                                threadMessages.clear()
-                                unreadNotifications.clear()
-                                allNotifications.clear()
-                                toastNotifications.clear()
-                                selectedRootId = null
-                                focusedMessageId = null
-                                focusedThreadMessageId = null
-                                centerView = WorkspaceCenterView.CHANNEL
-                                threadMessageBody = ""
-                                messageLinkPreview = null
-                                threadLinkPreview = null
-                                dismissedMessagePreviewUrl = null
-                                dismissedThreadPreviewUrl = null
-                                status = "Choose a workspace or create one."
-                                refreshWorkspaceList()
+                                runCatching { refreshWorkspaceList() }
+                                    .onFailure { status = it.message ?: "Failed to load workspaces" }
                             }
                         },
                         onOpenChannel = { target -> scope.launch { connectChannel(target) } },

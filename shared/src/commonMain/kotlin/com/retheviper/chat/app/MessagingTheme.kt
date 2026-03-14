@@ -149,7 +149,7 @@ internal fun rememberAppFontFamily(): FontFamily {
     )
 }
 
-internal fun buildDesktopWindowTitle(
+internal fun buildWindowTitle(
     screen: AppScreen,
     workspaceName: String?,
     channelName: String?,

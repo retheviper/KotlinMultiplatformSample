@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":shared"))
     implementation(compose.desktop.currentOs)
     implementation(libs.koin.core)
+    runtimeOnly(libs.logback.classic)
 
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.mockk)

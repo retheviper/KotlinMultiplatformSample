@@ -175,7 +175,7 @@ class MessagingClient(
     private fun decodeApiException(payload: String, statusCode: Int): IllegalStateException {
         val message = try {
             JsonInstance.decodeFromString<ApiErrorResponse>(payload).message
-        } catch (_: SerializationException) {
+        } catch (_: Throwable) {
             payload.ifBlank { "Request failed with status $statusCode" }
         }
         return IllegalStateException(message)

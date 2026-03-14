@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -461,10 +462,12 @@ internal fun SidebarChannelItem(
     onClick: () -> Unit
 ) {
     val palette = appPalette()
+    val itemShape = RoundedCornerShape(16.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (selected) palette.accent.copy(alpha = 0.24f) else Color.Transparent, RoundedCornerShape(14.dp))
+            .clip(itemShape)
+            .background(if (selected) palette.accent.copy(alpha = 0.24f) else Color.Transparent, itemShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
@@ -485,10 +488,12 @@ internal fun SidebarChannelItem(
 @Composable
 internal fun SidebarMenuItem(label: String, badge: Int, selected: Boolean, onClick: () -> Unit) {
     val palette = appPalette()
+    val itemShape = RoundedCornerShape(16.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (selected) palette.accent.copy(alpha = 0.24f) else Color.Transparent, RoundedCornerShape(14.dp))
+            .clip(itemShape)
+            .background(if (selected) palette.accent.copy(alpha = 0.24f) else Color.Transparent, itemShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween
