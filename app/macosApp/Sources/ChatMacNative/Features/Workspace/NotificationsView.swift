@@ -22,28 +22,7 @@ struct NotificationsView: View {
                         Button {
                             Task { await store.openNotification(notification) }
                         } label: {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text(notification.kind == .mention ? "Mention" : "Thread activity")
-                                        .font(.headline)
-                                    Spacer()
-                                    if notification.readAt == nil {
-                                        Circle()
-                                            .fill(Color.accentColor)
-                                            .frame(width: 8, height: 8)
-                                    }
-                                }
-                                Text(notification.authorDisplayName)
-                                    .font(.subheadline.bold())
-                                Text(notification.messagePreview)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(3)
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(nsColor: .controlBackgroundColor))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            NotificationCard(notification: notification)
                         }
                         .buttonStyle(.plain)
                     }
@@ -52,5 +31,61 @@ struct NotificationsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct NotificationCard: View {
+    let notification: MentionNotificationResponse
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        Text(notification.kind == .mention ? "Mention" : "Thread activity")
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(
+                                Capsule(style: .continuous)
+                                    .fill(notification.readAt == nil ? Color.accentColor.opacity(0.18) : Color.white.opacity(0.08))
+                            )
+                        if notification.readAt == nil {
+                            Circle()
+                                .fill(Color.accentColor)
+                                .frame(width: 8, height: 8)
+                        }
+                    }
+                    Text(notification.authorDisplayName)
+                        .font(.headline.weight(.semibold))
+                    Text(notification.messagePreview)
+                        .font(.body)
+                        .foregroundStyle(.primary.opacity(0.82))
+                        .lineLimit(3)
+                }
+                Spacer(minLength: 12)
+                Text(notification.createdAt.formattedNotificationTime)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(notification.readAt == nil ? Color.accentColor.opacity(0.10) : Color.white.opacity(0.04))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(notification.readAt == nil ? Color.accentColor.opacity(0.30) : Color.white.opacity(0.06), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
+private extension String {
+    var formattedNotificationTime: String {
+        if let instant = ISO8601DateFormatter().date(from: self) {
+            return instant.formatted(date: .omitted, time: .shortened)
+        }
+        return self
     }
 }
