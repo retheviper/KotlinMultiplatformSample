@@ -2,15 +2,16 @@
 
 ## Project structure
 
-- `api/js` - Client application by Compose Web
-- `api/jvm` - API server by Ktor
-- `api/common` - Shared code between client and server by Kotlin Multiplatform
+- `src/jvmMain` - Ktor API server
+- `src/jvmTest` - JVM tests
+
+Shared request/response models and constants are provided by the root `:contract` module.
 
 ## Build
 
 ```bash
-# Build client application (client will automatically build when server is built)
-./gradlew build
+# From repository root
+./gradlew :api:build
 ```
 
 ## Run
@@ -19,6 +20,6 @@
 # Run DB
 docker-compose up db -d
 
-# Run server (client will automatically build when server is run)
-./gradlew run
+# From repository root
+./gradlew :api:run
 ```

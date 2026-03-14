@@ -4,6 +4,15 @@
 
 Web / Desktop / Mobile BBS Application sample by Kotlin. (And Swift)
 
+## Direction
+
+This repository is being repositioned toward a Slack-like messaging product built with Kotlin Multiplatform.
+
+- Architecture: DDD + modular monolith
+- Backend style: one deployable monolith with strong internal module boundaries
+- Client style: shared KMP domain/application models with platform-specific presentation
+- Primary references: [AGENT.md](./AGENT.md), [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), [docs/BOOTSTRAP.md](./docs/BOOTSTRAP.md)
+
 ## Diagram
 
 ![diagram](./concept.svg)

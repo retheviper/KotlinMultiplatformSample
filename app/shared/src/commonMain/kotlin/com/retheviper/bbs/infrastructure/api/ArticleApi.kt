@@ -1,13 +1,12 @@
 package com.retheviper.bbs.infrastructure.api
 
 import com.retheviper.bbs.infrastructure.client.getHttpClient
-import com.retheviper.bbs.infrastructure.model.common.PaginationProperties
-import com.retheviper.bbs.infrastructure.model.response.ArticleResponse
-import com.retheviper.bbs.infrastructure.model.response.ListArticleResponse
+import com.retheviper.bbs.model.common.PaginationProperties
+import com.retheviper.bbs.model.response.ArticleResponse
+import com.retheviper.bbs.model.response.ListArticleResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.http.parameters
-import io.ktor.utils.io.core.use
+import io.ktor.client.request.parameter
 
 object ArticleApi {
 
@@ -21,12 +20,11 @@ object ArticleApi {
 
     suspend fun getArticles(boardId: Int, paginationProperties: PaginationProperties): ListArticleResponse {
         return getHttpClient().use {
-            parameters {
-                append("page", paginationProperties.page.toString())
-                append("size", paginationProperties.size.toString())
-                append("limit", paginationProperties.limit.toString())
+            it.get(endpoint.replace("{boardId}", boardId.toString())) {
+                parameter("page", paginationProperties.page)
+                parameter("size", paginationProperties.size)
+                parameter("limit", paginationProperties.limit)
             }
-            it.get(endpoint.replace("{boardId}", boardId.toString()))
         }.body()
     }
 }

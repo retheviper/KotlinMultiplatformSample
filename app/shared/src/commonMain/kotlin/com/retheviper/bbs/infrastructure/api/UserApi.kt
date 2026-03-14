@@ -1,13 +1,12 @@
 package com.retheviper.bbs.infrastructure.api
 
 import com.retheviper.bbs.infrastructure.client.getHttpClient
-import com.retheviper.bbs.infrastructure.model.request.CreateUserRequest
-import com.retheviper.bbs.infrastructure.model.response.UserResponse
+import com.retheviper.bbs.model.request.CreateUserRequest
+import com.retheviper.bbs.model.response.UserResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.utils.io.core.use
 
 
 object UserApi : Api {

@@ -73,7 +73,7 @@ data class Article(
                 content = request.content?.trimAll(),
                 authorId = authorId,
                 password = request.password.trimAll(),
-                category = request.categoryId?.let { Category(id = CategoryId(request.categoryId)) },
+                category = request.categoryId?.let { Category(id = CategoryId(it)) },
                 tags = request.tagNames?.map { Tag(name = it.trimAll()) }?.distinct() ?: emptyList()
             )
         }

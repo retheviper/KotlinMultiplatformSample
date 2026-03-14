@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.retheviper.bbs.infrastructure.api.ArticleApi
 import com.retheviper.bbs.infrastructure.api.UserApi
 import com.retheviper.bbs.infrastructure.client.ApiCaller
-import com.retheviper.bbs.infrastructure.model.common.PaginationProperties
+import com.retheviper.bbs.model.common.PaginationProperties
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)

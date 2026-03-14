@@ -15,16 +15,18 @@
 
 ## Project structure
 
-- `iosApp` - Client application by SwiftUI (iOS/iPadOS)
-- `andoroidApp` - Client application by Jetpack Compose (Android)
-- `desktopApp` - Client application by Compose for Desktop (macOS/Windows/Linux)
-- `shared` - Shared code between iOS/iPadOS/Android/macOS/Windows/Linux by Kotlin Multiplatform
+- `androidApp` - Android application by Jetpack Compose
+- `desktopApp` - Desktop application by Compose Multiplatform
+- `shared` - Shared Kotlin Multiplatform client code
+- `iosApp` - SwiftUI host app consuming the shared framework
+
+Shared request/response models and constants are provided by the root `:contract` module.
 
 ## Build
 
 ```bash
-# Build client application (client will automatically build when server is built)
-./gradlew build
+# From repository root
+./gradlew :app:shared:build :app:desktopApp:build
 ```
 
 ## Run
@@ -32,6 +34,6 @@
 ### Desktop
 
 ```bash
-# Run application (Requires server to be running)
-./gradlew run
+# From repository root (requires server to be running)
+./gradlew :app:desktopApp:run
 ```

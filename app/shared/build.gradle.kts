@@ -1,13 +1,13 @@
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    id("org.jetbrains.compose")
-    id("com.android.library")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.android.library)
 }
 
 kotlin {
-    android()
-
+    androidTarget()
     jvm()
 
     listOf(
@@ -20,21 +20,17 @@ kotlin {
         }
     }
 
-    val ktorVersion: String by project
-
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(project(":contract"))
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material)
-                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-                implementation(compose.components.resources)
-
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.kotlinx.datetime)
             }
         }
         val commonTest by getting {
@@ -44,13 +40,9 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                api("androidx.activity:activity-compose:1.6.1")
-                api("androidx.appcompat:appcompat:1.6.1")
-                api("androidx.core:core-ktx:1.9.0")
-                implementation("io.ktor:ktor-client-android:$ktorVersion")
+                implementation(libs.ktor.client.android)
             }
         }
-        //        val androidTest by getting
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
@@ -60,7 +52,7 @@ kotlin {
             iosArm64Main.dependsOn(this)
             iosSimulatorArm64Main.dependsOn(this)
             dependencies {
-                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
+                implementation(libs.ktor.client.darwin)
             }
         }
         val iosX64Test by getting
@@ -74,30 +66,28 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-apache:$ktorVersion")
+                implementation(libs.ktor.client.cio)
             }
         }
     }
+
+    jvmToolchain(17)
 }
 
 android {
-    compileSdk = (findProperty("android.compileSdk") as String).toInt()
     namespace = "com.retheviper.bbs"
+    compileSdk = providers.gradleProperty("android.compileSdk").get().toInt()
 
     sourceSets["main"].manifest.srcFile("src/main/AndroidManifest.xml")
     sourceSets["main"].res.srcDirs("src/main/res")
     sourceSets["main"].resources.srcDirs("src/main/resources")
 
     defaultConfig {
-        minSdk = (findProperty("android.minSdk") as String).toInt()
-        targetSdk = (findProperty("android.targetSdk") as String).toInt()
+        minSdk = providers.gradleProperty("android.minSdk").get().toInt()
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlin {
-        jvmToolchain(11)
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }

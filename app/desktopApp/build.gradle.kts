@@ -1,42 +1,20 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    kotlin("multiplatform")
-    id("org.jetbrains.compose")
-    kotlin("plugin.serialization") version "1.8.10"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.compose.multiplatform)
 }
 
-group = "com.retheviper.bbs"
-version = "1.0-SNAPSHOT"
+dependencies {
+    implementation(project(":app:shared"))
+    implementation(compose.desktop.currentOs)
+    implementation(libs.koin.core)
 
-val ktorVersion: String by project
-val koinVersion: String by project
-val kotestVersion: String by project
-
-kotlin {
-    jvm {
-        jvmToolchain(17)
-        withJava()
-    }
-    sourceSets {
-        val jvmMain by getting {
-            dependencies {
-                implementation(project(":shared"))
-                implementation(compose.desktop.currentOs)
-                implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.22")
-                implementation("io.insert-koin:koin-ktor:$koinVersion")
-                implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")
-            }
-        }
-        val jvmTest by getting {
-            dependencies {
-                implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-                implementation("io.mockk:mockk:1.13.5")
-                implementation("org.instancio:instancio-junit:2.16.0")
-                implementation("org.instancio:instancio-core:2.16.0")
-            }
-        }
-    }
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.mockk)
+    testImplementation(libs.instancio.junit)
+    testImplementation(libs.instancio.core)
 }
 
 compose.desktop {
@@ -48,4 +26,12 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(17)
 }
