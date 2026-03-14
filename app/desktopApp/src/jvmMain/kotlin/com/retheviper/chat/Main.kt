@@ -430,7 +430,7 @@ private fun selectedShellMode(): DesktopShellMode {
 
 private fun resolveShellMode(mode: DesktopShellMode): DesktopShellMode {
     return when (mode) {
-        DesktopShellMode.AUTO -> DesktopShellMode.COMPOSE
+        DesktopShellMode.AUTO -> if (isMacOs()) DesktopShellMode.CHOOSER else DesktopShellMode.COMPOSE
         DesktopShellMode.COMPOSE -> DesktopShellMode.COMPOSE
         DesktopShellMode.MAC_NATIVE -> if (isMacOs()) DesktopShellMode.MAC_NATIVE else DesktopShellMode.COMPOSE
         DesktopShellMode.CHOOSER -> chooseShellMode()
