@@ -97,6 +97,12 @@ fun toThreadMessages(thread: ThreadResponse): List<MessageResponse> {
 fun findActiveMention(text: String): MentionDraft? {
     val atIndex = text.lastIndexOf('@')
     if (atIndex < 0) return null
+    if (atIndex > 0) {
+        val before = text[atIndex - 1]
+        if (!before.isWhitespace()) {
+            return null
+        }
+    }
     val suffix = text.substring(atIndex + 1)
     if (suffix.contains(' ') || suffix.contains('\n') || suffix.contains('\t')) {
         return null

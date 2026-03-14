@@ -51,7 +51,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -1881,7 +1880,6 @@ private fun ImageAssetDialog(
     title: String?,
     onDismiss: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -1909,7 +1907,7 @@ private fun ImageAssetDialog(
             ) {
                 Button(
                     onClick = {
-                        clipboardManager.setText(buildAnnotatedString { append(imageUrl) })
+                        LinkAssetActions.copyText(imageUrl)
                     },
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = DarkText),
                     elevation = null

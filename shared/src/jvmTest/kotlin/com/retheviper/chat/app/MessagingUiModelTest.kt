@@ -56,6 +56,20 @@ class MessagingUiModelTest : FunSpec({
         next.messages.single().threadReplyCount shouldBe 3
     }
 
+    test("reply posted keeps the feed unchanged when the root message is not visible") {
+        val current = ChatFeedState(messages = listOf(message(id = "root-1", body = "first", threadReplyCount = 2)))
+
+        val next = reduceChatFeed(
+            current = current,
+            event = ChatEvent(
+                type = ChatEventType.REPLY_POSTED,
+                message = message(id = "reply-1", body = "reply", threadRootMessageId = "missing-root")
+            )
+        )
+
+        next shouldBe current
+    }
+
     test("reaction updated replaces the matching message in the visible feed") {
         val next = reduceChatFeed(
             current = ChatFeedState(messages = listOf(message(id = "root-1", body = "first"))),
@@ -164,6 +178,16 @@ class MessagingUiModelTest : FunSpec({
         plan?.createRequest?.displayName shouldBe "Bob"
     }
 
+    test("planWorkspaceJoin returns null when creating a new member without a display name") {
+        val plan = planWorkspaceJoin(
+            members = emptyList(),
+            userId = "bob",
+            displayName = "   "
+        )
+
+        plan.shouldBeNull()
+    }
+
     test("suggestMentionCandidates returns matches for the active mention") {
         val candidates = suggestMentionCandidates(
             members = listOf(
@@ -174,6 +198,15 @@ class MessagingUiModelTest : FunSpec({
         )
 
         candidates.map { it.userId } shouldContainExactly listOf("bob")
+    }
+
+    test("suggestMentionCandidates ignores at signs inside email-like text") {
+        val candidates = suggestMentionCandidates(
+            members = listOf(member(userId = "alice", displayName = "Alice")),
+            text = "email@test.com"
+        )
+
+        candidates shouldContainExactly emptyList()
     }
 
     test("applyMentionCandidate replaces the active mention token") {
