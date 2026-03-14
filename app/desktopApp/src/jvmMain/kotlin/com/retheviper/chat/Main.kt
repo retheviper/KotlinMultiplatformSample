@@ -1,14 +1,19 @@
 package com.retheviper.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -27,8 +32,8 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -89,61 +94,67 @@ private object ChooserDesktopShellRunner : DesktopShellRunner {
         var selectedMode by remember { mutableStateOf<DesktopShellMode?>(null) }
 
         when (selectedMode) {
-            null -> DialogWindow(
+            null -> Window(
                 onCloseRequest = ::exitApplication,
                 title = "Choose Shell",
-                resizable = false
+                resizable = false,
+                state = rememberWindowState(
+                    width = 760.dp,
+                    height = 470.dp,
+                    position = WindowPosition.Aligned(Alignment.Center)
+                )
             ) {
                 MaterialTheme {
                     Surface(
-                        modifier = Modifier.background(ComposeColor(0xFF17131F)),
+                        modifier = Modifier.fillMaxSize().background(ComposeColor(0xFF17131F)),
                         color = ComposeColor(0xFF17131F)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .width(560.dp)
-                                .padding(28.dp),
-                            verticalArrangement = Arrangement.spacedBy(20.dp)
-                        ) {
-                            Text(
-                                text = "Choose desktop shell",
-                                style = MaterialTheme.typography.h5,
-                                color = ComposeColor(0xFFF6F2FF)
-                            )
-                            Text(
-                                text = "Pick the shell to launch for this session.",
-                                style = MaterialTheme.typography.body2,
-                                color = ComposeColor(0xFFB7ADCC)
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(28.dp),
+                                verticalArrangement = Arrangement.spacedBy(20.dp)
                             ) {
-                                DesktopShellChoiceCard(
-                                    modifier = Modifier.weight(1f),
-                                    title = "Compose Desktop",
-                                    description = "Full multiplatform shell with tray integration and shared UI.",
-                                    accent = ComposeColor(0xFF8C62FF),
-                                    actionLabel = "Open Compose",
-                                    onClick = {
-                                        selectedMode = DesktopShellMode.COMPOSE
-                                    }
+                                Text(
+                                    text = "Choose desktop shell",
+                                    style = MaterialTheme.typography.h5,
+                                    color = ComposeColor(0xFFF6F2FF)
                                 )
-                                DesktopShellChoiceCard(
-                                    modifier = Modifier.weight(1f),
-                                    title = "Mac Native",
-                                    description = "SwiftUI shell for macOS with native windowing and notifications.",
-                                    accent = ComposeColor(0xFF45C2A7),
-                                    actionLabel = "Open Native",
-                                    onClick = {
-                                        val launched = MacNativeDesktopShellRunner.launch(background = true)
-                                        if (launched != null) {
-                                            exitApplication()
-                                        } else {
+                                Text(
+                                    text = "Pick the shell to launch for this session.",
+                                    style = MaterialTheme.typography.body2,
+                                    color = ComposeColor(0xFFB7ADCC)
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    DesktopShellChoiceCard(
+                                        modifier = Modifier.width(320.dp),
+                                        title = "Compose Desktop",
+                                        description = "Shared Compose UI with desktop integrations and the multiplatform app shell.",
+                                        iconPath = "icons/compose-multiplatform.svg",
+                                        accent = ComposeColor(0xFF8C62FF),
+                                        actionLabel = "Open Compose",
+                                        onClick = {
                                             selectedMode = DesktopShellMode.COMPOSE
                                         }
-                                    }
-                                )
+                                    )
+                                    DesktopShellChoiceCard(
+                                        modifier = Modifier.width(320.dp),
+                                        title = "Mac Native",
+                                        description = "SwiftUI shell for macOS with native window chrome and notification support.",
+                                        iconPath = "icons/swift.svg",
+                                        accent = ComposeColor(0xFF45C2A7),
+                                        actionLabel = "Open Native",
+                                        onClick = {
+                                            val launched = MacNativeDesktopShellRunner.launch(background = true)
+                                            if (launched != null) {
+                                                exitApplication()
+                                            } else {
+                                                selectedMode = DesktopShellMode.COMPOSE
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -160,12 +171,15 @@ private fun DesktopShellChoiceCard(
     modifier: Modifier = Modifier,
     title: String,
     description: String,
+    iconPath: String,
     accent: ComposeColor,
     actionLabel: String,
     onClick: () -> Unit
 ) {
     Surface(
-        modifier = modifier.heightIn(min = 220.dp),
+        modifier = modifier
+            .heightIn(min = 300.dp)
+            .clickable(onClick = onClick),
         color = ComposeColor(0xFF231C30),
         elevation = 0.dp
     ) {
@@ -173,38 +187,40 @@ private fun DesktopShellChoiceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Surface(
-                modifier = Modifier.width(44.dp),
-                color = accent.copy(alpha = 0.18f),
-                elevation = 0.dp
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Surface(
+                    modifier = Modifier.size(68.dp),
+                    color = accent.copy(alpha = 0.14f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    elevation = 0.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Image(
+                            painter = painterResource(iconPath),
+                            contentDescription = title,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                }
                 Text(
-                    text = "•",
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    color = accent,
+                    text = title,
                     style = MaterialTheme.typography.h6,
-                    fontWeight = FontWeight.Bold
+                    color = ComposeColor(0xFFF6F2FF),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.body2,
+                    color = ComposeColor(0xFFB7ADCC)
                 )
             }
             Text(
-                text = title,
-                style = MaterialTheme.typography.h6,
-                color = ComposeColor(0xFFF6F2FF),
+                text = actionLabel,
+                color = accent,
                 fontWeight = FontWeight.SemiBold
             )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.body2,
-                color = ComposeColor(0xFFB7ADCC)
-            )
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onClick
-            ) {
-                Text(actionLabel)
-            }
         }
     }
 }
@@ -221,21 +237,10 @@ private fun ComposeDesktopShellApp(onExitApplication: () -> Unit) {
     val windowState = rememberDesktopWindowState(preferences)
     val desktopBridge = remember { DesktopBridge() }
 
-    var isWindowVisible by rememberSaveable { mutableStateOf(true) }
     var windowTitle by rememberSaveable { mutableStateOf("Chat Desktop") }
     var unreadNotificationCount by rememberSaveable { mutableStateOf(0) }
-    var openWindowRequest by remember { mutableStateOf(0L) }
     var quitRequested by remember { mutableStateOf(false) }
     var awtWindow by remember { mutableStateOf<java.awt.Window?>(null) }
-
-    fun showWindow() {
-        isWindowVisible = true
-        openWindowRequest += 1
-    }
-
-    fun hideWindow() {
-        isWindowVisible = false
-    }
 
     fun requestQuit() {
         persistWindowState(preferences, windowState)
@@ -268,10 +273,16 @@ private fun ComposeDesktopShellApp(onExitApplication: () -> Unit) {
             title = windowTitle,
             unreadCount = unreadNotificationCount,
             onOpen = {
-                SwingUtilities.invokeLater { showWindow() }
+                SwingUtilities.invokeLater {
+                    awtWindow?.isVisible = true
+                    awtWindow?.toFront()
+                    awtWindow?.requestFocus()
+                }
             },
             onHide = {
-                SwingUtilities.invokeLater { hideWindow() }
+                SwingUtilities.invokeLater {
+                    awtWindow?.isVisible = false
+                }
             },
             onQuit = {
                 SwingUtilities.invokeLater { requestQuit() }
@@ -279,82 +290,64 @@ private fun ComposeDesktopShellApp(onExitApplication: () -> Unit) {
         )
     }
 
-    if (isWindowVisible) {
-        Window(
-            onCloseRequest = {
-                if (desktopBridge.isTraySupported) {
-                    hideWindow()
-                } else {
-                    requestQuit()
-                }
-            },
-            title = windowTitle,
-            state = windowState
-        ) {
-            awtWindow = window
-            window.minimumSize = Dimension(1180, 760)
+    Window(
+        onCloseRequest = { requestQuit() },
+        title = windowTitle,
+        state = windowState
+    ) {
+        awtWindow = window
+        window.minimumSize = Dimension(1180, 760)
 
-            LaunchedEffect(openWindowRequest) {
+        LaunchedEffect(Unit) {
+            if (!window.isVisible) {
                 window.isVisible = true
-                window.toFront()
-                window.requestFocus()
             }
-
-            MenuBar {
-                Menu("App") {
-                    Item(
-                        text = "Hide Window",
-                        enabled = desktopBridge.isTraySupported,
-                        shortcut = menuShortcut(Key.M),
-                        onClick = { hideWindow() }
-                    )
-                    Item(
-                        text = "Show Window",
-                        shortcut = menuShortcut(Key.O),
-                        onClick = { showWindow() }
-                    )
-                    Item(
-                        text = "Quit",
-                        shortcut = menuShortcut(Key.Q),
-                        onClick = { requestQuit() }
-                    )
-                }
-            }
-
-            DisposableEffect(Unit) {
-                onDispose {
-                    persistWindowState(preferences, windowState)
-                }
-            }
-
-            MessagingApp(
-                onUnreadNotificationCountChange = { unreadNotificationCount = it },
-                onNotificationEvent = { event ->
-                    desktopBridge.showNotification(
-                        event = event,
-                        window = awtWindow,
-                        unreadCount = unreadNotificationCount
-                    )
-                },
-                onWindowTitleChange = { title -> windowTitle = title }
-            )
+            window.toFront()
+            window.requestFocus()
         }
-    } else {
-        LaunchedEffect(openWindowRequest) {
-            desktopBridge.ensureTray(
-                title = windowTitle,
-                unreadCount = unreadNotificationCount,
-                onOpen = {
-                    SwingUtilities.invokeLater { showWindow() }
-                },
-                onHide = {
-                    SwingUtilities.invokeLater { hideWindow() }
-                },
-                onQuit = {
-                    SwingUtilities.invokeLater { requestQuit() }
-                }
-            )
+
+        MenuBar {
+            Menu("App") {
+                Item(
+                    text = "Hide Window",
+                    enabled = desktopBridge.isTraySupported,
+                    shortcut = menuShortcut(Key.M),
+                    onClick = { window.isVisible = false }
+                )
+                Item(
+                    text = "Show Window",
+                    shortcut = menuShortcut(Key.O),
+                    onClick = {
+                        window.isVisible = true
+                        window.toFront()
+                        window.requestFocus()
+                    }
+                )
+                Item(
+                    text = "Quit",
+                    shortcut = menuShortcut(Key.Q),
+                    onClick = { requestQuit() }
+                )
+            }
         }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                persistWindowState(preferences, windowState)
+            }
+        }
+
+        MessagingApp(
+            onUnreadNotificationCountChange = { unreadNotificationCount = it },
+            onNotificationEvent = { event ->
+                desktopBridge.showNotification(
+                    event = event,
+                    window = awtWindow,
+                    unreadCount = unreadNotificationCount
+                )
+            },
+            onWindowTitleChange = { title -> windowTitle = title }
+        )
     }
 
     DisposableEffect(Unit) {
