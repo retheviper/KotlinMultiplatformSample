@@ -111,6 +111,10 @@ private val MainBg = Color(0xFFF6F4FA)
 private val MainCard = Color(0xFFFFFFFF)
 private val ThreadBg = Color(0xFFF0ECF7)
 private val Border = Color(0xFFE4DDEF)
+private val OwnMessageBg = Color(0xFFF0EBFF)
+private val OtherMessageBg = Color(0xFFF9F7FC)
+private val OwnFocusedMessageBg = Color(0xFFE6DEFF)
+private val OtherFocusedMessageBg = Color(0xFFEEE8FB)
 private val LightText = Color(0xFFF7F2FF)
 private val MutedText = Color(0xFFD4C5E2)
 private val DarkText = Color(0xFF291F31)
@@ -1515,12 +1519,18 @@ private fun ThreadPane(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 itemsIndexed(threadMessages, key = { _, item -> item.id }) { index, item ->
+                    val isOwnMessage = currentMember?.id == item.authorMemberId
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = if (index == 0) 0.dp else 18.dp),
                         shape = RoundedCornerShape(16.dp),
-                        backgroundColor = if (focusedThreadMessageId == item.id) Color(0xFFEDE7FB) else Color.White,
+                        backgroundColor = when {
+                            focusedThreadMessageId == item.id && isOwnMessage -> OwnFocusedMessageBg
+                            focusedThreadMessageId == item.id -> Color(0xFFEDE7FB)
+                            isOwnMessage -> OwnMessageBg
+                            else -> Color.White
+                        },
                         elevation = 0.dp
                     ) {
                         Column(
@@ -1682,10 +1692,16 @@ private fun MessageRow(
     onToggleReaction: (String) -> Unit,
     onOpenReactionPicker: () -> Unit
 ) {
+    val isOwnMessage = currentMemberId == message.authorMemberId
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenThread),
         shape = RoundedCornerShape(18.dp),
-        backgroundColor = if (selected) Color(0xFFEEE8FB) else Color(0xFFF9F7FC),
+        backgroundColor = when {
+            selected && isOwnMessage -> OwnFocusedMessageBg
+            selected -> OtherFocusedMessageBg
+            isOwnMessage -> OwnMessageBg
+            else -> OtherMessageBg
+        },
         elevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
