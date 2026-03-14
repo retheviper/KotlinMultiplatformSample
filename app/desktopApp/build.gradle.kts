@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.gradle.api.tasks.JavaExec
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -41,6 +42,13 @@ compose.desktop {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.withType<JavaExec>().configureEach {
+    System.getProperty("chat.desktop.shell")?.let { systemProperty("chat.desktop.shell", it) }
+    System.getProperty("messaging.baseUrl")?.let { systemProperty("messaging.baseUrl", it) }
+    System.getenv("CHAT_DESKTOP_SHELL")?.let { environment("CHAT_DESKTOP_SHELL", it) }
+    System.getenv("MESSAGING_BASE_URL")?.let { environment("MESSAGING_BASE_URL", it) }
 }
 
 kotlin {

@@ -33,6 +33,8 @@ import java.awt.SystemTray
 import java.awt.Taskbar
 import java.awt.TrayIcon
 import java.awt.image.BufferedImage
+import java.io.File
+import java.nio.file.Path
 import java.util.prefs.Preferences
 import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
@@ -220,8 +222,39 @@ private object ComposeDesktopShellRunner : DesktopShellRunner {
 
 private object MacNativeDesktopShellRunner : DesktopShellRunner {
     override fun run() {
-        System.err.println("mac-native shell is reserved for a future SwiftUI implementation. Falling back to Compose Desktop.")
-        ComposeDesktopShellRunner.run()
+        val packageManifest = locateMacNativePackage()
+        if (packageManifest == null) {
+            System.err.println("Unable to locate app/macosApp/Package.swift. Falling back to Compose Desktop.")
+            ComposeDesktopShellRunner.run()
+            return
+        }
+
+        val process = runCatching {
+            ProcessBuilder(
+                "swift",
+                "run",
+                "--package-path",
+                packageManifest.parent.toString(),
+                "ChatMacNative"
+            ).apply {
+                directory(packageManifest.parent.toFile())
+                inheritIO()
+                environment()["MESSAGING_BASE_URL"] =
+                    System.getProperty("messaging.baseUrl")
+                        ?: System.getenv("MESSAGING_BASE_URL")
+                        ?: "http://localhost:8080"
+            }.start()
+        }.getOrElse { error ->
+            System.err.println("Failed to launch SwiftUI shell: ${error.message}. Falling back to Compose Desktop.")
+            ComposeDesktopShellRunner.run()
+            return
+        }
+
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            System.err.println("SwiftUI shell exited with code $exitCode. Falling back to Compose Desktop.")
+            ComposeDesktopShellRunner.run()
+        }
     }
 }
 
@@ -409,7 +442,7 @@ private fun chooseShellMode(): DesktopShellMode {
         return DesktopShellMode.COMPOSE
     }
 
-    val options = arrayOf("Compose Desktop", "Mac Native (future)")
+    val options = arrayOf("Compose Desktop", "Mac Native (SwiftUI)")
     val selected = runCatching {
         JOptionPane.showOptionDialog(
             null,
@@ -431,6 +464,19 @@ private fun chooseShellMode(): DesktopShellMode {
 
 private fun isMacOs(): Boolean =
     System.getProperty("os.name").contains("Mac", ignoreCase = true)
+
+private fun locateMacNativePackage(): Path? {
+    val cwd = File(System.getProperty("user.dir")).absoluteFile
+    var current: File? = cwd
+    while (current != null) {
+        val candidate = current.toPath().resolve("app").resolve("macosApp").resolve("Package.swift")
+        if (candidate.toFile().exists()) {
+            return candidate
+        }
+        current = current.parentFile
+    }
+    return null
+}
 
 private data class DesktopWindowSnapshot(
     val width: Float,
