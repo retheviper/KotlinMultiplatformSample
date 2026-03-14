@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,11 +33,15 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
+import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.Typography
+import androidx.compose.material.darkColors
+import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +51,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.onFocusChanged
@@ -101,25 +107,127 @@ private enum class WorkspaceCenterView {
     NOTIFICATIONS
 }
 
-private val Shell = Color(0xFF1D1624)
-private val Sidebar = Color(0xFF3C214B)
-private val SidebarCard = Color(0xFF4C2D60)
-private val Accent = Color(0xFF7C5CFF)
-private val AccentSoft = Color(0xFF8E72FF)
-private val MainBg = Color(0xFFF6F4FA)
-private val MainCard = Color(0xFFFFFFFF)
-private val ThreadBg = Color(0xFFF0ECF7)
-private val Border = Color(0xFFE4DDEF)
-private val OwnMessageBg = Color(0xFFF0EBFF)
-private val OtherMessageBg = Color(0xFFF9F7FC)
-private val OwnFocusedMessageBg = Color(0xFFE6DEFF)
-private val OtherFocusedMessageBg = Color(0xFFEEE8FB)
-private val LightText = Color(0xFFF7F2FF)
-private val MutedText = Color(0xFFD4C5E2)
-private val DarkText = Color(0xFF291F31)
-private val DimText = Color(0xFF7E7488)
+private data class AppPalette(
+    val shell: Color,
+    val sidebar: Color,
+    val sidebarCard: Color,
+    val accent: Color,
+    val accentSoft: Color,
+    val mainBg: Color,
+    val mainCard: Color,
+    val threadBg: Color,
+    val border: Color,
+    val ownMessageBg: Color,
+    val otherMessageBg: Color,
+    val ownFocusedMessageBg: Color,
+    val otherFocusedMessageBg: Color,
+    val lightText: Color,
+    val mutedText: Color,
+    val darkText: Color,
+    val dimText: Color,
+    val softText: Color,
+    val overlayCard: Color,
+    val subtleSurface: Color
+)
+
+private val LightPalette = AppPalette(
+    shell = Color(0xFFF1EDF6),
+    sidebar = Color(0xFF30253C),
+    sidebarCard = Color(0xFF40304F),
+    accent = Color(0xFF7C5CFF),
+    accentSoft = Color(0xFF9D87FF),
+    mainBg = Color(0xFFF6F4FA),
+    mainCard = Color(0xFFFFFFFF),
+    threadBg = Color(0xFFF3EFF8),
+    border = Color(0xFFE4DDEF),
+    ownMessageBg = Color(0xFFF0EBFF),
+    otherMessageBg = Color(0xFFF8F5FC),
+    ownFocusedMessageBg = Color(0xFFE6DEFF),
+    otherFocusedMessageBg = Color(0xFFEDE7FB),
+    lightText = Color(0xFFF7F2FF),
+    mutedText = Color(0xFFD4C5E2),
+    darkText = Color(0xFF291F31),
+    dimText = Color(0xFF7E7488),
+    softText = Color(0xFF4B4155),
+    overlayCard = Color(0xFFF7F3FB),
+    subtleSurface = Color(0xFFF4F0FA)
+)
+
+private val DarkPalette = AppPalette(
+    shell = Color(0xFF15111C),
+    sidebar = Color(0xFF201826),
+    sidebarCard = Color(0xFF2A2133),
+    accent = Color(0xFF9D87FF),
+    accentSoft = Color(0xFFB3A2FF),
+    mainBg = Color(0xFF18141F),
+    mainCard = Color(0xFF221C2B),
+    threadBg = Color(0xFF262032),
+    border = Color(0xFF3B3147),
+    ownMessageBg = Color(0xFF342755),
+    otherMessageBg = Color(0xFF2A2334),
+    ownFocusedMessageBg = Color(0xFF463570),
+    otherFocusedMessageBg = Color(0xFF372D46),
+    lightText = Color(0xFFF7F2FF),
+    mutedText = Color(0xFFB8ABCA),
+    darkText = Color(0xFFF4EEFC),
+    dimText = Color(0xFFA99BB8),
+    softText = Color(0xFFD4CBDF),
+    overlayCard = Color(0xFF2A2235),
+    subtleSurface = Color(0xFF30273B)
+)
+
+private val LocalAppPalette = staticCompositionLocalOf { LightPalette }
+private val Shell = LightPalette.shell
+private val Sidebar = LightPalette.sidebar
+private val SidebarCard = LightPalette.sidebarCard
+private val Accent = LightPalette.accent
+private val AccentSoft = LightPalette.accentSoft
+private val MainBg = LightPalette.mainBg
+private val MainCard = LightPalette.mainCard
+private val ThreadBg = LightPalette.threadBg
+private val Border = LightPalette.border
+private val OwnMessageBg = LightPalette.ownMessageBg
+private val OtherMessageBg = LightPalette.otherMessageBg
+private val OwnFocusedMessageBg = LightPalette.ownFocusedMessageBg
+private val OtherFocusedMessageBg = LightPalette.otherFocusedMessageBg
+private val LightText = LightPalette.lightText
+private val MutedText = LightPalette.mutedText
+private val DarkText = LightPalette.darkText
+private val DimText = LightPalette.dimText
 private val ReactionDefaults = listOf("👍", "❤️", "😂", "🎉", "👀", "🚀")
 private val UrlRegex = Regex("""https?://[^\s]+""", RegexOption.IGNORE_CASE)
+
+@Composable
+private fun appPalette(): AppPalette = LocalAppPalette.current
+
+@Composable
+private fun rememberMaterialColors(darkTheme: Boolean, palette: AppPalette): Colors {
+    return if (darkTheme) {
+        darkColors(
+            primary = palette.accent,
+            primaryVariant = palette.accentSoft,
+            secondary = palette.accentSoft,
+            background = palette.mainBg,
+            surface = palette.mainCard,
+            onPrimary = Color.White,
+            onSecondary = palette.darkText,
+            onBackground = palette.darkText,
+            onSurface = palette.darkText
+        )
+    } else {
+        lightColors(
+            primary = palette.accent,
+            primaryVariant = palette.accentSoft,
+            secondary = palette.accentSoft,
+            background = palette.mainBg,
+            surface = palette.mainCard,
+            onPrimary = Color.White,
+            onSecondary = palette.darkText,
+            onBackground = palette.darkText,
+            onSurface = palette.darkText
+        )
+    }
+}
 
 private data class ToastNotification(
     val id: String,
@@ -508,8 +616,15 @@ fun MessagingApp(
         )
     }
 
-    MaterialTheme(typography = Typography(defaultFontFamily = appFontFamily)) {
-        Surface(modifier = Modifier.fillMaxSize(), color = Shell) {
+    val darkTheme = isSystemInDarkTheme()
+    val palette = if (darkTheme) DarkPalette else LightPalette
+
+    androidx.compose.runtime.CompositionLocalProvider(LocalAppPalette provides palette) {
+        MaterialTheme(
+            colors = rememberMaterialColors(darkTheme, palette),
+            typography = Typography(defaultFontFamily = appFontFamily)
+        ) {
+            Surface(modifier = Modifier.fillMaxSize(), color = palette.shell) {
             Box(modifier = Modifier.fillMaxSize()) {
                 when (screen) {
                     AppScreen.LANDING -> {
@@ -866,6 +981,7 @@ fun MessagingApp(
                 }
             }
         }
+        }
     }
 }
 
@@ -884,8 +1000,9 @@ private fun LandingScreen(
     onOpenWorkspace: (WorkspaceResponse) -> Unit,
     onCreateWorkspace: () -> Unit
 ) {
+    val palette = appPalette()
     Box(
-        modifier = Modifier.fillMaxSize().padding(28.dp),
+        modifier = Modifier.fillMaxSize().background(palette.shell).padding(28.dp),
         contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
         Card(
@@ -895,15 +1012,15 @@ private fun LandingScreen(
                 .height(720.dp)
                 .animateContentSize(),
             shape = RoundedCornerShape(32.dp),
-            backgroundColor = Sidebar,
+            backgroundColor = palette.sidebar,
             elevation = 0.dp
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(28.dp),
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
-                Text("Chat Workspace", style = MaterialTheme.typography.h3, color = LightText)
-                Text(status, color = MutedText)
+                Text("Chat Workspace", style = MaterialTheme.typography.h3, color = palette.lightText)
+                Text(status, color = palette.mutedText)
                 Row(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
@@ -932,7 +1049,7 @@ private fun LandingScreen(
                         modifier = Modifier
                             .width(1.dp)
                             .fillMaxHeight()
-                            .background(MutedText.copy(alpha = 0.22f))
+                            .background(palette.mutedText.copy(alpha = 0.22f))
                     )
 
                     SplitPanelCard(
@@ -941,10 +1058,10 @@ private fun LandingScreen(
                         subtitle = "A #general channel is created automatically.",
                         dark = false
                     ) {
-                        FormField("Workspace slug", workspaceSlug, textColor = DarkText, onValueChange = onWorkspaceSlugChange)
-                        FormField("Workspace name", workspaceName, textColor = DarkText, onValueChange = onWorkspaceNameChange)
-                        FormField("Owner user id", ownerUserId, textColor = DarkText, onValueChange = onOwnerUserIdChange)
-                        FormField("Owner display name", ownerDisplayName, textColor = DarkText, onValueChange = onOwnerDisplayNameChange)
+                        FormField("Workspace slug", workspaceSlug, textColor = palette.darkText, onValueChange = onWorkspaceSlugChange)
+                        FormField("Workspace name", workspaceName, textColor = palette.darkText, onValueChange = onWorkspaceNameChange)
+                        FormField("Owner user id", ownerUserId, textColor = palette.darkText, onValueChange = onOwnerUserIdChange)
+                        FormField("Owner display name", ownerDisplayName, textColor = palette.darkText, onValueChange = onOwnerDisplayNameChange)
                         Spacer(modifier = Modifier.weight(1f))
                         FilledActionButton("Create workspace", onCreateWorkspace, modifier = Modifier.fillMaxWidth())
                     }
@@ -962,18 +1079,19 @@ private fun SplitPanelCard(
     dark: Boolean,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val palette = appPalette()
     Card(
         modifier = modifier.widthIn(min = 0.dp),
         shape = RoundedCornerShape(26.dp),
-        backgroundColor = if (dark) SidebarCard else MainBg,
+        backgroundColor = if (dark) palette.sidebarCard else palette.mainBg,
         elevation = 0.dp
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(22.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             content = {
-                Text(title, style = MaterialTheme.typography.h5, color = if (dark) LightText else DarkText)
-                Text(subtitle, color = if (dark) MutedText else DimText)
+                Text(title, style = MaterialTheme.typography.h5, color = if (dark) palette.lightText else palette.darkText)
+                Text(subtitle, color = if (dark) palette.mutedText else palette.dimText)
                 content()
             }
         )
@@ -988,24 +1106,25 @@ private fun SplitPanelHeader(
     backLabel: String,
     onBack: () -> Unit
 ) {
+    val palette = appPalette()
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(title, style = MaterialTheme.typography.h4, color = if (dark) DarkText else LightText)
-            Text(subtitle, color = if (dark) DimText else MutedText)
+            Text(title, style = MaterialTheme.typography.h4, color = if (dark) palette.darkText else palette.lightText)
+            Text(subtitle, color = if (dark) palette.dimText else palette.mutedText)
         }
         Card(
             modifier = Modifier.clickable(onClick = onBack),
             shape = RoundedCornerShape(14.dp),
-            backgroundColor = if (dark) Color(0xFFEAE3F7) else SidebarCard,
+            backgroundColor = if (dark) palette.overlayCard else palette.sidebarCard,
             elevation = 0.dp
         ) {
             Text(
                 backLabel,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                color = if (dark) DarkText else LightText
+                color = if (dark) palette.darkText else palette.lightText
             )
         }
     }
@@ -1024,8 +1143,9 @@ private fun JoinWorkspaceScreen(
     onJoin: () -> Unit,
     onContinueAsMember: (WorkspaceMemberResponse) -> Unit
 ) {
+    val palette = appPalette()
     Box(
-        modifier = Modifier.fillMaxSize().padding(28.dp),
+        modifier = Modifier.fillMaxSize().background(palette.shell).padding(28.dp),
         contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
         Card(
@@ -1035,7 +1155,7 @@ private fun JoinWorkspaceScreen(
                 .height(680.dp)
                 .animateContentSize(),
             shape = RoundedCornerShape(32.dp),
-            backgroundColor = Sidebar,
+            backgroundColor = palette.sidebar,
             elevation = 0.dp
         ) {
             Column(
@@ -1070,7 +1190,7 @@ private fun JoinWorkspaceScreen(
                                     Card(
                                         modifier = Modifier.fillMaxWidth().clickable { onContinueAsMember(member) },
                                         shape = RoundedCornerShape(16.dp),
-                                        backgroundColor = Sidebar,
+                                        backgroundColor = palette.sidebar,
                                         elevation = 0.dp
                                     ) {
                                         Row(
@@ -1078,10 +1198,10 @@ private fun JoinWorkspaceScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text(member.displayName, color = LightText, fontWeight = FontWeight.Bold)
-                                                Text("@${member.userId}", color = MutedText)
+                                                Text(member.displayName, color = palette.lightText, fontWeight = FontWeight.Bold)
+                                                Text("@${member.userId}", color = palette.mutedText)
                                             }
-                                            Text("Continue", color = AccentSoft, fontWeight = FontWeight.Medium)
+                                            Text("Continue", color = palette.accentSoft, fontWeight = FontWeight.Medium)
                                         }
                                     }
                                 }
@@ -1093,7 +1213,7 @@ private fun JoinWorkspaceScreen(
                         modifier = Modifier
                             .width(1.dp)
                             .fillMaxHeight()
-                            .background(MutedText.copy(alpha = 0.22f))
+                            .background(palette.mutedText.copy(alpha = 0.22f))
                     )
 
                     SplitPanelCard(
@@ -1102,8 +1222,8 @@ private fun JoinWorkspaceScreen(
                         subtitle = "Pick the identity you will use in this workspace.",
                         dark = false
                     ) {
-                        FormField("User id", userId, textColor = DarkText, onValueChange = onUserIdChange)
-                        FormField("Display name", displayName, textColor = DarkText, onValueChange = onDisplayNameChange)
+                        FormField("User id", userId, textColor = palette.darkText, onValueChange = onUserIdChange)
+                        FormField("Display name", displayName, textColor = palette.darkText, onValueChange = onDisplayNameChange)
                         Spacer(modifier = Modifier.weight(1f))
                         FilledActionButton("Continue", onJoin, modifier = Modifier.fillMaxWidth())
                     }
@@ -1161,6 +1281,7 @@ private fun WorkspaceScreen(
     onProfileDisplayNameChange: (String) -> Unit,
     onSaveProfile: () -> Unit
 ) {
+    val palette = appPalette()
     var createChannelDialogOpen by remember { mutableStateOf(false) }
     var reactionPickerTarget by remember { mutableStateOf<MessageResponse?>(null) }
     var editProfileDialogOpen by remember { mutableStateOf(false) }
@@ -1184,13 +1305,16 @@ private fun WorkspaceScreen(
     }
 
     Row(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(palette.shell)
+            .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Card(
             modifier = Modifier.width(300.dp).fillMaxHeight(),
             shape = RoundedCornerShape(28.dp),
-            backgroundColor = Sidebar,
+            backgroundColor = palette.sidebar,
             elevation = 0.dp
         ) {
             Column(
@@ -1205,17 +1329,17 @@ private fun WorkspaceScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(workspace?.name ?: "Workspace", style = MaterialTheme.typography.h5, color = LightText)
+                        Text(workspace?.name ?: "Workspace", style = MaterialTheme.typography.h5, color = palette.lightText)
                         Card(
                             modifier = Modifier.clickable(onClick = onSwitchWorkspace),
                             shape = CircleShape,
-                            backgroundColor = SidebarCard,
+                            backgroundColor = palette.sidebarCard,
                             elevation = 0.dp
                         ) {
                             Text(
                                 "<>",
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                color = LightText,
+                                color = palette.lightText,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -1224,7 +1348,7 @@ private fun WorkspaceScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        backgroundColor = SidebarCard,
+                        backgroundColor = palette.sidebarCard,
                         elevation = 0.dp
                     ) {
                         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1238,11 +1362,11 @@ private fun WorkspaceScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Channels", color = LightText, fontWeight = FontWeight.Bold)
+                                Text("Channels", color = palette.lightText, fontWeight = FontWeight.Bold)
                                 Card(
                                     modifier = Modifier.clickable { createChannelDialogOpen = true },
                                     shape = RoundedCornerShape(12.dp),
-                                    backgroundColor = Accent,
+                                    backgroundColor = palette.accent,
                                     elevation = 0.dp
                                 ) {
                                     Text(
@@ -1268,7 +1392,7 @@ private fun WorkspaceScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { editProfileDialogOpen = true },
                     shape = RoundedCornerShape(20.dp),
-                    backgroundColor = SidebarCard,
+                    backgroundColor = palette.sidebarCard,
                     elevation = 0.dp
                 ) {
                     Row(
@@ -1277,10 +1401,10 @@ private fun WorkspaceScreen(
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(currentMember?.displayName ?: "No member", color = LightText, fontWeight = FontWeight.Bold)
-                            Text(currentMember?.userId ?: "", color = MutedText)
+                            Text(currentMember?.displayName ?: "No member", color = palette.lightText, fontWeight = FontWeight.Bold)
+                            Text(currentMember?.userId ?: "", color = palette.mutedText)
                         }
-                        Text("Edit", color = AccentSoft, fontWeight = FontWeight.SemiBold)
+                        Text("Edit", color = palette.accentSoft, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -1293,7 +1417,7 @@ private fun WorkspaceScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                backgroundColor = MainCard,
+                backgroundColor = palette.mainCard,
                 elevation = 0.dp
             ) {
                 Row(
@@ -1301,12 +1425,12 @@ private fun WorkspaceScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text(channel?.let { "# ${it.slug}" } ?: "Choose a channel", style = MaterialTheme.typography.h5, color = DarkText)
-                        Text(channel?.topic ?: "Select a channel to start chatting.", color = DimText)
+                        Text(channel?.let { "# ${it.slug}" } ?: "Choose a channel", style = MaterialTheme.typography.h5, color = palette.darkText)
+                        Text(channel?.topic ?: "Select a channel to start chatting.", color = palette.dimText)
                     }
                     Column {
-                        Text(currentMember?.displayName ?: "No member", fontWeight = FontWeight.Bold, color = DarkText)
-                        Text(currentMember?.userId ?: "", color = DimText)
+                        Text(currentMember?.displayName ?: "No member", fontWeight = FontWeight.Bold, color = palette.darkText)
+                        Text(currentMember?.userId ?: "", color = palette.dimText)
                     }
                 }
             }
@@ -1314,7 +1438,7 @@ private fun WorkspaceScreen(
             Card(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                backgroundColor = MainCard,
+                backgroundColor = palette.mainCard,
                 elevation = 0.dp
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -1341,7 +1465,7 @@ private fun WorkspaceScreen(
                                             text = if (loadingOlderMessages) "Loading..." else "Read more",
                                             onClick = onLoadOlderMessages,
                                             modifier = Modifier.fillMaxWidth(),
-                                            contentColor = Accent
+                                            contentColor = palette.accent
                                         )
                                     }
                                 }
@@ -1400,13 +1524,13 @@ private fun WorkspaceScreen(
         AlertDialog(
             onDismissRequest = { createChannelDialogOpen = false },
             title = {
-                Text("Create a channel", color = DarkText)
+                Text("Create a channel", color = palette.darkText)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FormField("Slug", channelSlug, textColor = DarkText, onValueChange = onChannelSlugChange)
-                    FormField("Name", channelName, textColor = DarkText, onValueChange = onChannelNameChange)
-                    FormField("Topic", channelTopic, textColor = DarkText, onValueChange = onChannelTopicChange)
+                    FormField("Slug", channelSlug, textColor = palette.darkText, onValueChange = onChannelSlugChange)
+                    FormField("Name", channelName, textColor = palette.darkText, onValueChange = onChannelNameChange)
+                    FormField("Topic", channelTopic, textColor = palette.darkText, onValueChange = onChannelTopicChange)
                 }
             },
             confirmButton = {
@@ -1422,11 +1546,11 @@ private fun WorkspaceScreen(
                 OutlineActionButton(
                     "Cancel",
                     onClick = { createChannelDialogOpen = false },
-                    contentColor = DarkText
+                    contentColor = palette.darkText
                 )
             },
             shape = RoundedCornerShape(24.dp),
-            backgroundColor = MainCard
+            backgroundColor = palette.mainCard
         )
     }
 
@@ -1434,13 +1558,13 @@ private fun WorkspaceScreen(
         AlertDialog(
             onDismissRequest = { editProfileDialogOpen = false },
             title = {
-                Text("Update profile", color = DarkText)
+                Text("Update profile", color = palette.darkText)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FormField("Display name", profileDisplayName, textColor = DarkText, onValueChange = onProfileDisplayNameChange)
+                    FormField("Display name", profileDisplayName, textColor = palette.darkText, onValueChange = onProfileDisplayNameChange)
                     currentMember?.userId?.let { userId ->
-                        Text("User ID: $userId", color = DimText)
+                        Text("User ID: $userId", color = palette.dimText)
                     }
                 }
             },
@@ -1460,11 +1584,11 @@ private fun WorkspaceScreen(
                         onProfileDisplayNameChange(currentMember?.displayName.orEmpty())
                         editProfileDialogOpen = false
                     },
-                    contentColor = DarkText
+                    contentColor = palette.darkText
                 )
             },
             shape = RoundedCornerShape(24.dp),
-            backgroundColor = MainCard
+            backgroundColor = palette.mainCard
         )
     }
 
@@ -1495,13 +1619,14 @@ private fun ThreadPane(
     onOpenReactionPicker: (MessageResponse) -> Unit,
     onSend: () -> Unit
 ) {
+    val palette = appPalette()
     Card(
         modifier = Modifier
             .width(420.dp)
             .fillMaxHeight()
             .padding(14.dp),
         shape = RoundedCornerShape(28.dp),
-        backgroundColor = ThreadBg.copy(alpha = 0.98f),
+        backgroundColor = palette.threadBg.copy(alpha = 0.98f),
         elevation = 0.dp
     ) {
         Column(
@@ -1509,8 +1634,8 @@ private fun ThreadPane(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Thread", style = MaterialTheme.typography.h6, color = DarkText)
-                Text("Close", color = Accent, modifier = Modifier.clickable(onClick = onCloseThread))
+                Text("Thread", style = MaterialTheme.typography.h6, color = palette.darkText)
+                Text("Close", color = palette.accent, modifier = Modifier.clickable(onClick = onCloseThread))
             }
             LazyColumn(
                 state = listState,
@@ -1525,10 +1650,10 @@ private fun ThreadPane(
                             .padding(start = if (index == 0) 0.dp else 18.dp),
                         shape = RoundedCornerShape(16.dp),
                         backgroundColor = when {
-                            focusedThreadMessageId == item.id && isOwnMessage -> OwnFocusedMessageBg
-                            focusedThreadMessageId == item.id -> Color(0xFFEDE7FB)
-                            isOwnMessage -> OwnMessageBg
-                            else -> Color.White
+                            focusedThreadMessageId == item.id && isOwnMessage -> palette.ownFocusedMessageBg
+                            focusedThreadMessageId == item.id -> palette.otherFocusedMessageBg
+                            isOwnMessage -> palette.ownMessageBg
+                            else -> palette.mainCard
                         },
                         elevation = 0.dp
                     ) {
@@ -1536,7 +1661,7 @@ private fun ThreadPane(
                             modifier = Modifier.padding(14.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(item.authorDisplayName, fontWeight = FontWeight.Bold, color = DarkText)
+                            Text(item.authorDisplayName, fontWeight = FontWeight.Bold, color = palette.darkText)
                             MessageBodyText(
                                 text = item.body,
                                 mentionUserIds = workspaceMembers.mapTo(linkedSetOf()) { it.userId }
@@ -1596,10 +1721,11 @@ private data class ChatRuntime(
 
 @Composable
 private fun WorkspaceListItem(workspace: WorkspaceResponse, onClick: () -> Unit) {
+    val palette = appPalette()
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        backgroundColor = Sidebar,
+        backgroundColor = palette.sidebarCard,
         elevation = 0.dp
     ) {
         Row(
@@ -1607,24 +1733,25 @@ private fun WorkspaceListItem(workspace: WorkspaceResponse, onClick: () -> Unit)
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(workspace.name, color = LightText, fontWeight = FontWeight.Bold)
-                Text(workspace.slug, color = MutedText)
+                Text(workspace.name, color = palette.lightText, fontWeight = FontWeight.Bold)
+                Text(workspace.slug, color = palette.mutedText)
             }
-            Text("Open", color = AccentSoft, fontWeight = FontWeight.Medium)
+            Text("Open", color = palette.accentSoft, fontWeight = FontWeight.Medium)
         }
     }
 }
 
 @Composable
 private fun SidebarPanelCard(title: String, content: @Composable () -> Unit) {
+    val palette = appPalette()
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        backgroundColor = SidebarCard,
+        backgroundColor = palette.sidebarCard,
         elevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, color = LightText, fontWeight = FontWeight.Bold)
+            Text(title, color = palette.lightText, fontWeight = FontWeight.Bold)
             content()
         }
     }
@@ -1637,10 +1764,11 @@ private fun SidebarChannelItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val palette = appPalette()
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (selected) AccentSoft else Color.Transparent, RoundedCornerShape(14.dp))
+            .background(if (selected) palette.accent.copy(alpha = 0.24f) else Color.Transparent, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
@@ -1649,11 +1777,22 @@ private fun SidebarChannelItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("# ${channel.slug}", color = LightText, fontWeight = FontWeight.SemiBold)
-                Text(channel.topic ?: "No topic", color = MutedText)
+                Text("# ${channel.slug}", color = palette.lightText, fontWeight = FontWeight.SemiBold)
+                Text(channel.topic ?: "No topic", color = palette.mutedText)
             }
             if (mentionCount > 0) {
-                Text("[${mentionCount}]", color = Color.White, fontWeight = FontWeight.Bold)
+                Card(
+                    shape = RoundedCornerShape(999.dp),
+                    backgroundColor = palette.accent,
+                    elevation = 0.dp
+                ) {
+                    Text(
+                        "$mentionCount",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -1666,17 +1805,29 @@ private fun SidebarMenuItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val palette = appPalette()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (selected) AccentSoft else Color.Transparent, RoundedCornerShape(14.dp))
+            .background(if (selected) palette.accent.copy(alpha = 0.24f) else Color.Transparent, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = LightText, fontWeight = FontWeight.SemiBold)
+        Text(label, color = palette.lightText, fontWeight = FontWeight.SemiBold)
         if (badge > 0) {
-            Text("[${badge}]", color = Color.White, fontWeight = FontWeight.Bold)
+            Card(
+                shape = RoundedCornerShape(999.dp),
+                backgroundColor = palette.accent,
+                elevation = 0.dp
+            ) {
+                Text(
+                    "$badge",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -1691,22 +1842,23 @@ private fun MessageRow(
     onToggleReaction: (String) -> Unit,
     onOpenReactionPicker: () -> Unit
 ) {
+    val palette = appPalette()
     val isOwnMessage = currentMemberId == message.authorMemberId
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenThread),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         backgroundColor = when {
-            selected && isOwnMessage -> OwnFocusedMessageBg
-            selected -> OtherFocusedMessageBg
-            isOwnMessage -> OwnMessageBg
-            else -> OtherMessageBg
+            selected && isOwnMessage -> palette.ownFocusedMessageBg
+            selected -> palette.otherFocusedMessageBg
+            isOwnMessage -> palette.ownMessageBg
+            else -> palette.otherMessageBg
         },
         elevation = 0.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(message.authorDisplayName, fontWeight = FontWeight.Bold, color = DarkText)
-                Text(shortTimestamp(message.createdAt), color = DimText)
+                Text(message.authorDisplayName, fontWeight = FontWeight.Bold, color = palette.darkText)
+                Text(shortTimestamp(message.createdAt), color = palette.dimText)
             }
             MessageBodyText(text = message.body, mentionUserIds = mentionUserIds)
             message.linkPreview?.let { LinkPreviewCard(preview = it) }
@@ -1717,11 +1869,14 @@ private fun MessageRow(
                 onOpenReactionPicker = onOpenReactionPicker
             )
             if (message.threadReplyCount > 0) {
-                Text(
-                    "${message.threadReplyCount} repl${if (message.threadReplyCount == 1) "y" else "ies"}",
-                    color = Accent,
-                    fontWeight = FontWeight.Medium
-                )
+                Card(shape = RoundedCornerShape(999.dp), backgroundColor = palette.overlayCard, elevation = 0.dp) {
+                    Text(
+                        "${message.threadReplyCount} repl${if (message.threadReplyCount == 1) "y" else "ies"}",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        color = palette.accent,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -1740,12 +1895,13 @@ private fun ComposerPanel(
     sendLabel: String = "Send",
     placeholder: String = "Message"
 ) {
+    val palette = appPalette()
     val suggestions = suggestMentionCandidates(mentionCandidates, messageBody)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        backgroundColor = Color(0xFFF4F0FA),
+        backgroundColor = palette.subtleSurface,
         elevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1753,7 +1909,7 @@ private fun ComposerPanel(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    backgroundColor = Color.White,
+                    backgroundColor = palette.mainCard,
                     elevation = 0.dp
                 ) {
                     Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1765,8 +1921,8 @@ private fun ComposerPanel(
                                     .padding(horizontal = 10.dp, vertical = 8.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(member.displayName, color = DarkText, fontWeight = FontWeight.Medium)
-                                Text("@${member.userId}", color = DimText)
+                                Text(member.displayName, color = palette.darkText, fontWeight = FontWeight.Medium)
+                                Text("@${member.userId}", color = palette.dimText)
                             }
                         }
                     }
@@ -1779,7 +1935,7 @@ private fun ComposerPanel(
                 label = placeholder,
                 value = messageBody,
                 minLines = 4,
-                textColor = DarkText,
+                textColor = palette.darkText,
                 onValueChange = onMessageBodyChange,
                 onFocus = onFocus
             )
@@ -1793,21 +1949,22 @@ private fun ComposerLinkPreviewCard(
     preview: LinkPreviewResponse,
     onDismiss: () -> Unit
 ) {
+    val palette = appPalette()
     val imageOnly = isImageOnlyPreview(preview)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        backgroundColor = Color.White,
+        backgroundColor = palette.mainCard,
         elevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 if (!imageOnly) {
-                    Text(preview.siteName ?: "Link preview", color = DarkText, fontWeight = FontWeight.SemiBold)
+                    Text(preview.siteName ?: "Link preview", color = palette.darkText, fontWeight = FontWeight.SemiBold)
                 } else {
                     Spacer(modifier = Modifier.width(1.dp))
                 }
-                Text("x", color = Accent, modifier = Modifier.clickable(onClick = onDismiss))
+                Text("x", color = palette.accent, modifier = Modifier.clickable(onClick = onDismiss))
             }
             LinkPreviewImage(preview)
             if (!imageOnly) {
@@ -1819,10 +1976,11 @@ private fun ComposerLinkPreviewCard(
 
 @Composable
 private fun LinkPreviewCard(preview: LinkPreviewResponse) {
+    val palette = appPalette()
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        backgroundColor = Color(0xFFF3F0FA),
+        backgroundColor = palette.overlayCard,
         elevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1836,12 +1994,13 @@ private fun LinkPreviewCard(preview: LinkPreviewResponse) {
 
 @Composable
 private fun LinkPreviewImage(preview: LinkPreviewResponse) {
+    val palette = appPalette()
     val imageUrl = preview.imageUrl?.takeIf { it.isNotBlank() } ?: return
     var dialogOpen by remember(imageUrl) { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth().clickable { dialogOpen = true },
         shape = RoundedCornerShape(12.dp),
-        backgroundColor = Color(0xFFEAE4F6),
+        backgroundColor = palette.subtleSurface,
         elevation = 0.dp
     ) {
         AsyncImage(
@@ -1863,14 +2022,15 @@ private fun LinkPreviewImage(preview: LinkPreviewResponse) {
 
 @Composable
 private fun LinkPreviewSummary(preview: LinkPreviewResponse) {
+    val palette = appPalette()
     if (!preview.siteName.isNullOrBlank()) {
-        Text(preview.siteName, color = Accent, fontWeight = FontWeight.SemiBold)
+        Text(preview.siteName, color = palette.accent, fontWeight = FontWeight.SemiBold)
     }
     if (!preview.title.isNullOrBlank()) {
-        Text(preview.title, color = DarkText, fontWeight = FontWeight.Bold)
+        Text(preview.title, color = palette.darkText, fontWeight = FontWeight.Bold)
     }
     if (!preview.description.isNullOrBlank()) {
-        Text(preview.description, color = DimText)
+        Text(preview.description, color = palette.dimText)
     }
 }
 
@@ -1880,16 +2040,17 @@ private fun ImageAssetDialog(
     title: String?,
     onDismiss: () -> Unit
 ) {
+    val palette = appPalette()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(title ?: "Image", color = DarkText, fontWeight = FontWeight.Bold)
+            Text(title ?: "Image", color = palette.darkText, fontWeight = FontWeight.Bold)
         },
         text = {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                backgroundColor = Color(0xFFF3F0FA),
+                backgroundColor = palette.overlayCard,
                 elevation = 0.dp
             ) {
                 AsyncImage(
@@ -1909,7 +2070,7 @@ private fun ImageAssetDialog(
                     onClick = {
                         LinkAssetActions.copyText(imageUrl)
                     },
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = DarkText),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = palette.mainCard, contentColor = palette.darkText),
                     elevation = null
                 ) {
                     Text("Copy URL")
@@ -1918,14 +2079,14 @@ private fun ImageAssetDialog(
                     onClick = {
                         LinkAssetActions.saveRemoteFile(imageUrl, suggestedName = imageUrl.suggestedDownloadName())
                     },
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Accent, contentColor = LightText),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = palette.accent, contentColor = Color.White),
                     elevation = null
                 ) {
                     Text("Download")
                 }
                 Button(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = DarkText),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = palette.mainCard, contentColor = palette.darkText),
                     elevation = null
                 ) {
                     Text("Close")
@@ -1940,10 +2101,11 @@ private fun MessageBodyText(
     text: String,
     mentionUserIds: Set<String>
 ) {
-    val annotated = buildMessageAnnotatedText(text, mentionUserIds)
+    val palette = appPalette()
+    val annotated = buildMessageAnnotatedText(text, mentionUserIds, palette)
     Text(
         text = annotated,
-        style = MaterialTheme.typography.body1.copy(color = Color(0xFF463B4F))
+        style = MaterialTheme.typography.body1.copy(color = palette.softText)
     )
 }
 
@@ -1954,6 +2116,7 @@ private fun ReactionBar(
     onToggleReaction: (String) -> Unit,
     onOpenReactionPicker: () -> Unit
 ) {
+    val palette = appPalette()
     val emojiFontFamily = rememberEmojiFontFamily()
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         reactions.forEach { reaction ->
@@ -1961,13 +2124,13 @@ private fun ReactionBar(
             Card(
                 modifier = Modifier.clickable { onToggleReaction(reaction.emoji) },
                 shape = RoundedCornerShape(999.dp),
-                backgroundColor = if (selected) Color(0xFFE9DEFF) else Color(0xFFF1ECF8),
+                backgroundColor = if (selected) palette.overlayCard else palette.subtleSurface,
                 elevation = 0.dp
             ) {
                 Text(
                     "${reactionDisplayLabel(reaction.emoji)} ${reaction.count}",
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    color = if (selected) Accent else DarkText,
+                    color = if (selected) palette.accent else palette.darkText,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                     fontFamily = emojiFontFamily
                 )
@@ -1976,13 +2139,13 @@ private fun ReactionBar(
         Card(
             modifier = Modifier.clickable(onClick = onOpenReactionPicker),
             shape = RoundedCornerShape(999.dp),
-            backgroundColor = Color(0xFFF1ECF8),
+            backgroundColor = palette.subtleSurface,
             elevation = 0.dp
         ) {
             Text(
                 "+",
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                color = Accent,
+                color = palette.accent,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -1994,10 +2157,11 @@ private fun EmojiPickerDialog(
     onDismiss: () -> Unit,
     onSelect: (String) -> Unit
 ) {
+    val palette = appPalette()
     val emojiFontFamily = rememberEmojiFontFamily()
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add reaction", color = DarkText) },
+        title = { Text("Add reaction", color = palette.darkText) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 ReactionDefaults.chunked(3).forEach { row ->
@@ -2009,19 +2173,19 @@ private fun EmojiPickerDialog(
                             Card(
                                 modifier = Modifier.weight(1f).clickable { onSelect(emoji) },
                                 shape = RoundedCornerShape(16.dp),
-                                backgroundColor = Color(0xFFF6F3FB),
+                                backgroundColor = palette.subtleSurface,
                                 elevation = 0.dp
                             ) {
                                 Box(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
                                     contentAlignment = androidx.compose.ui.Alignment.Center
                                 ) {
-                                        Text(
-                                            reactionDisplayLabel(emoji),
-                                            color = DarkText,
-                                            style = MaterialTheme.typography.h6,
-                                            fontFamily = emojiFontFamily
-                                        )
+                                    Text(
+                                        reactionDisplayLabel(emoji),
+                                        color = palette.darkText,
+                                        style = MaterialTheme.typography.h6,
+                                        fontFamily = emojiFontFamily
+                                    )
                                     }
                                 }
                         }
@@ -2037,11 +2201,11 @@ private fun EmojiPickerDialog(
             OutlineActionButton(
                 "Close",
                 onClick = onDismiss,
-                contentColor = DarkText
+                contentColor = palette.darkText
             )
         },
         shape = RoundedCornerShape(24.dp),
-        backgroundColor = MainCard
+        backgroundColor = palette.mainCard
     )
 }
 
@@ -2050,6 +2214,7 @@ private fun NotificationListPanel(
     notifications: List<MentionNotificationResponse>,
     onOpenNotification: (MentionNotificationResponse) -> Unit
 ) {
+    val palette = appPalette()
     if (notifications.isEmpty()) {
         EmptyConversationState("No notifications", "Mentions and thread replies will show up here.")
         return
@@ -2063,13 +2228,13 @@ private fun NotificationListPanel(
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onOpenNotification(notification) },
                 shape = RoundedCornerShape(16.dp),
-                backgroundColor = if (notification.readAt == null) Color(0xFFF4EEFF) else Color(0xFFF9F7FC),
+                backgroundColor = if (notification.readAt == null) palette.overlayCard else palette.subtleSurface,
                 elevation = 0.dp
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(notificationTitle(notification), color = DarkText, fontWeight = FontWeight.Bold)
-                    Text(notification.messagePreview, color = Color(0xFF463B4F))
-                    Text(shortTimestamp(notification.createdAt), color = DimText)
+                    Text(notificationTitle(notification), color = palette.darkText, fontWeight = FontWeight.Bold)
+                    Text(notification.messagePreview, color = palette.softText)
+                    Text(shortTimestamp(notification.createdAt), color = palette.dimText)
                 }
             }
         }
@@ -2083,7 +2248,7 @@ private fun notificationTitle(notification: MentionNotificationResponse): String
     }
 }
 
-private fun buildMessageAnnotatedText(text: String, mentionUserIds: Set<String>) = buildAnnotatedString {
+private fun buildMessageAnnotatedText(text: String, mentionUserIds: Set<String>, palette: AppPalette) = buildAnnotatedString {
     val tokenRegex = Regex("""https?://[^\s]+|@([a-zA-Z0-9._-]+)""", RegexOption.IGNORE_CASE)
     var currentIndex = 0
 
@@ -2101,7 +2266,7 @@ private fun buildMessageAnnotatedText(text: String, mentionUserIds: Set<String>)
                     url = normalizedUrl,
                     styles = TextLinkStyles(
                         style = SpanStyle(
-                            color = Accent,
+                            color = palette.accent,
                             fontWeight = FontWeight.SemiBold,
                             textDecoration = TextDecoration.Underline
                         )
@@ -2118,8 +2283,8 @@ private fun buildMessageAnnotatedText(text: String, mentionUserIds: Set<String>)
             if (userId in mentionUserIds) {
                 pushStyle(
                     SpanStyle(
-                        color = Accent,
-                        background = Color(0xFFE8DEFF),
+                        color = palette.accent,
+                        background = palette.overlayCard,
                         fontWeight = FontWeight.SemiBold
                     )
                 )
@@ -2220,6 +2385,7 @@ private fun NotificationOverlay(
     onOpenNotification: (ToastNotification) -> Unit,
     onDismiss: (String) -> Unit
 ) {
+    val palette = appPalette()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -2230,7 +2396,7 @@ private fun NotificationOverlay(
         Card(
             modifier = Modifier.widthIn(max = 360.dp),
             shape = RoundedCornerShape(20.dp),
-            backgroundColor = MainCard,
+            backgroundColor = palette.mainCard,
             elevation = 0.dp
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -2238,15 +2404,15 @@ private fun NotificationOverlay(
                     Card(
                         modifier = Modifier.fillMaxWidth().clickable { onOpenNotification(notification) },
                         shape = RoundedCornerShape(14.dp),
-                        backgroundColor = Color(0xFFF6F3FB),
+                        backgroundColor = palette.subtleSurface,
                         elevation = 0.dp
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(notification.title, color = DarkText, fontWeight = FontWeight.SemiBold)
-                                Text("x", color = Accent, modifier = Modifier.clickable { onDismiss(notification.id) })
+                                Text(notification.title, color = palette.darkText, fontWeight = FontWeight.SemiBold)
+                                Text("x", color = palette.accent, modifier = Modifier.clickable { onDismiss(notification.id) })
                             }
-                            Text(notification.body, color = DimText)
+                            Text(notification.body, color = palette.softText)
                         }
                     }
                 }
@@ -2257,9 +2423,10 @@ private fun NotificationOverlay(
 
 @Composable
 private fun EmptyConversationState(title: String, body: String) {
+    val palette = appPalette()
     Column(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.h6, color = DarkText)
-        Text(body, color = DimText)
+        Text(title, style = MaterialTheme.typography.h6, color = palette.darkText)
+        Text(body, color = palette.dimText)
     }
 }
 
@@ -2270,16 +2437,17 @@ private fun FilledActionButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
+    val palette = appPalette()
     Button(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
-            backgroundColor = Accent,
+            backgroundColor = palette.accent,
             contentColor = Color.White,
-            disabledBackgroundColor = Border,
-            disabledContentColor = DimText
+            disabledBackgroundColor = palette.border,
+            disabledContentColor = palette.dimText
         ),
         elevation = ButtonDefaults.elevation(0.dp, 0.dp, 0.dp)
     ) {
@@ -2294,13 +2462,14 @@ private fun OutlineActionButton(
     modifier: Modifier = Modifier,
     contentColor: Color = LightText
 ) {
+    val palette = appPalette()
     Button(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             backgroundColor = Color.Transparent,
-            contentColor = contentColor
+            contentColor = contentColor.takeIf { it != LightText } ?: palette.lightText
         ),
         elevation = ButtonDefaults.elevation(0.dp, 0.dp, 0.dp)
     ) {
@@ -2318,16 +2487,26 @@ private fun FormField(
     onValueChange: (String) -> Unit,
     onFocus: () -> Unit = {}
 ) {
+    val palette = appPalette()
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier
             .fillMaxWidth()
             .onFocusChanged { if (it.isFocused) onFocus() },
-        label = { Text(label, color = labelColor) },
+        label = { Text(label, color = if (labelColor == DimText) palette.dimText else labelColor) },
         minLines = minLines,
         shape = RoundedCornerShape(14.dp),
-        textStyle = MaterialTheme.typography.body1.copy(color = textColor)
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            textColor = if (textColor == DarkText) palette.darkText else textColor,
+            cursorColor = palette.accent,
+            focusedBorderColor = palette.accent,
+            unfocusedBorderColor = palette.border,
+            focusedLabelColor = palette.accent,
+            unfocusedLabelColor = palette.dimText,
+            backgroundColor = palette.mainCard
+        ),
+        textStyle = MaterialTheme.typography.body1.copy(color = if (textColor == DarkText) palette.darkText else textColor)
     )
 }
 

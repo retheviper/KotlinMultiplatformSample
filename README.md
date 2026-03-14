@@ -170,6 +170,8 @@ Start the API first, then launch the desktop shell:
 ```
 
 The Compose Desktop client connects to `http://localhost:8080` by default.
+On macOS, running without an explicit shell selection opens the chooser by default.
+The Compose Desktop shell exits when the main window is closed.
 
 To point it at a different server:
 
@@ -187,7 +189,7 @@ Shell selection options:
 ./gradlew -Dchat.desktop.shell=mac-native :app:desktopApp:run
 ```
 
-`compose` runs the Compose Desktop shell. On macOS, `mac-native` launches the SwiftUI shell from `app/macosApp`.
+`compose` runs the Compose Desktop shell. On macOS, `mac-native` launches the SwiftUI shell from `app/macosApp`, and `chooser` opens the shell picker explicitly.
 
 You can also use environment variables instead of JVM system properties:
 
