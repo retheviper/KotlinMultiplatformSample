@@ -19,7 +19,7 @@ import java.awt.AWTException
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
-import java.awt.Graphics2D
+import java.awt.Image
 import java.awt.PopupMenu
 import java.awt.RenderingHints
 import java.awt.SystemTray
@@ -27,6 +27,7 @@ import java.awt.Taskbar
 import java.awt.TrayIcon
 import java.awt.image.BufferedImage
 import java.util.prefs.Preferences
+import javax.imageio.ImageIO
 import javax.swing.SwingUtilities
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -96,6 +97,7 @@ internal fun ComposeDesktopShellApp(onExitApplication: () -> Unit) {
     Window(onCloseRequest = { requestQuit() }, title = windowTitle, state = windowState) {
         awtWindow = window
         window.minimumSize = Dimension(1180, 760)
+        window.iconImage = baseAppIcon
 
         LaunchedEffect(Unit) {
             if (!window.isVisible) window.isVisible = true
@@ -143,6 +145,20 @@ internal fun ComposeDesktopShellApp(onExitApplication: () -> Unit) {
             desktopBridge.dispose()
         }
     }
+}
+
+private val baseAppIcon: BufferedImage by lazy {
+    val osName = System.getProperty("os.name")
+    val resourcePath = when {
+        osName.contains("Mac", ignoreCase = true) -> "/icons/app-icon-macos-512.png"
+        osName.contains("Windows", ignoreCase = true) -> "/icons/app-icon-windows-512.png"
+        osName.contains("Linux", ignoreCase = true) -> "/icons/app-icon-linux-512.png"
+        else -> "/icons/app-icon-512.png"
+    }
+    val stream = checkNotNull(ComposeDesktopShellRunner::class.java.getResourceAsStream(resourcePath)) {
+        "Missing desktop app icon resource"
+    }
+    stream.use { ImageIO.read(it) }
 }
 
 internal class DesktopBridge {
@@ -223,16 +239,7 @@ private fun createAppIcon(unreadCount: Int): BufferedImage {
     val graphics = image.createGraphics()
     graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-    graphics.color = Color(60, 33, 75)
-    graphics.fillRoundRect(0, 0, size, size, 18, 18)
-
-    graphics.color = Color(246, 244, 250)
-    graphics.font = Font("SansSerif", Font.BOLD, 34)
-    val label = "C"
-    val metrics = graphics.fontMetrics
-    val textX = (size - metrics.stringWidth(label)) / 2
-    val textY = ((size - metrics.height) / 2) + metrics.ascent
-    graphics.drawString(label, textX, textY)
+    graphics.drawImage(baseAppIcon.getScaledInstance(size, size, Image.SCALE_SMOOTH), 0, 0, null)
 
     if (unreadCount > 0) {
         val badgeText = unreadCount.coerceAtMost(99).toString()
