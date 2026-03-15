@@ -7,9 +7,7 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import com.retheviper.shared.generated.resources.NotoColorEmoji
 import com.retheviper.shared.generated.resources.NotoSansJPRegular
 import com.retheviper.shared.generated.resources.NotoSansKRRegular
@@ -151,11 +149,6 @@ internal fun rememberAppFontFamily(): FontFamily {
         ResourceFont(Res.font.NotoSansJPRegular),
         ResourceFont(Res.font.NotoSansKRRegular)
     )
-}
-
-@Composable
-internal fun rememberIsCompactScreen(): Boolean {
-    return LocalConfiguration.current.screenWidthDp.dp <= CompactScreenMaxWidth.dp
 }
 
 internal fun buildWindowTitle(

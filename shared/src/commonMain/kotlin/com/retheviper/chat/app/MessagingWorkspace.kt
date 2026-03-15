@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -119,7 +120,6 @@ internal fun WorkspaceScreen(
     onSaveProfile: () -> Unit
 ) {
     val palette = appPalette()
-    val isCompactScreen = rememberIsCompactScreen()
     val mentionUserIds = remember(workspaceMembers) { workspaceMembers.mapTo(linkedSetOf()) { it.userId } }
     var createChannelDialogOpen by remember { mutableStateOf(false) }
     var reactionPickerTarget by remember { mutableStateOf<MessageResponse?>(null) }
@@ -140,8 +140,10 @@ internal fun WorkspaceScreen(
         if (index >= 0) threadListState.animateScrollToItem(index)
     }
 
-    if (isCompactScreen) {
-        Box(modifier = Modifier.fillMaxSize().background(palette.shell)) {
+    BoxWithConstraints {
+        val isCompactScreen = maxWidth <= CompactScreenMaxWidth.dp
+        if (isCompactScreen) {
+            Box(modifier = Modifier.fillMaxSize().background(palette.shell)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -271,96 +273,97 @@ internal fun WorkspaceScreen(
                 )
             }
         }
-    } else {
-        Row(
-            modifier = Modifier.fillMaxSize().background(palette.shell).padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            WorkspaceSidebar(
-                workspaceName = workspace?.name ?: AppLabels.workspace,
-                currentMember = currentMember,
-                workspaceChannels = workspaceChannels,
-                channelMentionCounts = channelMentionCounts,
-                channel = channel,
-                centerView = centerView,
-                notificationCount = notificationCount,
-                onSwitchWorkspace = onSwitchWorkspace,
-                onOpenNotifications = onOpenNotifications,
-                onCreateChannel = { createChannelDialogOpen = true },
-                onOpenChannel = onOpenChannel,
-                onEditProfile = { editProfileDialogOpen = true }
-            )
+        } else {
+            Row(
+                modifier = Modifier.fillMaxSize().background(palette.shell).padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                WorkspaceSidebar(
+                    workspaceName = workspace?.name ?: AppLabels.workspace,
+                    currentMember = currentMember,
+                    workspaceChannels = workspaceChannels,
+                    channelMentionCounts = channelMentionCounts,
+                    channel = channel,
+                    centerView = centerView,
+                    notificationCount = notificationCount,
+                    onSwitchWorkspace = onSwitchWorkspace,
+                    onOpenNotifications = onOpenNotifications,
+                    onCreateChannel = { createChannelDialogOpen = true },
+                    onOpenChannel = onOpenChannel,
+                    onEditProfile = { editProfileDialogOpen = true }
+                )
 
-            Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
-                    WorkspaceTopSummary(channel = channel, currentMember = currentMember, compact = false)
-                }
+                Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
+                        WorkspaceTopSummary(channel = channel, currentMember = currentMember, compact = false)
+                    }
 
-                Card(modifier = Modifier.weight(1f).fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            if (centerView == WorkspaceCenterView.NOTIFICATIONS) {
-                                NotificationListPanel(notifications = allNotifications, onOpenNotification = onOpenNotificationItem)
-                            } else if (channel == null) {
-                                EmptyConversationState(AppLabels.openChannel, AppLabels.openChannelBody)
-                            } else {
-                                LazyColumn(state = messageListState, modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    if (hasOlderMessages) {
-                                        item(key = "read-more") {
-                                            OutlineActionButton(
-                                                text = if (loadingOlderMessages) AppLabels.loading else AppLabels.readMore,
-                                                onClick = onLoadOlderMessages,
-                                                modifier = Modifier.fillMaxWidth(),
-                                                contentColor = palette.accent
+                    Card(modifier = Modifier.weight(1f).fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                if (centerView == WorkspaceCenterView.NOTIFICATIONS) {
+                                    NotificationListPanel(notifications = allNotifications, onOpenNotification = onOpenNotificationItem)
+                                } else if (channel == null) {
+                                    EmptyConversationState(AppLabels.openChannel, AppLabels.openChannelBody)
+                                } else {
+                                    LazyColumn(state = messageListState, modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        if (hasOlderMessages) {
+                                            item(key = "read-more") {
+                                                OutlineActionButton(
+                                                    text = if (loadingOlderMessages) AppLabels.loading else AppLabels.readMore,
+                                                    onClick = onLoadOlderMessages,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    contentColor = palette.accent
+                                                )
+                                            }
+                                        }
+                                        items(messages, key = { it.id }) { item ->
+                                            MessageRow(
+                                                message = item,
+                                                selected = selectedRootId == item.id || focusedMessageId == item.id,
+                                                currentMemberId = currentMember?.id,
+                                                mentionUserIds = mentionUserIds,
+                                                onOpenThread = { onOpenThread(item) },
+                                                onToggleReaction = { emoji -> onToggleReaction(item, emoji) },
+                                                onOpenReactionPicker = { reactionPickerTarget = item }
                                             )
                                         }
                                     }
-                                    items(messages, key = { it.id }) { item ->
-                                        MessageRow(
-                                            message = item,
-                                            selected = selectedRootId == item.id || focusedMessageId == item.id,
-                                            currentMemberId = currentMember?.id,
-                                            mentionUserIds = mentionUserIds,
-                                            onOpenThread = { onOpenThread(item) },
-                                            onToggleReaction = { emoji -> onToggleReaction(item, emoji) },
-                                            onOpenReactionPicker = { reactionPickerTarget = item }
-                                        )
-                                    }
+                                    ComposerPanel(
+                                        currentMember = currentMember,
+                                        mentionCandidates = workspaceMembers,
+                                        messageBody = messageBody,
+                                        linkPreview = messageLinkPreview,
+                                        onMessageBodyChange = onMessageBodyChange,
+                                        onDismissPreview = onDismissMessagePreview,
+                                        onFocus = onCloseThread,
+                                        onSend = onSendChannelMessage
+                                    )
                                 }
-                                ComposerPanel(
+                            }
+                            androidx.compose.animation.AnimatedVisibility(
+                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                visible = selectedRootId != null,
+                                enter = slideInHorizontally(initialOffsetX = { it / 3 }) + fadeIn(),
+                                exit = slideOutHorizontally(targetOffsetX = { it / 3 }) + fadeOut()
+                            ) {
+                                ThreadPane(
                                     currentMember = currentMember,
-                                    mentionCandidates = workspaceMembers,
-                                    messageBody = messageBody,
-                                    linkPreview = messageLinkPreview,
-                                    onMessageBodyChange = onMessageBodyChange,
-                                    onDismissPreview = onDismissMessagePreview,
-                                    onFocus = onCloseThread,
-                                    onSend = onSendChannelMessage
+                                    mentionUserIds = mentionUserIds,
+                                    workspaceMembers = workspaceMembers,
+                                    threadMessages = threadMessages,
+                                    listState = threadListState,
+                                    focusedThreadMessageId = focusedThreadMessageId,
+                                    messageBody = threadMessageBody,
+                                    linkPreview = threadLinkPreview,
+                                    onMessageBodyChange = onThreadMessageBodyChange,
+                                    onDismissPreview = onDismissThreadPreview,
+                                    onCloseThread = onCloseThread,
+                                    onToggleReaction = onToggleReaction,
+                                    onOpenReactionPicker = { reactionPickerTarget = it },
+                                    onSend = onSendThreadMessage
                                 )
                             }
-                        }
-                        androidx.compose.animation.AnimatedVisibility(
-                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                            visible = selectedRootId != null,
-                            enter = slideInHorizontally(initialOffsetX = { it / 3 }) + fadeIn(),
-                            exit = slideOutHorizontally(targetOffsetX = { it / 3 }) + fadeOut()
-                        ) {
-                            ThreadPane(
-                                currentMember = currentMember,
-                                mentionUserIds = mentionUserIds,
-                                workspaceMembers = workspaceMembers,
-                                threadMessages = threadMessages,
-                                listState = threadListState,
-                                focusedThreadMessageId = focusedThreadMessageId,
-                                messageBody = threadMessageBody,
-                                linkPreview = threadLinkPreview,
-                                onMessageBodyChange = onThreadMessageBodyChange,
-                                onDismissPreview = onDismissThreadPreview,
-                                onCloseThread = onCloseThread,
-                                onToggleReaction = onToggleReaction,
-                                onOpenReactionPicker = { reactionPickerTarget = it },
-                                onSend = onSendThreadMessage
-                            )
                         }
                     }
                 }

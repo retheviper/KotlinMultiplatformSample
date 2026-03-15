@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -50,25 +51,26 @@ internal fun LandingScreen(
     onCreateWorkspace: () -> Unit
 ) {
     val palette = appPalette()
-    val isCompactScreen = rememberIsCompactScreen()
-    Box(
-        modifier = Modifier.fillMaxSize().background(palette.shell).padding(if (isCompactScreen) 14.dp else 28.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(if (isCompactScreen) 1f else 0.9f)
-                .widthIn(max = 1040.dp)
-                .heightIn(min = if (isCompactScreen) 0.dp else 720.dp)
-                .animateContentSize(),
-            shape = RoundedCornerShape(32.dp),
-            backgroundColor = palette.sidebar,
-            elevation = 0.dp
+    BoxWithConstraints {
+        val isCompactScreen = maxWidth <= CompactScreenMaxWidth.dp
+        Box(
+            modifier = Modifier.fillMaxSize().background(palette.shell).padding(if (isCompactScreen) 14.dp else 28.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(if (isCompactScreen) 18.dp else 28.dp),
-                verticalArrangement = Arrangement.spacedBy(22.dp)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(if (isCompactScreen) 1f else 0.9f)
+                    .widthIn(max = 1040.dp)
+                    .heightIn(min = if (isCompactScreen) 0.dp else 720.dp)
+                    .animateContentSize(),
+                shape = RoundedCornerShape(32.dp),
+                backgroundColor = palette.sidebar,
+                elevation = 0.dp
             ) {
+                Column(
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(if (isCompactScreen) 18.dp else 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(22.dp)
+                ) {
                 Text(AppLabels.chatWorkspace, style = MaterialTheme.typography.h3, color = palette.lightText)
                 Text(status, color = palette.mutedText)
                 if (isCompactScreen) {
@@ -151,6 +153,7 @@ internal fun LandingScreen(
                         FilledActionButton(AppLabels.createWorkspace, onCreateWorkspace, modifier = Modifier.fillMaxWidth())
                     }
                 }
+                }
             }
         }
     }
@@ -170,25 +173,26 @@ internal fun JoinWorkspaceScreen(
     onContinueAsMember: (WorkspaceMemberResponse) -> Unit
 ) {
     val palette = appPalette()
-    val isCompactScreen = rememberIsCompactScreen()
-    Box(
-        modifier = Modifier.fillMaxSize().background(palette.shell).padding(if (isCompactScreen) 14.dp else 28.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(if (isCompactScreen) 1f else 0.9f)
-                .widthIn(max = 980.dp)
-                .heightIn(min = if (isCompactScreen) 0.dp else 680.dp)
-                .animateContentSize(),
-            shape = RoundedCornerShape(32.dp),
-            backgroundColor = palette.sidebar,
-            elevation = 0.dp
+    BoxWithConstraints {
+        val isCompactScreen = maxWidth <= CompactScreenMaxWidth.dp
+        Box(
+            modifier = Modifier.fillMaxSize().background(palette.shell).padding(if (isCompactScreen) 14.dp else 28.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(if (isCompactScreen) 18.dp else 28.dp),
-                verticalArrangement = Arrangement.spacedBy(22.dp)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(if (isCompactScreen) 1f else 0.9f)
+                    .widthIn(max = 980.dp)
+                    .heightIn(min = if (isCompactScreen) 0.dp else 680.dp)
+                    .animateContentSize(),
+                shape = RoundedCornerShape(32.dp),
+                backgroundColor = palette.sidebar,
+                elevation = 0.dp
             ) {
+                Column(
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(if (isCompactScreen) 18.dp else 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(22.dp)
+                ) {
                 SplitPanelHeader(
                     title = AppStatus.joinWorkspaceTitle(workspace?.name),
                     subtitle = status,
@@ -303,6 +307,7 @@ internal fun JoinWorkspaceScreen(
                         Spacer(modifier = Modifier.weight(1f))
                         FilledActionButton(AppLabels.continueLabel, onJoin, modifier = Modifier.fillMaxWidth())
                     }
+                }
                 }
             }
         }
