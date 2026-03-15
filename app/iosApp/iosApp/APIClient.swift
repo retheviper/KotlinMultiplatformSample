@@ -12,119 +12,87 @@ struct APIClient {
     }
 
     func listWorkspaces() async throws -> [WorkspaceResponse] {
-        let workspaces = try await runShared {
-            try client.listWorkspacesBlocking()
-        }
+        let workspaces = try await client.listWorkspaces()
         return workspaces.map(\.native)
     }
 
     func createWorkspace(_ requestBody: CreateWorkspaceRequest) async throws -> WorkspaceResponse {
-        let workspace = try await runShared {
-            try client.createWorkspaceBlocking(request: requestBody.sharedRequest)
-        }
+        let workspace = try await client.createWorkspace(request: requestBody.sharedRequest)
         return workspace.native
     }
 
     func listMembers(workspaceId: String) async throws -> [WorkspaceMemberResponse] {
-        let members = try await runShared {
-            try client.listWorkspaceMembersBlocking(workspaceId: workspaceId)
-        }
+        let members = try await client.listWorkspaceMembers(workspaceId: workspaceId)
         return members.map(\.native)
     }
 
     func addMember(workspaceId: String, requestBody: AddWorkspaceMemberRequest) async throws -> WorkspaceMemberResponse {
-        let member = try await runShared {
-            try client.addWorkspaceMemberBlocking(workspaceId: workspaceId, request: requestBody.sharedRequest)
-        }
+        let member = try await client.addWorkspaceMember(workspaceId: workspaceId, request: requestBody.sharedRequest)
         return member.native
     }
 
     func updateMember(memberId: String, displayName: String) async throws -> WorkspaceMemberResponse {
-        let member = try await runShared {
-            try client.updateWorkspaceMemberBlocking(
-                memberId: memberId,
-                request: UpdateWorkspaceMemberRequest(displayName: displayName).sharedRequest
-            )
-        }
+        let member = try await client.updateWorkspaceMember(
+            memberId: memberId,
+            request: UpdateWorkspaceMemberRequest(displayName: displayName).sharedRequest
+        )
         return member.native
     }
 
     func listChannels(workspaceId: String) async throws -> [ChannelResponse] {
-        let channels = try await runShared {
-            try client.listWorkspaceChannelsBlocking(workspaceId: workspaceId)
-        }
+        let channels = try await client.listWorkspaceChannels(workspaceId: workspaceId)
         return channels.map(\.native)
     }
 
     func createChannel(workspaceId: String, requestBody: CreateChannelRequest) async throws -> ChannelResponse {
-        let channel = try await runShared {
-            try client.createChannelBlocking(workspaceId: workspaceId, request: requestBody.sharedRequest)
-        }
+        let channel = try await client.createChannel(workspaceId: workspaceId, request: requestBody.sharedRequest)
         return channel.native
     }
 
     func listMessages(channelId: String, beforeMessageId: String? = nil, limit: Int = 50) async throws -> [MessageResponse] {
-        let page = try await runShared {
-            try client.listChannelMessagesBlocking(
-                channelId: channelId,
-                limit: Int32(limit),
-                beforeMessageId: beforeMessageId
-            )
-        }
+        let page = try await client.listChannelMessages(
+            channelId: channelId,
+            limit: Int32(limit),
+            beforeMessageId: beforeMessageId
+        )
         return page.messages.map(\.native)
     }
 
     func getThread(messageId: String) async throws -> ThreadResponse {
-        let thread = try await runShared {
-            try client.getThreadBlocking(messageId: messageId)
-        }
+        let thread = try await client.getThread(messageId: messageId)
         return thread.native
     }
 
     func listNotifications(memberId: String, unreadOnly: Bool) async throws -> [MentionNotificationResponse] {
-        let notifications = try await runShared {
-            try client.listNotificationsBlocking(memberId: memberId, unreadOnly: unreadOnly)
-        }
+        let notifications = try await client.listNotifications(memberId: memberId, unreadOnly: unreadOnly)
         return notifications.map(\.native)
     }
 
     func markNotificationsRead(memberId: String, ids: [String]) async throws {
-        try await runSharedUnit {
-            try client.markNotificationsReadBlocking(memberId: memberId, notificationIds: ids)
-        }
+        try await client.markNotificationsRead(memberId: memberId, notificationIds: ids)
     }
 
     func resolveLinkPreview(url: String) async throws -> LinkPreviewResponse? {
-        let response = try await runShared {
-            try client.resolveLinkPreviewBlocking(url: url)
-        }
+        let response = try await client.resolveLinkPreview(url: url)
         return response.preview?.native
     }
 
     func openChat(channelId: String) async throws -> ChatSocketSession {
-        let session = try await runShared {
-            try client.openChatBlocking(channelId: channelId)
-        }
+        let session = try await client.openChat(channelId: channelId)
         return ChatSocketSession(raw: session)
     }
 
     func sendCommand(session: ChatSocketSession, command: ChatCommand) async throws {
-        try await runSharedUnit {
-            try client.sendCommandBlocking(session: session.raw, command: command.sharedCommand)
-        }
+        try await client.sendCommand(session: session.raw, command: command.sharedCommand)
     }
 
     func receiveEvent(session: ChatSocketSession) async throws -> ChatEvent {
-        let event = try await runShared {
-            try client.receiveEventBlocking(session: session.raw)
-        }
+        let event = try await client.receiveEvent(session: session.raw)
         return event.native
     }
 
     func close() async throws {
-        try await runSharedUnit {
-            try client.closeBlocking()
-        }
+        try await client.close()
     }
 
     func notificationStreamRequest(memberId: String) throws -> URLRequest {
@@ -145,31 +113,6 @@ struct APIClient {
 
 struct ChatSocketSession {
     let raw: shared.Ktor_client_coreDefaultClientWebSocketSession
-}
-
-private func runShared<T>(_ operation: @escaping @Sendable () throws -> T) async throws -> T {
-    try await withCheckedThrowingContinuation { continuation in
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                continuation.resume(returning: try operation())
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-}
-
-private func runSharedUnit(_ operation: @escaping @Sendable () throws -> Void) async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try operation()
-                continuation.resume(returning: ())
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
 }
 
 private extension CreateWorkspaceRequest {

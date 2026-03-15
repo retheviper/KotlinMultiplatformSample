@@ -435,3 +435,4 @@ obj/
 !/gradle/wrapper/gradle-wrapper.jar
 
 # End of https://www.toptal.com/developers/gitignore/api/swift,xcode,macos,kotlin,java,intellij+all,android,androidstudio,gradle
+.kotlin/
