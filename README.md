@@ -13,7 +13,8 @@ This repository contains:
 - a Compose Wasm web client served by the API
 - a Compose Desktop shell
 - a macOS SwiftUI shell
-- placeholder mobile shells for future Android and iOS work
+- an Android shell backed by the shared Compose UI
+- an iOS SwiftUI shell backed by shared contracts and networking
 
 The current implementation is a Slack-like vertical slice with workspaces, channels, threaded replies, mentions, notifications, reactions, and link previews.
 Notifications are push-driven on Web, Compose Desktop, and the macOS SwiftUI shell.
@@ -34,7 +35,7 @@ shared/
   Compose Wasm entry point
 
 app/androidApp/
-  Android placeholder shell
+  Android shell using the shared Compose UI
 
 app/desktopApp/
   Compose Desktop shell
@@ -43,7 +44,7 @@ app/macosApp/
   macOS SwiftUI shell
 
 app/iosApp/
-  iOS placeholder shell
+  iOS SwiftUI shell
 
 compose.yaml
   Local PostgreSQL service definition
@@ -67,7 +68,7 @@ compose.yaml
 - Web: implemented and served by the API
 - Desktop: implemented with Compose Desktop
 - macOS native: implemented with SwiftUI in `app/macosApp`
-- Android: module exists, but the product UI is not implemented yet
+- Android: implemented with a thin shell in `app/androidApp`, reusing the `shared` Compose UI, state, resources, and networking
 - iOS: implemented with a SwiftUI shell in `app/iosApp`, using `shared` for contracts and networking
 - iPadOS: implemented with the same `app/iosApp` target, with adaptive iPad layouts and simulator support
 
@@ -142,13 +143,31 @@ export CHAT_DB_PASSWORD=postgres
 ./gradlew :api:run
 ```
 
+### 3. Run Android
+
+Start the API first, then prepare an Android emulator and install the Android app:
+
+```bash
+./gradlew :api:run
+emulator -list-avds
+emulator @<your-avd-name>
+adb devices
+./gradlew :app:androidApp:installDebug
+adb shell am start -n com.retheviper.chat.android/com.retheviper.chat.android.MainActivity
+```
+
+The Android shell connects to `http://10.0.2.2:8080` by default so the emulator can reach the host machine.
+It intentionally keeps platform code thin and delegates product UI, state, resources, and networking to `:shared`.
+If you launch the emulator from Android Studio instead, start any device from Device Manager before running `installDebug`.
+The current default networking setup targets the Android emulator. A physical Android device is not configured out of the box because `10.0.2.2` is emulator-only.
+
 What happens during startup:
 
 - Flyway applies schema migrations
 - the web frontend bundle is prepared from `shared`
 - the API serves the web client from `/`
 
-### 3. Open the application
+### 4. Open the application
 
 Default endpoints:
 
@@ -220,26 +239,29 @@ Start the API first:
 
 ```bash
 ./gradlew :api:run
+xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -showdestinations
+xcrun simctl list devices available
 ```
 
-Then build the iPhone app for the simulator:
+Then choose an installed iPhone simulator name from the commands above and build the app for that simulator:
 
 ```bash
 xcodebuild \
   -project app/iosApp/iosApp.xcodeproj \
   -scheme iosApp \
   -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.3.1' \
+  -destination 'platform=iOS Simulator,name=<your-iphone-simulator>' \
   build
 ```
 
-Boot the simulator, install the app, and launch it:
+Resolve the built `.app` path, boot the simulator, install the app, and launch it:
 
 ```bash
-xcrun simctl boot "iPhone 17"
-xcrun simctl bootstatus "iPhone 17" -b
-xcrun simctl install "iPhone 17" ~/Library/Developer/Xcode/DerivedData/iosApp-gfhryxmsbbcerxgboevyilzzzfda/Build/Products/Debug-iphonesimulator/iosApp.app
-xcrun simctl launch "iPhone 17" orgIdentifier.iosApp
+find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1
+xcrun simctl boot "<your-iphone-simulator>"
+xcrun simctl bootstatus "<your-iphone-simulator>" -b
+xcrun simctl install booted "$(find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1)"
+xcrun simctl launch booted orgIdentifier.iosApp
 ```
 
 Default server target for the iOS shell:
@@ -248,7 +270,15 @@ Default server target for the iOS shell:
 MESSAGING_BASE_URL=http://localhost:8080
 ```
 
-If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose an iPhone simulator such as `iPhone 17`, and run the `iosApp` scheme.
+The iOS shell defaults to `http://localhost:8080`, which works for the iOS Simulator because it shares the Mac host network.
+If you want to override it for simulator runs from the CLI, you can inject an environment variable at launch time:
+
+```bash
+SIMCTL_CHILD_MESSAGING_BASE_URL=http://localhost:8080 \
+xcrun simctl launch booted orgIdentifier.iosApp
+```
+
+If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose any installed iPhone Simulator, set `MESSAGING_BASE_URL` in the Run scheme if needed, and run the `iosApp` scheme.
 
 ## iPadOS Simulator Run
 
@@ -256,29 +286,31 @@ Start the API first:
 
 ```bash
 ./gradlew :api:run
+xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -showdestinations
+xcrun simctl list devices available
 ```
 
-Then build the same target for an iPad simulator:
+Then choose an installed iPad simulator name and build the same target for that simulator:
 
 ```bash
 xcodebuild \
   -project app/iosApp/iosApp.xcodeproj \
   -scheme iosApp \
   -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPad Air 13-inch (M3),OS=26.3.1' \
+  -destination 'platform=iOS Simulator,name=<your-ipad-simulator>' \
   build
 ```
 
 Boot the iPad simulator, install the app, and launch it:
 
 ```bash
-xcrun simctl boot "iPad Air 13-inch (M3)"
-xcrun simctl bootstatus "iPad Air 13-inch (M3)" -b
-xcrun simctl install "iPad Air 13-inch (M3)" ~/Library/Developer/Xcode/DerivedData/iosApp-gfhryxmsbbcerxgboevyilzzzfda/Build/Products/Debug-iphonesimulator/iosApp.app
-xcrun simctl launch "iPad Air 13-inch (M3)" orgIdentifier.iosApp
+xcrun simctl boot "<your-ipad-simulator>"
+xcrun simctl bootstatus "<your-ipad-simulator>" -b
+xcrun simctl install booted "$(find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1)"
+xcrun simctl launch booted orgIdentifier.iosApp
 ```
 
-If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose an iPad simulator such as `iPad Air 13-inch (M3)`, and run the `iosApp` scheme.
+If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose any installed iPad Simulator, and run the `iosApp` scheme.
 
 ## Test and Verification
 
@@ -287,16 +319,20 @@ Core verification commands:
 ```bash
 ./gradlew :shared:jvmTest
 ./gradlew :api:test
+./gradlew :app:androidApp:assembleDebug
 ./gradlew :app:desktopApp:compileKotlin
 swift test --package-path app/macosApp
-xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.3.1' build
-xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPad Air 13-inch (M3),OS=26.3.1' build
+xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -showdestinations
+xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -destination 'platform=iOS Simulator,name=<installed-iphone-simulator>' build
+xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -destination 'platform=iOS Simulator,name=<installed-ipad-simulator>' build
 ```
 
 Notes:
 
 - `:api:test` uses Testcontainers and requires Docker
 - iOS simulator names and OS versions must match the runtimes installed in your local Xcode
+- `:app:androidApp:assembleDebug` verifies the Android module without requiring a running emulator
+- `:app:androidApp:installDebug` requires an available emulator or connected device, but the default base URL is set up for the Android emulator
 
 ## Common Local Issues
 
@@ -306,5 +342,11 @@ Notes:
   - Change the local PostgreSQL mapping or stop the conflicting service.
 - `Android build fails`
   - Provide a valid Android SDK via `ANDROID_HOME` or `local.properties`.
+- `adb` or `emulator` command is not found
+  - Install the Android SDK command-line tools and add the SDK `platform-tools` and `emulator` directories to your `PATH`.
+- `No iOS simulator matches the destination`
+  - Run `xcodebuild -showdestinations` or `xcrun simctl list devices available` and replace the simulator name with one installed in your Xcode.
+- `simctl install` cannot find `iosApp.app`
+  - Re-run the `xcodebuild` step and resolve the app path again from `~/Library/Developer/Xcode/DerivedData`.
 - `API tests fail on container startup`
   - Check Docker availability and container permissions.
