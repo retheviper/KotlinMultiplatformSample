@@ -2,18 +2,18 @@
 
 ## Platform shells
 
-- `androidApp` - Android placeholder shell
+- `androidApp` - Android shell backed by the shared Compose UI
 - `desktopApp` - Compose Desktop shell for macOS, Windows, and Linux
 - `macosApp` - macOS SwiftUI native shell
-- `iosApp` - iOS placeholder shell
+- `iosApp` - iOS SwiftUI shell
 
 ## Project structure
 
-- `androidApp` - Android placeholder module
+- `androidApp` - Thin Android launcher module
 - `desktopApp` - Compose Multiplatform desktop launcher
 - `macosApp` - Swift package for the native macOS shell
 - `../shared` - Shared Kotlin Multiplatform client code
-- `iosApp` - iOS placeholder module
+- `iosApp` - iOS SwiftUI module
 
 Shared request/response models, UI, and client code are provided by the root `:shared` module.
 
@@ -25,6 +25,14 @@ Shared request/response models, UI, and client code are provided by the root `:s
 ```
 
 ## Run
+
+### Android
+
+```bash
+# From repository root (requires server to be running and Android SDK configured)
+./gradlew :app:listAndroidAvds
+./gradlew :app:runAndroidEmulator -PandroidAvd=<your-avd-name>
+```
 
 ### Desktop
 

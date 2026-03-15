@@ -145,21 +145,28 @@ export CHAT_DB_PASSWORD=postgres
 
 ### 3. Run Android
 
-Start the API first, then prepare an Android emulator and install the Android app:
+Start the API first, then use the Gradle shortcut task:
 
 ```bash
 ./gradlew :api:run
-emulator -list-avds
-emulator @<your-avd-name>
-adb devices
-./gradlew :app:androidApp:installDebug
-adb shell am start -n com.retheviper.chat.android/com.retheviper.chat.android.MainActivity
+./gradlew :app:listAndroidAvds
+./gradlew :app:runAndroidEmulator -PandroidAvd=<your-avd-name>
 ```
+
+If you already have exactly one emulator running, `-PandroidAvd=...` is optional. If multiple emulators are connected, pass `-PandroidDeviceSerial=<adb-serial>`.
+If Android builds fail during the `androidJdkImage` / `jlink` step, run Gradle with a standard JDK such as Temurin 21 instead of GraalVM for this repository.
 
 The Android shell connects to `http://10.0.2.2:8080` by default so the emulator can reach the host machine.
 It intentionally keeps platform code thin and delegates product UI, state, resources, and networking to `:shared`.
 If you launch the emulator from Android Studio instead, start any device from Device Manager before running `installDebug`.
 The current default networking setup targets the Android emulator. A physical Android device is not configured out of the box because `10.0.2.2` is emulator-only.
+
+Example:
+
+```bash
+JAVA_HOME=/Users/youngbinkim/Library/Java/JavaVirtualMachines/temurin-21.0.9/Contents/Home \
+./gradlew :app:runAndroidEmulator -PandroidAvd=<your-avd-name>
+```
 
 What happens during startup:
 
@@ -239,29 +246,21 @@ Start the API first:
 
 ```bash
 ./gradlew :api:run
-xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -showdestinations
-xcrun simctl list devices available
+./gradlew :app:listAppleSimulators
 ```
 
-Then choose an installed iPhone simulator name from the commands above and build the app for that simulator:
+Then choose an installed iPhone simulator name and let Gradle build, install, and launch the app:
 
 ```bash
-xcodebuild \
-  -project app/iosApp/iosApp.xcodeproj \
-  -scheme iosApp \
-  -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=<your-iphone-simulator>' \
-  build
+./gradlew :app:runIosSimulator -PiosSimulator="<your-iphone-simulator>"
 ```
 
-Resolve the built `.app` path, boot the simulator, install the app, and launch it:
+To override the server base URL during simulator launch:
 
 ```bash
-find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1
-xcrun simctl boot "<your-iphone-simulator>"
-xcrun simctl bootstatus "<your-iphone-simulator>" -b
-xcrun simctl install booted "$(find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1)"
-xcrun simctl launch booted orgIdentifier.iosApp
+./gradlew :app:runIosSimulator \
+  -PiosSimulator="<your-iphone-simulator>" \
+  -Pmessaging.baseUrl=http://localhost:8080
 ```
 
 Default server target for the iOS shell:
@@ -271,12 +270,7 @@ MESSAGING_BASE_URL=http://localhost:8080
 ```
 
 The iOS shell defaults to `http://localhost:8080`, which works for the iOS Simulator because it shares the Mac host network.
-If you want to override it for simulator runs from the CLI, you can inject an environment variable at launch time:
-
-```bash
-SIMCTL_CHILD_MESSAGING_BASE_URL=http://localhost:8080 \
-xcrun simctl launch booted orgIdentifier.iosApp
-```
+The Gradle task forwards `-Pmessaging.baseUrl=...` to the simulator launch as `SIMCTL_CHILD_MESSAGING_BASE_URL`.
 
 If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose any installed iPhone Simulator, set `MESSAGING_BASE_URL` in the Run scheme if needed, and run the `iosApp` scheme.
 
@@ -286,28 +280,21 @@ Start the API first:
 
 ```bash
 ./gradlew :api:run
-xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -showdestinations
-xcrun simctl list devices available
+./gradlew :app:listAppleSimulators
 ```
 
-Then choose an installed iPad simulator name and build the same target for that simulator:
+Then choose an installed iPad simulator name and let Gradle build, install, and launch the same target:
 
 ```bash
-xcodebuild \
-  -project app/iosApp/iosApp.xcodeproj \
-  -scheme iosApp \
-  -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=<your-ipad-simulator>' \
-  build
+./gradlew :app:runIpadSimulator -PipadSimulator="<your-ipad-simulator>"
 ```
 
-Boot the iPad simulator, install the app, and launch it:
+To override the server base URL during simulator launch:
 
 ```bash
-xcrun simctl boot "<your-ipad-simulator>"
-xcrun simctl bootstatus "<your-ipad-simulator>" -b
-xcrun simctl install booted "$(find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1)"
-xcrun simctl launch booted orgIdentifier.iosApp
+./gradlew :app:runIpadSimulator \
+  -PipadSimulator="<your-ipad-simulator>" \
+  -Pmessaging.baseUrl=http://localhost:8080
 ```
 
 If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose any installed iPad Simulator, and run the `iosApp` scheme.

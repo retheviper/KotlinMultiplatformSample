@@ -124,21 +124,28 @@ docker compose up -d db
 
 ### 3. Android 실행
 
-먼저 API를 실행한 뒤 Android 에뮬레이터를 준비하고 앱을 설치합니다.
+먼저 API를 실행한 뒤 Gradle 단축 태스크를 사용합니다.
 
 ```bash
 ./gradlew :api:run
-emulator -list-avds
-emulator @<your-avd-name>
-adb devices
-./gradlew :app:androidApp:installDebug
-adb shell am start -n com.retheviper.chat.android/com.retheviper.chat.android.MainActivity
+./gradlew :app:listAndroidAvds
+./gradlew :app:runAndroidEmulator -PandroidAvd=<your-avd-name>
 ```
+
+이미 실행 중인 에뮬레이터가 정확히 하나라면 `-PandroidAvd=...`는 생략할 수 있습니다. 여러 에뮬레이터가 연결돼 있으면 `-PandroidDeviceSerial=<adb-serial>`을 넘기면 됩니다.
+`androidJdkImage` / `jlink` 단계에서 Android 빌드가 실패하면, 이 저장소에서는 GraalVM 대신 Temurin 21 같은 일반 JDK로 Gradle을 실행하세요.
 
 Android 셸은 에뮬레이터에서 호스트 머신의 서버에 접근할 수 있도록 기본값으로 `http://10.0.2.2:8080`에 연결합니다.
 플랫폼 코드는 얇게 유지하고, 제품 UI/상태/리소스/네트워킹은 `:shared`에 위임하는 구성을 기본으로 합니다.
 Android Studio를 쓴다면 Device Manager에서 에뮬레이터를 먼저 실행한 뒤 `installDebug`를 수행해도 됩니다.
 현재 기본 네트워크 설정은 Android 에뮬레이터 기준입니다. `10.0.2.2`는 에뮬레이터 전용이므로, 실기기는 별도 설정 없이 바로 연결되지는 않습니다.
+
+예시:
+
+```bash
+JAVA_HOME=/Users/youngbinkim/Library/Java/JavaVirtualMachines/temurin-21.0.9/Contents/Home \
+./gradlew :app:runAndroidEmulator -PandroidAvd=<your-avd-name>
+```
 
 기본적으로 `compose.yaml`로 실행한 로컬 PostgreSQL을 사용합니다.
 
@@ -237,29 +244,21 @@ swift run --package-path app/macosApp
 
 ```bash
 ./gradlew :api:run
-xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -showdestinations
-xcrun simctl list devices available
+./gradlew :app:listAppleSimulators
 ```
 
-그 다음 위 명령으로 확인한 설치된 iPhone 시뮬레이터 이름을 골라 앱을 빌드합니다.
+그 다음 설치된 iPhone 시뮬레이터 이름을 골라 Gradle로 빌드, 설치, 실행을 한 번에 수행합니다.
 
 ```bash
-xcodebuild \
-  -project app/iosApp/iosApp.xcodeproj \
-  -scheme iosApp \
-  -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=<your-iphone-simulator>' \
-  build
+./gradlew :app:runIosSimulator -PiosSimulator="<your-iphone-simulator>"
 ```
 
-빌드된 `.app` 경로를 확인하고, 시뮬레이터를 부팅한 뒤 앱을 설치하고 실행합니다.
+시뮬레이터 실행 시 서버 주소를 바꾸려면:
 
 ```bash
-find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1
-xcrun simctl boot "<your-iphone-simulator>"
-xcrun simctl bootstatus "<your-iphone-simulator>" -b
-xcrun simctl install booted "$(find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1)"
-xcrun simctl launch booted orgIdentifier.iosApp
+./gradlew :app:runIosSimulator \
+  -PiosSimulator="<your-iphone-simulator>" \
+  -Pmessaging.baseUrl=http://localhost:8080
 ```
 
 iOS 셸의 기본 서버 주소:
@@ -269,12 +268,7 @@ MESSAGING_BASE_URL=http://localhost:8080
 ```
 
 iOS 셸은 기본적으로 `http://localhost:8080`에 연결하며, iOS 시뮬레이터는 Mac 호스트 네트워크를 공유하므로 이 기본값이 그대로 동작합니다.
-CLI에서 시뮬레이터 실행 시 서버 주소를 바꾸고 싶다면 다음처럼 환경 변수를 주입할 수 있습니다.
-
-```bash
-SIMCTL_CHILD_MESSAGING_BASE_URL=http://localhost:8080 \
-xcrun simctl launch booted orgIdentifier.iosApp
-```
+Gradle 태스크는 `-Pmessaging.baseUrl=...` 값을 `SIMCTL_CHILD_MESSAGING_BASE_URL`로 전달합니다.
 
 Xcode를 사용할 경우 `app/iosApp/iosApp.xcodeproj`를 열고 설치된 iPhone Simulator를 선택한 뒤, 필요하면 Run scheme에 `MESSAGING_BASE_URL`을 지정해서 실행하면 됩니다.
 
@@ -284,28 +278,21 @@ Xcode를 사용할 경우 `app/iosApp/iosApp.xcodeproj`를 열고 설치된 iPho
 
 ```bash
 ./gradlew :api:run
-xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -showdestinations
-xcrun simctl list devices available
+./gradlew :app:listAppleSimulators
 ```
 
-같은 타깃을 설치된 iPad 시뮬레이터 이름에 맞춰 빌드합니다.
+같은 타깃을 설치된 iPad 시뮬레이터 이름에 맞춰 Gradle로 빌드, 설치, 실행합니다.
 
 ```bash
-xcodebuild \
-  -project app/iosApp/iosApp.xcodeproj \
-  -scheme iosApp \
-  -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=<your-ipad-simulator>' \
-  build
+./gradlew :app:runIpadSimulator -PipadSimulator="<your-ipad-simulator>"
 ```
 
-iPad 시뮬레이터를 부팅하고 앱을 설치한 뒤 실행합니다.
+시뮬레이터 실행 시 서버 주소를 바꾸려면:
 
 ```bash
-xcrun simctl boot "<your-ipad-simulator>"
-xcrun simctl bootstatus "<your-ipad-simulator>" -b
-xcrun simctl install booted "$(find ~/Library/Developer/Xcode/DerivedData -path '*/Build/Products/Debug-iphonesimulator/iosApp.app' | head -n 1)"
-xcrun simctl launch booted orgIdentifier.iosApp
+./gradlew :app:runIpadSimulator \
+  -PipadSimulator="<your-ipad-simulator>" \
+  -Pmessaging.baseUrl=http://localhost:8080
 ```
 
 Xcode를 사용할 경우 `app/iosApp/iosApp.xcodeproj`를 열고 설치된 iPad Simulator를 선택해 실행하면 됩니다.
