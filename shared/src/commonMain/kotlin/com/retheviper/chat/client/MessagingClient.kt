@@ -40,14 +40,15 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class MessagingClient(
-    private val baseUrl: String,
+    private val baseUrl: String
+) {
     private val client: HttpClient = platformHttpClient {
         install(ContentNegotiation) {
             json(JsonInstance)
         }
         install(WebSockets)
     }
-) {
+
     suspend fun listWorkspaces(): List<WorkspaceResponse> =
         requestDecoded {
             client.get(api("/api/v1/workspaces"))
@@ -161,6 +162,86 @@ class MessagingClient(
 
     suspend fun close() {
         client.close()
+    }
+
+    @Throws(Exception::class)
+    fun listWorkspacesBlocking(): List<WorkspaceResponse> = kotlinx.coroutines.runBlocking {
+        listWorkspaces()
+    }
+
+    @Throws(Exception::class)
+    fun createWorkspaceBlocking(request: CreateWorkspaceRequest): WorkspaceResponse = kotlinx.coroutines.runBlocking {
+        createWorkspace(request)
+    }
+
+    @Throws(Exception::class)
+    fun listWorkspaceMembersBlocking(workspaceId: String): List<WorkspaceMemberResponse> = kotlinx.coroutines.runBlocking {
+        listWorkspaceMembers(workspaceId)
+    }
+
+    @Throws(Exception::class)
+    fun addWorkspaceMemberBlocking(workspaceId: String, request: AddWorkspaceMemberRequest): WorkspaceMemberResponse = kotlinx.coroutines.runBlocking {
+        addWorkspaceMember(workspaceId, request)
+    }
+
+    @Throws(Exception::class)
+    fun updateWorkspaceMemberBlocking(memberId: String, request: UpdateWorkspaceMemberRequest): WorkspaceMemberResponse = kotlinx.coroutines.runBlocking {
+        updateWorkspaceMember(memberId, request)
+    }
+
+    @Throws(Exception::class)
+    fun listWorkspaceChannelsBlocking(workspaceId: String): List<ChannelResponse> = kotlinx.coroutines.runBlocking {
+        listWorkspaceChannels(workspaceId)
+    }
+
+    @Throws(Exception::class)
+    fun createChannelBlocking(workspaceId: String, request: CreateChannelRequest): ChannelResponse = kotlinx.coroutines.runBlocking {
+        createChannel(workspaceId, request)
+    }
+
+    @Throws(Exception::class)
+    fun listChannelMessagesBlocking(channelId: String, limit: Int, beforeMessageId: String?): MessagePageResponse = kotlinx.coroutines.runBlocking {
+        listChannelMessages(channelId, limit, beforeMessageId)
+    }
+
+    @Throws(Exception::class)
+    fun getThreadBlocking(messageId: String): ThreadResponse = kotlinx.coroutines.runBlocking {
+        getThread(messageId)
+    }
+
+    @Throws(Exception::class)
+    fun listNotificationsBlocking(memberId: String, unreadOnly: Boolean): List<MentionNotificationResponse> = kotlinx.coroutines.runBlocking {
+        listNotifications(memberId, unreadOnly)
+    }
+
+    @Throws(Exception::class)
+    fun markNotificationsReadBlocking(memberId: String, notificationIds: List<String>) = kotlinx.coroutines.runBlocking {
+        markNotificationsRead(memberId, notificationIds)
+    }
+
+    @Throws(Exception::class)
+    fun resolveLinkPreviewBlocking(url: String): ResolveLinkPreviewResponse = kotlinx.coroutines.runBlocking {
+        resolveLinkPreview(url)
+    }
+
+    @Throws(Exception::class)
+    fun openChatBlocking(channelId: String): DefaultClientWebSocketSession = kotlinx.coroutines.runBlocking {
+        openChat(channelId)
+    }
+
+    @Throws(Exception::class)
+    fun sendCommandBlocking(session: DefaultClientWebSocketSession, command: ChatCommand) = kotlinx.coroutines.runBlocking {
+        sendCommand(session, command)
+    }
+
+    @Throws(Exception::class)
+    fun receiveEventBlocking(session: DefaultClientWebSocketSession): ChatEvent = kotlinx.coroutines.runBlocking {
+        receiveEvent(session)
+    }
+
+    @Throws(Exception::class)
+    fun closeBlocking() = kotlinx.coroutines.runBlocking {
+        close()
     }
 
     private suspend inline fun <reified T> requestDecoded(block: () -> io.ktor.client.statement.HttpResponse): T {

@@ -1,5 +1,48 @@
-import AppKit
 import SwiftUI
+
+struct ServerChip: View {
+    @Binding var baseURLString: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "network")
+            TextField("Server", text: $baseURLString)
+                .textFieldStyle(.roundedBorder)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: Capsule())
+    }
+}
+
+struct MentionSuggestionsView: View {
+    let candidates: [WorkspaceMemberResponse]
+    let onSelect: (WorkspaceMemberResponse) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(candidates.prefix(5)) { member in
+                Button {
+                    onSelect(member)
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(member.displayName)
+                            Text("@\(member.userId)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .background(Color.platformControlBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
 
 struct LinkifiedText: View {
     let text: String
@@ -7,10 +50,6 @@ struct LinkifiedText: View {
 
     var body: some View {
         Text(attributedText)
-            .environment(\.openURL, OpenURLAction { url in
-                NSWorkspace.shared.open(url)
-                return .handled
-            })
     }
 
     private var attributedText: AttributedString {

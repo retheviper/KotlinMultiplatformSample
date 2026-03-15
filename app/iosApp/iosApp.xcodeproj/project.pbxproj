@@ -9,6 +9,23 @@
 /* Begin PBXBuildFile section */
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
 		058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */; };
+		1C24D1073000000000000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1083000000000000001 /* Models.swift */; };
+		1C24D1093000000000000001 /* MentionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D10A3000000000000001 /* MentionHelpers.swift */; };
+		1C24D10B3000000000000001 /* NotificationSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D10C3000000000000001 /* NotificationSnapshot.swift */; };
+		1C24D10D3000000000000001 /* NotificationStreamParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D10E3000000000000001 /* NotificationStreamParsing.swift */; };
+		1C24D1013000000000000001 /* PlatformColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1023000000000000001 /* PlatformColors.swift */; };
+		1C24D1033000000000000001 /* CommonInputComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1043000000000000001 /* CommonInputComponents.swift */; };
+		1C24D1053000000000000001 /* LinkPreviewComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1063000000000000001 /* LinkPreviewComponents.swift */; };
+		1C24D10F3000000000000001 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1103000000000000001 /* APIClient.swift */; };
+		1C24D1113000000000000001 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1123000000000000001 /* NotificationManager.swift */; };
+		1C24D1133000000000000001 /* ChatStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1143000000000000001 /* ChatStore.swift */; };
+		1C24D1153000000000000001 /* ChatStore+Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1163000000000000001 /* ChatStore+Notifications.swift */; };
+		1C24D1173000000000000001 /* ChatStore+Sockets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1183000000000000001 /* ChatStore+Sockets.swift */; };
+		1C24D1193000000000000001 /* IOSAppScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D11A3000000000000001 /* IOSAppScreens.swift */; };
+		1C24D11B3000000000000001 /* WorkspaceShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D11C3000000000000001 /* WorkspaceShellView.swift */; };
+		1C24D11D3000000000000001 /* ChannelAndThreadViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D11E3000000000000001 /* ChannelAndThreadViews.swift */; };
+		1C24D11F3000000000000001 /* MessageComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1203000000000000001 /* MessageComponents.swift */; };
+		1C24D1213000000000000001 /* OverlayComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C24D1223000000000000001 /* OverlayComponents.swift */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
 /* End PBXBuildFile section */
@@ -29,6 +46,23 @@
 /* Begin PBXFileReference section */
 		058557BA273AAA24004C7B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		1C24D1083000000000000001 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Models.swift; path = ../macosApp/Sources/ChatMacNative/Data/Models.swift; sourceTree = SOURCE_ROOT; };
+		1C24D10A3000000000000001 /* MentionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MentionHelpers.swift; path = ../macosApp/Sources/ChatMacNative/Support/MentionHelpers.swift; sourceTree = SOURCE_ROOT; };
+		1C24D10C3000000000000001 /* NotificationSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NotificationSnapshot.swift; path = ../macosApp/Sources/ChatMacNative/Support/NotificationSnapshot.swift; sourceTree = SOURCE_ROOT; };
+		1C24D10E3000000000000001 /* NotificationStreamParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NotificationStreamParsing.swift; path = ../macosApp/Sources/ChatMacNative/Support/NotificationStreamParsing.swift; sourceTree = SOURCE_ROOT; };
+		1C24D1023000000000000001 /* PlatformColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlatformColors.swift; path = ../macosApp/Sources/ChatMacNative/Shared/PlatformColors.swift; sourceTree = SOURCE_ROOT; };
+		1C24D1043000000000000001 /* CommonInputComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CommonInputComponents.swift; path = ../macosApp/Sources/ChatMacNative/Shared/CommonInputComponents.swift; sourceTree = SOURCE_ROOT; };
+		1C24D1063000000000000001 /* LinkPreviewComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkPreviewComponents.swift; path = ../macosApp/Sources/ChatMacNative/Shared/LinkPreviewComponents.swift; sourceTree = SOURCE_ROOT; };
+		1C24D1103000000000000001 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		1C24D1123000000000000001 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		1C24D1143000000000000001 /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
+		1C24D1163000000000000001 /* ChatStore+Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatStore+Notifications.swift"; sourceTree = "<group>"; };
+		1C24D1183000000000000001 /* ChatStore+Sockets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatStore+Sockets.swift"; sourceTree = "<group>"; };
+		1C24D11A3000000000000001 /* IOSAppScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAppScreens.swift; sourceTree = "<group>"; };
+		1C24D11C3000000000000001 /* WorkspaceShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceShellView.swift; sourceTree = "<group>"; };
+		1C24D11E3000000000000001 /* ChannelAndThreadViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelAndThreadViews.swift; sourceTree = "<group>"; };
+		1C24D1203000000000000001 /* MessageComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageComponents.swift; sourceTree = "<group>"; };
+		1C24D1223000000000000001 /* OverlayComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayComponents.swift; sourceTree = "<group>"; };
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		7555FF7B242A565900829871 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -75,6 +109,23 @@
 			isa = PBXGroup;
 			children = (
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
+				1C24D1083000000000000001 /* Models.swift */,
+				1C24D10A3000000000000001 /* MentionHelpers.swift */,
+				1C24D10C3000000000000001 /* NotificationSnapshot.swift */,
+				1C24D10E3000000000000001 /* NotificationStreamParsing.swift */,
+				1C24D1023000000000000001 /* PlatformColors.swift */,
+				1C24D1043000000000000001 /* CommonInputComponents.swift */,
+				1C24D1063000000000000001 /* LinkPreviewComponents.swift */,
+				1C24D1103000000000000001 /* APIClient.swift */,
+				1C24D1123000000000000001 /* NotificationManager.swift */,
+				1C24D1143000000000000001 /* ChatStore.swift */,
+				1C24D1163000000000000001 /* ChatStore+Notifications.swift */,
+				1C24D1183000000000000001 /* ChatStore+Sockets.swift */,
+				1C24D11A3000000000000001 /* IOSAppScreens.swift */,
+				1C24D11C3000000000000001 /* WorkspaceShellView.swift */,
+				1C24D11E3000000000000001 /* ChannelAndThreadViews.swift */,
+				1C24D1203000000000000001 /* MessageComponents.swift */,
+				1C24D1223000000000000001 /* OverlayComponents.swift */,
 				7555FF82242A565900829871 /* ContentView.swift */,
 				7555FF8C242A565B00829871 /* Info.plist */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
@@ -166,14 +217,19 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
+				"$(SRCROOT)/../../shared/build.gradle.kts",
+				"$(SRCROOT)/../../shared/src/commonMain",
+				"$(SRCROOT)/../../shared/src/iosMain",
 			);
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(SRCROOT)/../../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)/shared.framework/shared",
+				"$(SRCROOT)/../../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)/shared.framework/Headers/shared.h",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"$SRCROOT/../..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -182,7 +238,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C24D10F3000000000000001 /* APIClient.swift in Sources */,
+				1C24D1153000000000000001 /* ChatStore+Notifications.swift in Sources */,
+				1C24D1173000000000000001 /* ChatStore+Sockets.swift in Sources */,
+				1C24D1133000000000000001 /* ChatStore.swift in Sources */,
+				1C24D11D3000000000000001 /* ChannelAndThreadViews.swift in Sources */,
+				1C24D1033000000000000001 /* CommonInputComponents.swift in Sources */,
+				1C24D1193000000000000001 /* IOSAppScreens.swift in Sources */,
+				1C24D1053000000000000001 /* LinkPreviewComponents.swift in Sources */,
+				1C24D1093000000000000001 /* MentionHelpers.swift in Sources */,
+				1C24D11F3000000000000001 /* MessageComponents.swift in Sources */,
+				1C24D1073000000000000001 /* Models.swift in Sources */,
+				1C24D1113000000000000001 /* NotificationManager.swift in Sources */,
+				1C24D10B3000000000000001 /* NotificationSnapshot.swift in Sources */,
+				1C24D10D3000000000000001 /* NotificationStreamParsing.swift in Sources */,
+				1C24D1213000000000000001 /* OverlayComponents.swift in Sources */,
+				1C24D1013000000000000001 /* PlatformColors.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
+				1C24D11B3000000000000001 /* WorkspaceShellView.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -241,7 +314,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -297,7 +370,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "bbs-app-ios";
@@ -315,7 +388,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				INFOPLIST_FILE = iosApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -340,7 +413,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				INFOPLIST_FILE = iosApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

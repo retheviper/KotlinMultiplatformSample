@@ -26,27 +26,33 @@ struct MessageCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(message.authorDisplayName)
-                    .font(.headline)
-                Spacer()
-                Text(message.createdAt)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            LinkifiedText(text: message.body, mentionUserIds: mentionUserIds)
-                .textSelection(.enabled)
-
-            if let preview = message.linkPreview {
-                NativeLinkPreviewCard(preview: preview, onDismiss: nil)
-            }
-
-            if message.threadReplyCount > 0 {
-                Button("\(message.threadReplyCount) replies") {
-                    onOpenThread()
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(message.authorDisplayName)
+                        .font(.headline)
+                    Spacer()
+                    Text(message.createdAt)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.link)
+
+                LinkifiedText(text: message.body, mentionUserIds: mentionUserIds)
+                    .textSelection(.enabled)
+
+                if let preview = message.linkPreview {
+                    NativeLinkPreviewCard(preview: preview, onDismiss: nil)
+                }
+
+                if message.threadReplyCount > 0 {
+                    Button("\(message.threadReplyCount) replies") {
+                        onOpenThread()
+                    }
+                    .buttonStyle(.link)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .onTapGesture {
+                onOpenThread()
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -85,8 +91,5 @@ struct MessageCardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .onTapGesture {
-            onOpenThread()
-        }
     }
 }
