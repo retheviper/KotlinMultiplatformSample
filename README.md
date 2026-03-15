@@ -68,7 +68,14 @@ compose.yaml
 - Desktop: implemented with Compose Desktop
 - macOS native: implemented with SwiftUI in `app/macosApp`
 - Android: module exists, but the product UI is not implemented yet
-- iOS: module exists, but the product UI is not implemented yet
+- iOS: implemented with a SwiftUI shell in `app/iosApp`, using `shared` for contracts and networking
+- iPadOS: implemented with the same `app/iosApp` target, with adaptive iPad layouts and simulator support
+
+## Apple Shell Notes
+
+- iOS and macOS now share Swift models/helpers and several SwiftUI components instead of duplicating platform code.
+- The iOS SwiftUI shell is split by concern into root screens, workspace shell, channel/thread screens, message components, and overlay components.
+- New Apple-side work should verify the latest official SwiftUI, WebKit, UserNotifications, Ktor, and Kotlin Multiplatform documentation before implementation when behavior is version-sensitive.
 
 ## Prerequisites
 
@@ -81,6 +88,7 @@ Optional:
 
 - Android SDK for `:app:androidApp`
 - Xcode and Swift 6 toolchain for `app/macosApp`
+- Xcode with iOS Simulator runtimes for `app/iosApp`
 
 Verified toolchain in this repository:
 
@@ -206,7 +214,71 @@ You can also run the SwiftUI shell directly:
 swift run --package-path app/macosApp
 ```
 
-Android and iOS modules are not part of the runnable product path yet. They are reserved for future native client work.
+## iOS Simulator Run
+
+Start the API first:
+
+```bash
+./gradlew :api:run
+```
+
+Then build the iPhone app for the simulator:
+
+```bash
+xcodebuild \
+  -project app/iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.3.1' \
+  build
+```
+
+Boot the simulator, install the app, and launch it:
+
+```bash
+xcrun simctl boot "iPhone 17"
+xcrun simctl bootstatus "iPhone 17" -b
+xcrun simctl install "iPhone 17" ~/Library/Developer/Xcode/DerivedData/iosApp-gfhryxmsbbcerxgboevyilzzzfda/Build/Products/Debug-iphonesimulator/iosApp.app
+xcrun simctl launch "iPhone 17" orgIdentifier.iosApp
+```
+
+Default server target for the iOS shell:
+
+```bash
+MESSAGING_BASE_URL=http://localhost:8080
+```
+
+If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose an iPhone simulator such as `iPhone 17`, and run the `iosApp` scheme.
+
+## iPadOS Simulator Run
+
+Start the API first:
+
+```bash
+./gradlew :api:run
+```
+
+Then build the same target for an iPad simulator:
+
+```bash
+xcodebuild \
+  -project app/iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPad Air 13-inch (M3),OS=26.3.1' \
+  build
+```
+
+Boot the iPad simulator, install the app, and launch it:
+
+```bash
+xcrun simctl boot "iPad Air 13-inch (M3)"
+xcrun simctl bootstatus "iPad Air 13-inch (M3)" -b
+xcrun simctl install "iPad Air 13-inch (M3)" ~/Library/Developer/Xcode/DerivedData/iosApp-gfhryxmsbbcerxgboevyilzzzfda/Build/Products/Debug-iphonesimulator/iosApp.app
+xcrun simctl launch "iPad Air 13-inch (M3)" orgIdentifier.iosApp
+```
+
+If you prefer Xcode, open `app/iosApp/iosApp.xcodeproj`, choose an iPad simulator such as `iPad Air 13-inch (M3)`, and run the `iosApp` scheme.
 
 ## Test and Verification
 
@@ -217,12 +289,14 @@ Core verification commands:
 ./gradlew :api:test
 ./gradlew :app:desktopApp:compileKotlin
 swift test --package-path app/macosApp
+xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.3.1' build
+xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPad Air 13-inch (M3),OS=26.3.1' build
 ```
 
 Notes:
 
 - `:api:test` uses Testcontainers and requires Docker
-- Android and iOS builds are not included in the commands above
+- iOS simulator names and OS versions must match the runtimes installed in your local Xcode
 
 ## Common Local Issues
 
