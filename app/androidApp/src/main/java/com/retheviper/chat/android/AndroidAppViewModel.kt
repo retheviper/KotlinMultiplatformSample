@@ -70,4 +70,4 @@ internal class AndroidAppViewModel(
 
 }
 
-private const val ANDROID_APP_DEFAULT_WINDOW_TITLE = "Chat Android"
+private const val ANDROID_APP_DEFAULT_WINDOW_TITLE = "KMPs"

@@ -2,19 +2,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChatMacNative",
+    name: "KMPs",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .executable(
-            name: "ChatMacNative",
-            targets: ["ChatMacNative"]
+            name: "KMPs",
+            targets: ["KMPs"]
         )
     ],
     targets: [
         .executableTarget(
-            name: "ChatMacNative",
+            name: "KMPs",
             path: "Sources/ChatMacNative",
             resources: [
                 .process("Resources")
@@ -22,7 +22,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ChatMacNativeTests",
-            dependencies: ["ChatMacNative"],
+            dependencies: ["KMPs"],
             path: "Tests/ChatMacNativeTests"
         )
     ]

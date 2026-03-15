@@ -39,10 +39,10 @@ The currently working product surface includes:
 - macOS SwiftUI native shell
 - Ktor API with OpenAPI, PostgreSQL, and Flyway
 
-These areas are still closer to placeholders than finished product shells:
+These areas are still thinner shells than the web, desktop, and macOS surfaces:
 
-- `app/androidApp`
-- `app/iosApp`
+- `app/androidApp` reuses the shared Compose UI with limited platform-specific behavior
+- `app/iosApp` is functional, but still lower priority than web, desktop, and macOS for product depth
 
 ## Module Layout
 
@@ -65,10 +65,10 @@ app/macosApp
   macOS SwiftUI native shell
 
 app/androidApp
-  Android placeholder shell
+  Android shell backed by shared Compose UI
 
 app/iosApp
-  iOS placeholder shell
+  iOS SwiftUI shell
 ```
 
 ## Session Reflection

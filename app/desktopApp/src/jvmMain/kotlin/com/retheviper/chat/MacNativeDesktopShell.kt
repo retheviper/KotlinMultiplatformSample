@@ -27,7 +27,7 @@ internal object MacNativeDesktopShellRunner : DesktopShellRunner {
                 "run",
                 "--package-path",
                 packageManifest.parent.toString(),
-                "ChatMacNative"
+                "KMPs"
             ).apply {
                 directory(packageManifest.parent.toFile())
                 inheritIO()

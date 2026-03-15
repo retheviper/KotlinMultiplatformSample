@@ -333,7 +333,7 @@ Notes:
   - Install the Android SDK command-line tools and add the SDK `platform-tools` and `emulator` directories to your `PATH`.
 - `No iOS simulator matches the destination`
   - Run `xcodebuild -showdestinations` or `xcrun simctl list devices available` and replace the simulator name with one installed in your Xcode.
-- `simctl install` cannot find `iosApp.app`
+- `simctl install` cannot find `KMPs.app`
   - Re-run the `xcodebuild` step and resolve the app path again from `~/Library/Developer/Xcode/DerivedData`.
 - `API tests fail on container startup`
   - Check Docker availability and container permissions.

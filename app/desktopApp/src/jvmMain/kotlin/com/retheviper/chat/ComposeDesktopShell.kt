@@ -43,7 +43,7 @@ internal fun ComposeDesktopShellApp(onExitApplication: () -> Unit) {
     val windowState = rememberDesktopWindowState(preferences)
     val desktopBridge = remember { DesktopBridge() }
 
-    var windowTitle by rememberSaveable { mutableStateOf("Chat Desktop") }
+    var windowTitle by rememberSaveable { mutableStateOf("KMPs") }
     var unreadNotificationCount by rememberSaveable { mutableStateOf(0) }
     var quitRequested by remember { mutableStateOf(false) }
     var awtWindow by remember { mutableStateOf<java.awt.Window?>(null) }
@@ -212,7 +212,7 @@ internal class DesktopBridge {
     }
 
     fun showNotification(event: com.retheviper.chat.app.AppNotificationEvent, window: java.awt.Window?, unreadCount: Int) {
-        updateBadge("Chat Desktop", unreadCount)
+        updateBadge("KMPs", unreadCount)
         trayIcon?.displayMessage(event.title, event.body, TrayIcon.MessageType.INFO)
         if (isTaskbarSupported) {
             runCatching {

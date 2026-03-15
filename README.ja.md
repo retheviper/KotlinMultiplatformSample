@@ -333,7 +333,7 @@ xcodebuild -project app/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimula
   - Android SDK command-line tools を入れ、SDK の `platform-tools` と `emulator` ディレクトリを `PATH` に追加してください。
 - `No iOS simulator matches the destination`
   - `xcodebuild -showdestinations` または `xcrun simctl list devices available` で利用可能な simulator 名を確認し、その名前に置き換えてください。
-- `simctl install` で `iosApp.app` が見つからない
+- `simctl install` で `KMPs.app` が見つからない
   - `xcodebuild` をやり直し、`~/Library/Developer/Xcode/DerivedData` から `.app` のパスを再確認してください。
 - `API tests fail on container startup`
   - Docker が利用可能か、コンテナ実行権限があるか確認してください。

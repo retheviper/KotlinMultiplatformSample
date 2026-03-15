@@ -14,7 +14,7 @@ import java.io.File
 
 private const val IOS_APP_SCHEME = "iosApp"
 private const val IOS_APP_BUNDLE_ID = "orgIdentifier.iosApp"
-private const val IOS_APP_NAME = "iosApp.app"
+private const val IOS_APP_NAME = "KMPs.app"
 
 abstract class BaseCommandTask : DefaultTask() {
     @get:InputDirectory

@@ -1,5 +1,5 @@
 import XCTest
-@testable import ChatMacNative
+@testable import KMPs
 
 final class NotificationSnapshotTests: XCTestCase {
     func testAggregatesUnreadCountsAndChannelBadges() {
