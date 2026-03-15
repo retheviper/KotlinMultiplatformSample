@@ -15,7 +15,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "ChatMacNative",
-            path: "Sources/ChatMacNative"
+            path: "Sources/ChatMacNative",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "ChatMacNativeTests",
