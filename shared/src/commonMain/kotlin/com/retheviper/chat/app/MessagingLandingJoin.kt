@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,27 +50,63 @@ internal fun LandingScreen(
     onCreateWorkspace: () -> Unit
 ) {
     val palette = appPalette()
+    val isCompactScreen = rememberIsCompactScreen()
     Box(
-        modifier = Modifier.fillMaxSize().background(palette.shell).padding(28.dp),
+        modifier = Modifier.fillMaxSize().background(palette.shell).padding(if (isCompactScreen) 14.dp else 28.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth(if (isCompactScreen) 1f else 0.9f)
                 .widthIn(max = 1040.dp)
-                .height(720.dp)
+                .heightIn(min = if (isCompactScreen) 0.dp else 720.dp)
                 .animateContentSize(),
             shape = RoundedCornerShape(32.dp),
             backgroundColor = palette.sidebar,
             elevation = 0.dp
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(28.dp),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(if (isCompactScreen) 18.dp else 28.dp),
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
                 Text(AppLabels.chatWorkspace, style = MaterialTheme.typography.h3, color = palette.lightText)
                 Text(status, color = palette.mutedText)
-                Row(
+                if (isCompactScreen) {
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SplitPanelCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = AppLabels.join,
+                            subtitle = AppLabels.joinSubtitle,
+                            dark = true
+                        ) {
+                            if (workspaces.isEmpty()) {
+                                EmptyConversationState(AppLabels.noWorkspaces, AppLabels.noWorkspacesBody)
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    items(workspaces, key = { it.id }) { item ->
+                                        WorkspaceListItem(item, onClick = { onOpenWorkspace(item) })
+                                    }
+                                }
+                            }
+                        }
+
+                        SplitPanelCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = AppLabels.create,
+                            subtitle = AppLabels.createWorkspaceSubtitle,
+                            dark = false
+                        ) {
+                            FormField(AppLabels.workspaceSlugField, workspaceSlug, textColor = palette.darkText, onValueChange = onWorkspaceSlugChange)
+                            FormField(AppLabels.workspaceNameField, workspaceName, textColor = palette.darkText, onValueChange = onWorkspaceNameChange)
+                            FormField(AppLabels.ownerUserIdField, ownerUserId, textColor = palette.darkText, onValueChange = onOwnerUserIdChange)
+                            FormField(AppLabels.ownerDisplayNameField, ownerDisplayName, textColor = palette.darkText, onValueChange = onOwnerDisplayNameChange)
+                            FilledActionButton(AppLabels.createWorkspace, onCreateWorkspace, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                } else Row(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
@@ -131,22 +170,23 @@ internal fun JoinWorkspaceScreen(
     onContinueAsMember: (WorkspaceMemberResponse) -> Unit
 ) {
     val palette = appPalette()
+    val isCompactScreen = rememberIsCompactScreen()
     Box(
-        modifier = Modifier.fillMaxSize().background(palette.shell).padding(28.dp),
+        modifier = Modifier.fillMaxSize().background(palette.shell).padding(if (isCompactScreen) 14.dp else 28.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth(if (isCompactScreen) 1f else 0.9f)
                 .widthIn(max = 980.dp)
-                .height(680.dp)
+                .heightIn(min = if (isCompactScreen) 0.dp else 680.dp)
                 .animateContentSize(),
             shape = RoundedCornerShape(32.dp),
             backgroundColor = palette.sidebar,
             elevation = 0.dp
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(28.dp),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(if (isCompactScreen) 18.dp else 28.dp),
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
                 SplitPanelHeader(
@@ -156,7 +196,56 @@ internal fun JoinWorkspaceScreen(
                     backLabel = AppLabels.back,
                     onBack = onBack
                 )
-                Row(
+                if (isCompactScreen) {
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SplitPanelCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = AppLabels.select,
+                            subtitle = AppLabels.selectMemberSubtitle,
+                            dark = true
+                        ) {
+                            if (existingMembers.isEmpty()) {
+                                EmptyConversationState(AppLabels.noMembers, AppLabels.noMembersBody)
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    items(existingMembers, key = { it.id }) { member ->
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth().clickable { onContinueAsMember(member) },
+                                            shape = RoundedCornerShape(16.dp),
+                                            backgroundColor = palette.sidebar,
+                                            elevation = 0.dp
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    Text(member.displayName, color = palette.lightText, fontWeight = FontWeight.Bold)
+                                                    Text("@${member.userId}", color = palette.mutedText)
+                                                }
+                                                Text(AppLabels.continueLabel, color = palette.accentSoft, fontWeight = FontWeight.Medium)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        SplitPanelCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = AppLabels.create,
+                            subtitle = AppLabels.createMemberSubtitle,
+                            dark = false
+                        ) {
+                            FormField(AppLabels.userIdField, userId, textColor = palette.darkText, onValueChange = onUserIdChange)
+                            FormField(AppLabels.displayNameField, displayName, textColor = palette.darkText, onValueChange = onDisplayNameChange)
+                            FilledActionButton(AppLabels.continueLabel, onJoin, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                } else Row(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {

@@ -7,6 +7,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,9 +17,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -40,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
@@ -55,7 +59,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.retheviper.chat.client.MessagingClient
-import com.retheviper.chat.client.PlatformClientConfig
 import com.retheviper.chat.contract.ChannelResponse
 import com.retheviper.chat.contract.LinkPreviewResponse
 import com.retheviper.chat.contract.MentionNotificationResponse
@@ -64,7 +67,6 @@ import com.retheviper.chat.contract.MessageResponse
 import com.retheviper.chat.contract.NotificationKind
 import com.retheviper.chat.contract.WorkspaceMemberResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import io.ktor.http.encodeURLParameter
 import io.ktor.websocket.close
 import kotlinx.coroutines.Job
 
@@ -117,10 +119,12 @@ internal fun WorkspaceScreen(
     onSaveProfile: () -> Unit
 ) {
     val palette = appPalette()
+    val isCompactScreen = rememberIsCompactScreen()
     val mentionUserIds = remember(workspaceMembers) { workspaceMembers.mapTo(linkedSetOf()) { it.userId } }
     var createChannelDialogOpen by remember { mutableStateOf(false) }
     var reactionPickerTarget by remember { mutableStateOf<MessageResponse?>(null) }
     var editProfileDialogOpen by remember { mutableStateOf(false) }
+    var compactSidebarOpen by rememberSaveable { mutableStateOf(false) }
     val messageListState = rememberLazyListState()
     val threadListState = rememberLazyListState()
 
@@ -136,105 +140,43 @@ internal fun WorkspaceScreen(
         if (index >= 0) threadListState.animateScrollToItem(index)
     }
 
-    Row(
-        modifier = Modifier.fillMaxSize().background(palette.shell).padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Card(
-            modifier = Modifier.width(300.dp).fillMaxHeight(),
-            shape = RoundedCornerShape(28.dp),
-            backgroundColor = palette.sidebar,
-            elevation = 0.dp
-        ) {
-            Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(workspace?.name ?: AppLabels.workspace, style = MaterialTheme.typography.h5, color = palette.lightText)
-                        Card(
-                            modifier = Modifier.clickable(onClick = onSwitchWorkspace),
-                            shape = CircleShape,
-                            backgroundColor = palette.sidebarCard,
-                            elevation = 0.dp
-                        ) {
-                            Text("<>", modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), color = palette.lightText, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), backgroundColor = palette.sidebarCard, elevation = 0.dp) {
-                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            SidebarMenuItem(
-                                label = AppLabels.notifications,
-                                badge = notificationCount,
-                                selected = centerView == WorkspaceCenterView.NOTIFICATIONS,
-                                onClick = onOpenNotifications
-                            )
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(AppLabels.channels, color = palette.lightText, fontWeight = FontWeight.Bold)
-                                Card(
-                                    modifier = Modifier.clickable { createChannelDialogOpen = true },
-                                    shape = RoundedCornerShape(12.dp),
-                                    backgroundColor = palette.accent,
-                                    elevation = 0.dp
-                                ) {
-                                    Text("+", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), color = Color.White, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                            workspaceChannels.forEach { item ->
-                                SidebarChannelItem(
-                                    channel = item,
-                                    mentionCount = channelMentionCounts[item.id] ?: 0,
-                                    selected = item.id == channel?.id,
-                                    onClick = { onOpenChannel(item) }
-                                )
-                            }
-                        }
-                    }
-                }
-
+    if (isCompactScreen) {
+        Box(modifier = Modifier.fillMaxSize().background(palette.shell)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CompactTopBar(
+                    workspaceName = workspace?.name ?: AppLabels.workspace,
+                    subtitle = if (centerView == WorkspaceCenterView.NOTIFICATIONS) AppLabels.notifications else channel?.name ?: AppLabels.chooseChannel,
+                    notificationCount = notificationCount,
+                    onOpenSidebar = { compactSidebarOpen = true },
+                    onOpenNotifications = onOpenNotifications
+                )
                 Card(
-                    modifier = Modifier.fillMaxWidth().clickable { editProfileDialogOpen = true },
-                    shape = RoundedCornerShape(20.dp),
-                    backgroundColor = palette.sidebarCard,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    backgroundColor = palette.mainCard,
                     elevation = 0.dp
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(currentMember?.displayName ?: AppLabels.noMember, color = palette.lightText, fontWeight = FontWeight.Bold)
-                            Text(currentMember?.userId ?: "", color = palette.mutedText)
-                        }
-                        Text(AppLabels.edit, color = palette.accentSoft, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
-        }
-
-        Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
-                Row(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text(channel?.let { "# ${it.slug}" } ?: AppLabels.chooseChannel, style = MaterialTheme.typography.h5, color = palette.darkText)
-                        Text(channel?.topic ?: AppLabels.selectChannelBody, color = palette.dimText)
-                    }
-                    Column {
-                        Text(currentMember?.displayName ?: AppLabels.noMember, fontWeight = FontWeight.Bold, color = palette.darkText)
-                        Text(currentMember?.userId ?: "", color = palette.dimText)
-                    }
-                }
-            }
-
-            Card(modifier = Modifier.weight(1f).fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Column(modifier = Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        WorkspaceTopSummary(
+                            channel = channel,
+                            currentMember = currentMember,
+                            compact = true
+                        )
                         if (centerView == WorkspaceCenterView.NOTIFICATIONS) {
                             NotificationListPanel(notifications = allNotifications, onOpenNotification = onOpenNotificationItem)
                         } else if (channel == null) {
                             EmptyConversationState(AppLabels.openChannel, AppLabels.openChannelBody)
                         } else {
-                            LazyColumn(state = messageListState, modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            LazyColumn(
+                                state = messageListState,
+                                modifier = Modifier.weight(1f).fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
                                 if (hasOlderMessages) {
                                     item(key = "read-more") {
                                         OutlineActionButton(
@@ -257,40 +199,169 @@ internal fun WorkspaceScreen(
                                     )
                                 }
                             }
-                            ComposerPanel(
-                                currentMember = currentMember,
-                                mentionCandidates = workspaceMembers,
-                                messageBody = messageBody,
-                                linkPreview = messageLinkPreview,
-                                onMessageBodyChange = onMessageBodyChange,
-                                onDismissPreview = onDismissMessagePreview,
-                                onFocus = onCloseThread,
-                                onSend = onSendChannelMessage
-                            )
+                            AnimatedVisibility(visible = selectedRootId != null) {
+                                ThreadPane(
+                                    currentMember = currentMember,
+                                    mentionUserIds = mentionUserIds,
+                                    workspaceMembers = workspaceMembers,
+                                    threadMessages = threadMessages,
+                                    listState = threadListState,
+                                    focusedThreadMessageId = focusedThreadMessageId,
+                                    messageBody = threadMessageBody,
+                                    linkPreview = threadLinkPreview,
+                                    onMessageBodyChange = onThreadMessageBodyChange,
+                                    onDismissPreview = onDismissThreadPreview,
+                                    onCloseThread = onCloseThread,
+                                    onToggleReaction = onToggleReaction,
+                                    onOpenReactionPicker = { reactionPickerTarget = it },
+                                    onSend = onSendThreadMessage,
+                                    compact = true
+                                )
+                            }
+                            if (selectedRootId == null) {
+                                ComposerPanel(
+                                    currentMember = currentMember,
+                                    mentionCandidates = workspaceMembers,
+                                    messageBody = messageBody,
+                                    linkPreview = messageLinkPreview,
+                                    onMessageBodyChange = onMessageBodyChange,
+                                    onDismissPreview = onDismissMessagePreview,
+                                    onFocus = onCloseThread,
+                                    onSend = onSendChannelMessage
+                                )
+                            }
                         }
                     }
-                    androidx.compose.animation.AnimatedVisibility(
-                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                        visible = selectedRootId != null,
-                        enter = slideInHorizontally(initialOffsetX = { it / 3 }) + fadeIn(),
-                        exit = slideOutHorizontally(targetOffsetX = { it / 3 }) + fadeOut()
-                    ) {
-                        ThreadPane(
-                            currentMember = currentMember,
-                            mentionUserIds = mentionUserIds,
-                            workspaceMembers = workspaceMembers,
-                            threadMessages = threadMessages,
-                            listState = threadListState,
-                            focusedThreadMessageId = focusedThreadMessageId,
-                            messageBody = threadMessageBody,
-                            linkPreview = threadLinkPreview,
-                            onMessageBodyChange = onThreadMessageBodyChange,
-                            onDismissPreview = onDismissThreadPreview,
-                            onCloseThread = onCloseThread,
-                            onToggleReaction = onToggleReaction,
-                            onOpenReactionPicker = { reactionPickerTarget = it },
-                            onSend = onSendThreadMessage
-                        )
+                }
+            }
+            AnimatedVisibility(
+                visible = compactSidebarOpen,
+                enter = slideInHorizontally(initialOffsetX = { -it / 2 }) + fadeIn(),
+                exit = slideOutHorizontally(targetOffsetX = { -it / 2 }) + fadeOut()
+            ) {
+                CompactSidebarDrawer(
+                    workspaceName = workspace?.name ?: AppLabels.workspace,
+                    currentMember = currentMember,
+                    workspaceChannels = workspaceChannels,
+                    channelMentionCounts = channelMentionCounts,
+                    channel = channel,
+                    centerView = centerView,
+                    notificationCount = notificationCount,
+                    onDismiss = { compactSidebarOpen = false },
+                    onSwitchWorkspace = {
+                        compactSidebarOpen = false
+                        onSwitchWorkspace()
+                    },
+                    onOpenNotifications = {
+                        compactSidebarOpen = false
+                        onOpenNotifications()
+                    },
+                    onCreateChannel = {
+                        compactSidebarOpen = false
+                        createChannelDialogOpen = true
+                    },
+                    onOpenChannel = {
+                        compactSidebarOpen = false
+                        onOpenChannel(it)
+                    },
+                    onEditProfile = {
+                        compactSidebarOpen = false
+                        editProfileDialogOpen = true
+                    }
+                )
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxSize().background(palette.shell).padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            WorkspaceSidebar(
+                workspaceName = workspace?.name ?: AppLabels.workspace,
+                currentMember = currentMember,
+                workspaceChannels = workspaceChannels,
+                channelMentionCounts = channelMentionCounts,
+                channel = channel,
+                centerView = centerView,
+                notificationCount = notificationCount,
+                onSwitchWorkspace = onSwitchWorkspace,
+                onOpenNotifications = onOpenNotifications,
+                onCreateChannel = { createChannelDialogOpen = true },
+                onOpenChannel = onOpenChannel,
+                onEditProfile = { editProfileDialogOpen = true }
+            )
+
+            Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
+                    WorkspaceTopSummary(channel = channel, currentMember = currentMember, compact = false)
+                }
+
+                Card(modifier = Modifier.weight(1f).fillMaxWidth(), shape = RoundedCornerShape(24.dp), backgroundColor = palette.mainCard, elevation = 0.dp) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            if (centerView == WorkspaceCenterView.NOTIFICATIONS) {
+                                NotificationListPanel(notifications = allNotifications, onOpenNotification = onOpenNotificationItem)
+                            } else if (channel == null) {
+                                EmptyConversationState(AppLabels.openChannel, AppLabels.openChannelBody)
+                            } else {
+                                LazyColumn(state = messageListState, modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    if (hasOlderMessages) {
+                                        item(key = "read-more") {
+                                            OutlineActionButton(
+                                                text = if (loadingOlderMessages) AppLabels.loading else AppLabels.readMore,
+                                                onClick = onLoadOlderMessages,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                contentColor = palette.accent
+                                            )
+                                        }
+                                    }
+                                    items(messages, key = { it.id }) { item ->
+                                        MessageRow(
+                                            message = item,
+                                            selected = selectedRootId == item.id || focusedMessageId == item.id,
+                                            currentMemberId = currentMember?.id,
+                                            mentionUserIds = mentionUserIds,
+                                            onOpenThread = { onOpenThread(item) },
+                                            onToggleReaction = { emoji -> onToggleReaction(item, emoji) },
+                                            onOpenReactionPicker = { reactionPickerTarget = item }
+                                        )
+                                    }
+                                }
+                                ComposerPanel(
+                                    currentMember = currentMember,
+                                    mentionCandidates = workspaceMembers,
+                                    messageBody = messageBody,
+                                    linkPreview = messageLinkPreview,
+                                    onMessageBodyChange = onMessageBodyChange,
+                                    onDismissPreview = onDismissMessagePreview,
+                                    onFocus = onCloseThread,
+                                    onSend = onSendChannelMessage
+                                )
+                            }
+                        }
+                        androidx.compose.animation.AnimatedVisibility(
+                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                            visible = selectedRootId != null,
+                            enter = slideInHorizontally(initialOffsetX = { it / 3 }) + fadeIn(),
+                            exit = slideOutHorizontally(targetOffsetX = { it / 3 }) + fadeOut()
+                        ) {
+                            ThreadPane(
+                                currentMember = currentMember,
+                                mentionUserIds = mentionUserIds,
+                                workspaceMembers = workspaceMembers,
+                                threadMessages = threadMessages,
+                                listState = threadListState,
+                                focusedThreadMessageId = focusedThreadMessageId,
+                                messageBody = threadMessageBody,
+                                linkPreview = threadLinkPreview,
+                                onMessageBodyChange = onThreadMessageBodyChange,
+                                onDismissPreview = onDismissThreadPreview,
+                                onCloseThread = onCloseThread,
+                                onToggleReaction = onToggleReaction,
+                                onOpenReactionPicker = { reactionPickerTarget = it },
+                                onSend = onSendThreadMessage
+                            )
+                        }
                     }
                 }
             }
@@ -373,11 +444,16 @@ internal fun ThreadPane(
     onCloseThread: () -> Unit,
     onToggleReaction: (MessageResponse, String) -> Unit,
     onOpenReactionPicker: (MessageResponse) -> Unit,
-    onSend: () -> Unit
+    onSend: () -> Unit,
+    compact: Boolean = false
 ) {
     val palette = appPalette()
     Card(
-        modifier = Modifier.width(420.dp).fillMaxHeight().padding(14.dp),
+        modifier = if (compact) {
+            Modifier.fillMaxWidth().heightIn(min = 360.dp, max = 560.dp)
+        } else {
+            Modifier.width(420.dp).fillMaxHeight().padding(14.dp)
+        },
         shape = RoundedCornerShape(28.dp),
         backgroundColor = palette.threadBg.copy(alpha = 0.98f),
         elevation = 0.dp
@@ -391,7 +467,7 @@ internal fun ThreadPane(
                 itemsIndexed(threadMessages, key = { _, item -> item.id }) { index, item ->
                     val isOwnMessage = currentMember?.id == item.authorMemberId
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(start = if (index == 0) 0.dp else 18.dp),
+                        modifier = Modifier.fillMaxWidth().padding(start = if (compact || index == 0) 0.dp else 18.dp),
                         shape = RoundedCornerShape(16.dp),
                         backgroundColor = when {
                             focusedThreadMessageId == item.id && isOwnMessage -> palette.ownFocusedMessageBg
@@ -445,6 +521,235 @@ internal suspend fun loadThread(
         .onFailure {
             updateStatus(it.message ?: AppStatus.failedLoadThread)
         }
+}
+
+@Composable
+internal fun WorkspaceSidebar(
+    workspaceName: String,
+    currentMember: WorkspaceMemberResponse?,
+    workspaceChannels: List<ChannelResponse>,
+    channelMentionCounts: Map<String, Int>,
+    channel: ChannelResponse?,
+    centerView: WorkspaceCenterView,
+    notificationCount: Int,
+    showNotificationsShortcut: Boolean = true,
+    onSwitchWorkspace: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    onCreateChannel: () -> Unit,
+    onOpenChannel: (ChannelResponse) -> Unit,
+    onEditProfile: () -> Unit
+) {
+    val palette = appPalette()
+    Card(
+        modifier = Modifier.width(300.dp).fillMaxHeight(),
+        shape = RoundedCornerShape(28.dp),
+        backgroundColor = palette.sidebar,
+        elevation = 0.dp
+    ) {
+        Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(workspaceName, style = MaterialTheme.typography.h5, color = palette.lightText)
+                    Card(
+                        modifier = Modifier.clickable(onClick = onSwitchWorkspace),
+                        shape = CircleShape,
+                        backgroundColor = palette.sidebarCard,
+                        elevation = 0.dp
+                    ) {
+                        Text("<>", modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), color = palette.lightText, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), backgroundColor = palette.sidebarCard, elevation = 0.dp) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (showNotificationsShortcut) {
+                            SidebarMenuItem(
+                                label = AppLabels.notifications,
+                                badge = notificationCount,
+                                selected = centerView == WorkspaceCenterView.NOTIFICATIONS,
+                                onClick = onOpenNotifications
+                            )
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(AppLabels.channels, color = palette.lightText, fontWeight = FontWeight.Bold)
+                            Card(
+                                modifier = Modifier.clickable(onClick = onCreateChannel),
+                                shape = RoundedCornerShape(12.dp),
+                                backgroundColor = palette.accent,
+                                elevation = 0.dp
+                            ) {
+                                Text("+", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        workspaceChannels.forEach { item ->
+                            SidebarChannelItem(
+                                channel = item,
+                                mentionCount = channelMentionCounts[item.id] ?: 0,
+                                selected = item.id == channel?.id,
+                                onClick = { onOpenChannel(item) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            MemberSummaryCard(
+                currentMember = currentMember,
+                dark = true,
+                onClick = onEditProfile
+            )
+        }
+    }
+}
+
+@Composable
+internal fun MemberSummaryCard(
+    currentMember: WorkspaceMemberResponse?,
+    dark: Boolean,
+    onClick: () -> Unit
+) {
+    val palette = appPalette()
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        backgroundColor = if (dark) palette.sidebarCard else palette.overlayCard,
+        elevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    currentMember?.displayName ?: AppLabels.noMember,
+                    color = if (dark) palette.lightText else palette.darkText,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(currentMember?.userId ?: "", color = if (dark) palette.mutedText else palette.dimText)
+            }
+            Text(AppLabels.edit, color = palette.accentSoft, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+internal fun CompactTopBar(
+    workspaceName: String,
+    subtitle: String,
+    notificationCount: Int,
+    onOpenSidebar: () -> Unit,
+    onOpenNotifications: () -> Unit
+) {
+    val palette = appPalette()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        backgroundColor = palette.sidebar,
+        elevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Card(
+                modifier = Modifier.clickable(onClick = onOpenSidebar),
+                shape = CircleShape,
+                backgroundColor = palette.sidebarCard,
+                elevation = 0.dp
+            ) {
+                Text("≡", modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp), color = palette.lightText, fontWeight = FontWeight.Bold)
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(workspaceName, color = palette.lightText, fontWeight = FontWeight.Bold)
+                Text(subtitle, color = palette.mutedText)
+            }
+            Card(
+                modifier = Modifier.clickable(onClick = onOpenNotifications),
+                shape = CircleShape,
+                backgroundColor = palette.sidebarCard,
+                elevation = 0.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("\uD83D\uDD14", color = palette.lightText, fontWeight = FontWeight.Bold)
+                    if (notificationCount > 0) {
+                        Text("$notificationCount", color = palette.lightText, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun CompactSidebarDrawer(
+    workspaceName: String,
+    currentMember: WorkspaceMemberResponse?,
+    workspaceChannels: List<ChannelResponse>,
+    channelMentionCounts: Map<String, Int>,
+    channel: ChannelResponse?,
+    centerView: WorkspaceCenterView,
+    notificationCount: Int,
+    onDismiss: () -> Unit,
+    onSwitchWorkspace: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    onCreateChannel: () -> Unit,
+    onOpenChannel: (ChannelResponse) -> Unit,
+    onEditProfile: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.18f))
+                .clickable(onClick = onDismiss)
+        )
+        WorkspaceSidebar(
+            workspaceName = workspaceName,
+            currentMember = currentMember,
+            workspaceChannels = workspaceChannels,
+            channelMentionCounts = channelMentionCounts,
+            channel = channel,
+            centerView = centerView,
+            notificationCount = notificationCount,
+            showNotificationsShortcut = false,
+            onSwitchWorkspace = onSwitchWorkspace,
+            onOpenNotifications = onOpenNotifications,
+            onCreateChannel = onCreateChannel,
+            onOpenChannel = onOpenChannel,
+            onEditProfile = onEditProfile
+        )
+    }
+}
+
+@Composable
+internal fun WorkspaceTopSummary(
+    channel: ChannelResponse?,
+    currentMember: WorkspaceMemberResponse?,
+    compact: Boolean
+) {
+    val palette = appPalette()
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = if (compact) 4.dp else 20.dp, vertical = if (compact) 4.dp else 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = if (compact) Alignment.Top else Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(channel?.let { "# ${it.slug}" } ?: AppLabels.chooseChannel, style = MaterialTheme.typography.h5, color = palette.darkText)
+            Text(channel?.topic ?: AppLabels.selectChannelBody, color = palette.dimText)
+        }
+        if (!compact) {
+            Column {
+                Text(currentMember?.displayName ?: AppLabels.noMember, fontWeight = FontWeight.Bold, color = palette.darkText)
+                Text(currentMember?.userId ?: "", color = palette.dimText)
+            }
+        }
+    }
 }
 
 internal data class ChatRuntime(
@@ -620,11 +925,12 @@ internal fun LinkPreviewCard(preview: LinkPreviewResponse) {
 @Composable
 internal fun LinkPreviewImage(preview: LinkPreviewResponse) {
     val palette = appPalette()
+    val environment = rememberMessagingAppEnvironment()
     val imageUrl = preview.imageUrl?.takeIf { it.isNotBlank() } ?: return
     var dialogOpen by remember(imageUrl) { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth().clickable { dialogOpen = true }, shape = RoundedCornerShape(12.dp), backgroundColor = palette.subtleSurface, elevation = 0.dp) {
         AsyncImage(
-            model = previewImageProxyUrl(imageUrl),
+            model = environment.previewImageUrl(imageUrl),
             contentDescription = preview.title ?: preview.siteName ?: AppLabels.linkPreviewImage,
             modifier = Modifier.fillMaxWidth().height(180.dp),
             contentScale = ContentScale.Crop
@@ -646,13 +952,14 @@ internal fun LinkPreviewSummary(preview: LinkPreviewResponse) {
 @Composable
 internal fun ImageAssetDialog(imageUrl: String, title: String?, onDismiss: () -> Unit) {
     val palette = appPalette()
+    val environment = rememberMessagingAppEnvironment()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title ?: AppDefaults.imageName, color = palette.darkText, fontWeight = FontWeight.Bold) },
         text = {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), backgroundColor = palette.overlayCard, elevation = 0.dp) {
                 AsyncImage(
-                    model = previewImageProxyUrl(imageUrl),
+                    model = environment.previewImageUrl(imageUrl),
                     contentDescription = title ?: AppLabels.imagePreview,
                     modifier = Modifier.fillMaxWidth().height(320.dp),
                     contentScale = ContentScale.Fit
@@ -843,10 +1150,6 @@ internal fun reactionDisplayLabel(value: String): String {
         ":rocket:" -> "🚀"
         else -> value
     }
-}
-
-internal fun previewImageProxyUrl(imageUrl: String): String {
-    return "${PlatformClientConfig.baseUrl}/api/v1/link-preview/image?url=${imageUrl.encodeURLParameter()}"
 }
 
 internal fun isImageOnlyPreview(preview: LinkPreviewResponse): Boolean {
