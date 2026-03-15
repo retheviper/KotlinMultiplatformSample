@@ -250,7 +250,7 @@ playground.xcworkspace
 .build/
 
 # Internal working docs
-AGENT.md
+AGENTS.md
 docs/
 kotlin-js-store/
 
