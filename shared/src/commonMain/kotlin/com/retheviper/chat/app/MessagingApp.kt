@@ -8,36 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.retheviper.chat.client.MessagingClient
-import com.retheviper.chat.client.NotificationStreamClient
-import com.retheviper.chat.client.NotificationStreamHandle
-import com.retheviper.chat.client.PlatformClientConfig
-import com.retheviper.chat.contract.AddWorkspaceMemberRequest
-import com.retheviper.chat.contract.ChannelResponse
 import com.retheviper.chat.contract.ChannelVisibility
-import com.retheviper.chat.contract.ChatCommand
-import com.retheviper.chat.contract.ChatCommandType
-import com.retheviper.chat.contract.ChatEvent
-import com.retheviper.chat.contract.ChatEventType
 import com.retheviper.chat.contract.CreateChannelRequest
 import com.retheviper.chat.contract.CreateWorkspaceRequest
-import com.retheviper.chat.contract.LinkPreviewResponse
-import com.retheviper.chat.contract.MentionNotificationResponse
 import com.retheviper.chat.contract.NotificationKind
-import com.retheviper.chat.contract.UpdateWorkspaceMemberRequest
-import com.retheviper.chat.contract.WorkspaceMemberResponse
-import com.retheviper.chat.contract.WorkspaceResponse
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal data class ToastNotification(
@@ -58,436 +34,62 @@ data class AppNotificationEvent(
 
 @Composable
 fun MessagingApp(
+    environment: MessagingAppEnvironment = rememberMessagingAppEnvironment(),
     onUnreadNotificationCountChange: (Int) -> Unit = {},
     onNotificationEvent: (AppNotificationEvent) -> Unit = {},
     onWindowTitleChange: (String) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
-    val client = remember { MessagingClient(PlatformClientConfig.baseUrl) }
+    val state = rememberMessagingAppState(environment, scope)
     val appFontFamily = rememberAppFontFamily()
-
-    var screen by remember { mutableStateOf(AppScreen.LANDING) }
-    var status by remember { mutableStateOf(AppDefaults.initialStatus) }
-    val workspaces = remember { mutableStateListOf<WorkspaceResponse>() }
-    var workspace by remember { mutableStateOf<WorkspaceResponse?>(null) }
-    var currentMember by remember { mutableStateOf<WorkspaceMemberResponse?>(null) }
-    val workspaceMembers = remember { mutableStateListOf<WorkspaceMemberResponse>() }
-    val workspaceChannels = remember { mutableStateListOf<ChannelResponse>() }
-    var channel by remember { mutableStateOf<ChannelResponse?>(null) }
-    val messages = remember { mutableStateListOf<com.retheviper.chat.contract.MessageResponse>() }
-    val threadMessages = remember { mutableStateListOf<com.retheviper.chat.contract.MessageResponse>() }
-    val unreadNotifications = remember { mutableStateListOf<MentionNotificationResponse>() }
-    val allNotifications = remember { mutableStateListOf<MentionNotificationResponse>() }
-    val toastNotifications = remember { mutableStateListOf<ToastNotification>() }
-    var notificationStreamHandle by remember { mutableStateOf<NotificationStreamHandle?>(null) }
-    var selectedRootId by remember { mutableStateOf<String?>(null) }
-    var chatRuntime by remember { mutableStateOf<ChatRuntime?>(null) }
-    var focusedMessageId by remember { mutableStateOf<String?>(null) }
-    var focusedThreadMessageId by remember { mutableStateOf<String?>(null) }
-    var centerView by remember { mutableStateOf(WorkspaceCenterView.CHANNEL) }
-    var hasOlderMessages by remember { mutableStateOf(false) }
-    var loadingOlderMessages by remember { mutableStateOf(false) }
-    var scrollToLatestOnNextSnapshot by remember { mutableStateOf(false) }
-
-    var createWorkspaceSlug by remember { mutableStateOf(AppDefaults.workspaceSlug) }
-    var createWorkspaceName by remember { mutableStateOf(AppDefaults.workspaceName) }
-    var createOwnerUserId by remember { mutableStateOf(AppDefaults.ownerUserId) }
-    var createOwnerDisplayName by remember { mutableStateOf(AppDefaults.ownerDisplayName) }
-
-    var joinUserId by remember { mutableStateOf(AppDefaults.memberUserId) }
-    var joinDisplayName by remember { mutableStateOf(AppDefaults.memberDisplayName) }
-
-    var channelSlug by remember { mutableStateOf(AppDefaults.channelSlug) }
-    var channelName by remember { mutableStateOf(AppDefaults.channelName) }
-    var channelTopic by remember { mutableStateOf(AppDefaults.channelTopic) }
-
-    var messageBody by remember { mutableStateOf("") }
-    var threadMessageBody by remember { mutableStateOf("") }
-    var messageLinkPreview by remember { mutableStateOf<LinkPreviewResponse?>(null) }
-    var threadLinkPreview by remember { mutableStateOf<LinkPreviewResponse?>(null) }
-    var dismissedMessagePreviewUrl by remember { mutableStateOf<String?>(null) }
-    var dismissedThreadPreviewUrl by remember { mutableStateOf<String?>(null) }
-    var profileDisplayName by remember { mutableStateOf(AppDefaults.memberDisplayName) }
-
-    suspend fun refreshWorkspaceList() {
-        workspaces.replaceWith(client.listWorkspaces())
-    }
-
-    suspend fun refreshWorkspaceContext(targetWorkspace: WorkspaceResponse) {
-        workspaceMembers.replaceWith(client.listWorkspaceMembers(targetWorkspace.id))
-        workspaceChannels.replaceWith(client.listWorkspaceChannels(targetWorkspace.id))
-    }
-
-    suspend fun disconnectChat() {
-        val runtime = chatRuntime ?: return
-        chatRuntime = null
-        runtime.close()
-    }
-
-    fun disconnectChatAsync() {
-        val runtime = chatRuntime ?: return
-        chatRuntime = null
-        scope.launch(Dispatchers.Default) {
-            runCatching { runtime.close() }
-        }
-    }
-
-    fun disconnectNotificationStreamAsync() {
-        val handle = notificationStreamHandle ?: return
-        notificationStreamHandle = null
-        scope.launch(Dispatchers.Default) {
-            runCatching { handle.close() }
-        }
-    }
-
-    fun resetWorkspaceSession() {
-        screen = AppScreen.LANDING
-        workspace = null
-        currentMember = null
-        channel = null
-        workspaceMembers.clear()
-        workspaceChannels.clear()
-        messages.clear()
-        threadMessages.clear()
-        unreadNotifications.clear()
-        allNotifications.clear()
-        toastNotifications.clear()
-        selectedRootId = null
-        focusedMessageId = null
-        focusedThreadMessageId = null
-        centerView = WorkspaceCenterView.CHANNEL
-        threadMessageBody = ""
-        messageBody = ""
-        messageLinkPreview = null
-        threadLinkPreview = null
-        dismissedMessagePreviewUrl = null
-        dismissedThreadPreviewUrl = null
-        disconnectChatAsync()
-        disconnectNotificationStreamAsync()
-        status = AppDefaults.initialStatus
-    }
-
-    suspend fun resolvePreviewForBody(
-        body: String,
-        currentPreview: LinkPreviewResponse?,
-        dismissedUrl: String?,
-        onPreviewResolved: (LinkPreviewResponse?) -> Unit,
-        onDismissedUrlChange: (String?) -> Unit
-    ) {
-        val url = extractFirstUrl(body)
-        if (url == null) {
-            onPreviewResolved(null)
-            onDismissedUrlChange(null)
-            return
-        }
-        if (dismissedUrl == url) {
-            onPreviewResolved(null)
-            return
-        }
-        if (currentPreview?.url == url) return
-        onDismissedUrlChange(null)
-        val preview = runCatching { client.resolveLinkPreview(url).preview }.getOrNull()
-        onPreviewResolved(preview)
-    }
-
-    fun enqueueToast(notification: ToastNotification) {
-        if (toastNotifications.none { it.id == notification.id }) {
-            toastNotifications.add(0, notification)
-            onNotificationEvent(AppNotificationEvent(notification.id, notification.title, notification.body))
-        }
-        scope.launch {
-            delay(4000)
-            toastNotifications.removeAll { it.id == notification.id }
-        }
-    }
-
-    suspend fun refreshNotifications(showToast: Boolean) {
-        val member = currentMember ?: return
-        val previousUnread = unreadNotifications.toList()
-        val includeHistory = shouldLoadNotificationHistory(centerView, allNotifications)
-        val (latest, latestAll) = coroutineScope {
-            val unreadDeferred = async { client.listNotifications(member.id, unreadOnly = true) }
-            val allDeferred = if (includeHistory) {
-                async { client.listNotifications(member.id, unreadOnly = false) }
-            } else {
-                null
-            }
-            unreadDeferred.await() to (allDeferred?.await() ?: allNotifications.toList())
-        }
-        unreadNotifications.replaceWith(latest)
-        allNotifications.replaceWith(latestAll)
-        if (showToast) {
-            val newUnread = findNewUnreadNotifications(previousUnread, latest)
-            if (newUnread.isNotEmpty()) {
-                newUnread.take(3).forEach { notification ->
-                    enqueueToast(
-                        ToastNotification(
-                            id = notification.id,
-                            title = notificationTitle(notification),
-                            body = notification.messagePreview,
-                            channelId = notification.channelId,
-                            messageId = notification.messageId,
-                            threadRootMessageId = notification.threadRootMessageId,
-                            readNotificationId = notification.id
-                        )
-                    )
-                }
-            }
-        }
-    }
-
-    suspend fun markNotificationsRead(notificationIds: List<String>) {
-        val member = currentMember ?: return
-        if (notificationIds.isEmpty()) return
-        val readIds = notificationIds.toHashSet()
-        runCatching {
-            client.markNotificationsRead(member.id, notificationIds)
-            val updated = applyNotificationRead(
-                current = NotificationRefreshState(
-                    unreadNotifications = unreadNotifications.toList(),
-                    allNotifications = allNotifications.toList()
-                ),
-                readIds = readIds
-            )
-            unreadNotifications.replaceWith(updated.unreadNotifications)
-            allNotifications.replaceWith(updated.allNotifications)
-        }.onFailure {
-            status = it.message ?: AppStatus.failedUpdateNotifications
-        }
-    }
-
-    suspend fun updateCurrentMemberDisplayName(displayName: String) {
-        val member = currentMember ?: return
-        val updated = client.updateWorkspaceMember(member.id, UpdateWorkspaceMemberRequest(displayName = displayName))
-        currentMember = updated
-        workspaceMembers.replaceWith(workspaceMembers.map { existing -> if (existing.id == updated.id) updated else existing })
-        if (joinUserId == updated.userId) joinDisplayName = updated.displayName
-        profileDisplayName = updated.displayName
-        status = AppStatus.profileUpdated
-    }
-
-    suspend fun connectChannel(targetChannel: ChannelResponse) {
-        channel = targetChannel
-        centerView = WorkspaceCenterView.CHANNEL
-        messages.clear()
-        threadMessages.clear()
-        hasOlderMessages = false
-        loadingOlderMessages = false
-        scrollToLatestOnNextSnapshot = true
-        selectedRootId = null
-        messageBody = ""
-        threadMessageBody = ""
-        messageLinkPreview = null
-        threadLinkPreview = null
-        dismissedMessagePreviewUrl = null
-        dismissedThreadPreviewUrl = null
-        focusedMessageId = null
-        focusedThreadMessageId = null
-        disconnectChat()
-        status = AppStatus.connectingChannel(targetChannel.slug)
-
-        runCatching {
-            val session = client.openChat(targetChannel.id)
-            val collector = scope.launch {
-                while (true) {
-                    when (val event = client.receiveEvent(session)) {
-                        is ChatEvent -> {
-                            when (event.type) {
-                                ChatEventType.SNAPSHOT,
-                                ChatEventType.MESSAGE_POSTED,
-                                ChatEventType.REPLY_POSTED,
-                                ChatEventType.REACTION_UPDATED -> {
-                                    if (event.type == ChatEventType.SNAPSHOT) {
-                                        hasOlderMessages = event.messages.size >= 50
-                                        if (scrollToLatestOnNextSnapshot) {
-                                            focusedMessageId = event.messages.lastOrNull()?.id
-                                            scrollToLatestOnNextSnapshot = false
-                                        }
-                                    }
-                                    messages.replaceWith(
-                                        reduceChatFeed(
-                                            current = ChatFeedState(messages.toList()),
-                                            event = event
-                                        ).messages
-                                    )
-                                    event.message?.let { updated ->
-                                        if (threadMessages.any { it.id == updated.id }) {
-                                            threadMessages.replaceWith(threadMessages.toList().replaceMessage(updated))
-                                        }
-                                    }
-                                    if (selectedRootId != null && event.message?.threadRootMessageId == selectedRootId) {
-                                        loadThread(client, selectedRootId, threadMessages) { status = it }
-                                    }
-                                    if (
-                                        event.message?.body?.contains("@${currentMember?.userId}") == true ||
-                                        (
-                                            event.type == ChatEventType.REPLY_POSTED &&
-                                                event.message?.authorMemberId != currentMember?.id &&
-                                                event.message?.threadRootMessageId != null &&
-                                                event.message.threadRootMessageId != selectedRootId
-                                            )
-                                    ) {
-                                        refreshNotifications(showToast = true)
-                                    }
-                                }
-                                ChatEventType.ERROR -> status = event.error?.message ?: AppStatus.socketError
-                            }
-                        }
-                    }
-                }
-            }
-            client.sendCommand(session, ChatCommand(type = ChatCommandType.LOAD_RECENT, limit = 50))
-            chatRuntime = ChatRuntime(session, collector)
-        }.onSuccess {
-            val unreadIds = unreadNotifications.filter { it.channelId == targetChannel.id }.map { it.id }
-            markNotificationsRead(unreadIds)
-            status = AppStatus.channelConnected(targetChannel.slug)
-        }.onFailure {
-            status = it.message ?: AppStatus.channelConnectionFailed
-        }
-    }
-
-    suspend fun openWorkspace(targetWorkspace: WorkspaceResponse, member: WorkspaceMemberResponse?) {
-        workspace = targetWorkspace
-        currentMember = member
-        profileDisplayName = member?.displayName ?: joinDisplayName
-        channel = null
-        messages.clear()
-        threadMessages.clear()
-        selectedRootId = null
-        messageBody = ""
-        threadMessageBody = ""
-        messageLinkPreview = null
-        threadLinkPreview = null
-        dismissedMessagePreviewUrl = null
-        dismissedThreadPreviewUrl = null
-        focusedMessageId = null
-        focusedThreadMessageId = null
-        disconnectChat()
-        refreshWorkspaceContext(targetWorkspace)
-        screen = if (member == null) AppScreen.JOIN_WORKSPACE else AppScreen.WORKSPACE
-        centerView = WorkspaceCenterView.CHANNEL
-        status = if (member == null) AppStatus.signInPrompt else AppStatus.workspaceOpened
-        if (member != null) {
-            refreshNotifications(showToast = false)
-            workspaceChannels.firstOrNull()?.let { connectChannel(it) }
-        }
-    }
-
-    suspend fun navigateToNotification(notification: ToastNotification) {
-        val targetChannel = workspaceChannels.firstOrNull { it.id == notification.channelId } ?: return
-        if (channel?.id != targetChannel.id) connectChannel(targetChannel)
-        if (notification.threadRootMessageId != null) {
-            selectedRootId = notification.threadRootMessageId
-            focusedMessageId = notification.threadRootMessageId
-            focusedThreadMessageId = notification.messageId
-            loadThread(client, notification.threadRootMessageId, threadMessages) { status = it }
-            markNotificationsRead(
-                threadNotificationIdsToMarkRead(unreadNotifications, notification.threadRootMessageId)
-            )
-        } else {
-            selectedRootId = null
-            threadMessages.clear()
-            focusedMessageId = notification.messageId
-            focusedThreadMessageId = null
-            threadLinkPreview = null
-            dismissedThreadPreviewUrl = null
-        }
-        toastNotifications.removeAll { it.id == notification.id }
-        notification.readNotificationId?.let { markNotificationsRead(listOf(it)) }
-    }
-
-    suspend fun loadOlderMessages() {
-        val targetChannel = channel ?: return
-        val oldestMessageId = messages.firstOrNull()?.id ?: return
-        if (loadingOlderMessages) return
-        loadingOlderMessages = true
-        runCatching {
-            client.listChannelMessages(targetChannel.id, limit = 50, beforeMessageId = oldestMessageId).messages
-        }.onSuccess { olderMessages ->
-            if (olderMessages.isNotEmpty()) messages.replaceWith(olderMessages + messages)
-            hasOlderMessages = olderMessages.size >= 50
-        }.onFailure {
-            status = it.message ?: AppStatus.failedLoadOlderMessages
-        }
-        loadingOlderMessages = false
-    }
+    val darkTheme = isSystemInDarkTheme()
+    val palette = rememberCurrentPalette()
 
     LaunchedEffect(Unit) {
-        runCatching { refreshWorkspaceList() }.onFailure { status = it.message ?: AppStatus.failedLoadWorkspaces }
+        runCatching { state.refreshWorkspaceList() }
+            .onFailure { state.status = it.message ?: AppStatus.failedLoadWorkspaces }
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            disconnectNotificationStreamAsync()
             scope.launch {
-                disconnectChat()
-                client.close()
+                runCatching { state.dispose() }
             }
         }
     }
 
-    DisposableEffect(screen, currentMember?.id, workspace?.id) {
-        disconnectNotificationStreamAsync()
-        if (screen == AppScreen.WORKSPACE && currentMember != null && workspace != null) {
-            notificationStreamHandle = NotificationStreamClient.connect(
-                baseUrl = PlatformClientConfig.baseUrl,
-                memberId = currentMember!!.id,
-                onNotificationSignal = {
-                    scope.launch {
-                        runCatching { refreshNotifications(showToast = true) }
-                            .onFailure { status = it.message ?: AppStatus.failedRefreshNotifications }
-                    }
-                },
-                onFailure = {
-                    scope.launch {
-                        status = it.message ?: AppStatus.notificationStreamDisconnected
-                    }
-                }
-            )
-        }
+    DisposableEffect(state.screen, state.currentMember?.id, state.workspace?.id) {
+        state.startNotificationStreamIfNeeded()
         onDispose {
-            disconnectNotificationStreamAsync()
+            state.disconnectNotificationStreamAsync()
         }
     }
 
-    LaunchedEffect(screen, currentMember?.id, workspace?.id, notificationStreamHandle) {
-        if (screen != AppScreen.WORKSPACE || currentMember == null || workspace == null) {
-            unreadNotifications.clear()
-            allNotifications.clear()
-            toastNotifications.clear()
-            return@LaunchedEffect
-        }
-        if (notificationStreamHandle != null) {
-            runCatching { refreshNotifications(showToast = false) }
-                .onFailure { status = it.message ?: AppStatus.failedLoadNotifications }
-            return@LaunchedEffect
-        }
-        while (true) {
-            runCatching { refreshNotifications(showToast = true) }
-                .onFailure { status = it.message ?: AppStatus.failedLoadNotifications }
-            delay(5000)
+    LaunchedEffect(state.screen, state.currentMember?.id, state.workspace?.id, state.notificationStreamHandle) {
+        state.refreshOrPollNotifications()
+    }
+
+    LaunchedEffect(state.unreadNotifications.size) {
+        onUnreadNotificationCountChange(state.unreadNotifications.size)
+    }
+
+    LaunchedEffect(state.toastNotifications.toList()) {
+        state.toastNotifications.forEach { notification ->
+            onNotificationEvent(AppNotificationEvent(notification.id, notification.title, notification.body))
         }
     }
 
-    LaunchedEffect(unreadNotifications.size) {
-        onUnreadNotificationCountChange(unreadNotifications.size)
-    }
-
-    LaunchedEffect(screen, workspace?.name, channel?.name, currentMember?.displayName, centerView) {
+    LaunchedEffect(state.screen, state.workspace?.name, state.channel?.name, state.currentMember?.displayName, state.centerView) {
         onWindowTitleChange(
             buildWindowTitle(
-                screen = screen,
-                workspaceName = workspace?.name,
-                channelName = channel?.name,
-                memberDisplayName = currentMember?.displayName,
-                centerView = centerView
+                screen = state.screen,
+                workspaceName = state.workspace?.name,
+                channelName = state.channel?.name,
+                memberDisplayName = state.currentMember?.displayName,
+                centerView = state.centerView
             )
         )
     }
-
-    val darkTheme = isSystemInDarkTheme()
-    val palette = rememberCurrentPalette()
 
     CompositionLocalProvider(LocalAppPalette provides palette) {
         MaterialTheme(
@@ -495,178 +97,147 @@ fun MessagingApp(
             typography = Typography(defaultFontFamily = appFontFamily)
         ) {
             Surface(modifier = Modifier, color = palette.shell) {
-                when (screen) {
+                when (state.screen) {
                     AppScreen.LANDING -> LandingScreen(
-                        workspaces = workspaces,
-                        status = status,
-                        workspaceSlug = createWorkspaceSlug,
-                        workspaceName = createWorkspaceName,
-                        ownerUserId = createOwnerUserId,
-                        ownerDisplayName = createOwnerDisplayName,
-                        onWorkspaceSlugChange = { createWorkspaceSlug = it },
-                        onWorkspaceNameChange = { createWorkspaceName = it },
-                        onOwnerUserIdChange = { createOwnerUserId = it },
-                        onOwnerDisplayNameChange = { createOwnerDisplayName = it },
-                        onOpenWorkspace = { target -> scope.launch { openWorkspace(target, member = null) } },
+                        workspaces = state.workspaces,
+                        status = state.status,
+                        workspaceSlug = state.createWorkspaceSlug,
+                        workspaceName = state.createWorkspaceName,
+                        ownerUserId = state.createOwnerUserId,
+                        ownerDisplayName = state.createOwnerDisplayName,
+                        onWorkspaceSlugChange = { state.createWorkspaceSlug = it },
+                        onWorkspaceNameChange = { state.createWorkspaceName = it },
+                        onOwnerUserIdChange = { state.createOwnerUserId = it },
+                        onOwnerDisplayNameChange = { state.createOwnerDisplayName = it },
+                        onOpenWorkspace = { target -> scope.launch { state.openWorkspace(target, member = null) } },
                         onCreateWorkspace = {
                             scope.launch {
-                                status = AppStatus.creatingWorkspace
+                                state.status = AppStatus.creatingWorkspace
                                 runCatching {
-                                    client.createWorkspace(
+                                    state.client.createWorkspace(
                                         CreateWorkspaceRequest(
-                                            slug = createWorkspaceSlug,
-                                            name = createWorkspaceName,
-                                            ownerUserId = createOwnerUserId,
-                                            ownerDisplayName = createOwnerDisplayName
+                                            slug = state.createWorkspaceSlug,
+                                            name = state.createWorkspaceName,
+                                            ownerUserId = state.createOwnerUserId,
+                                            ownerDisplayName = state.createOwnerDisplayName
                                         )
                                     )
                                 }.onSuccess { created ->
-                                    refreshWorkspaceList()
-                                    val owner = client.listWorkspaceMembers(created.id).firstOrNull { it.id == created.ownerMemberId }
-                                    openWorkspace(created, owner)
-                                    status = AppStatus.workspaceCreated
+                                    state.refreshWorkspaceList()
+                                    val owner = state.client.listWorkspaceMembers(created.id).firstOrNull { it.id == created.ownerMemberId }
+                                    state.openWorkspace(created, owner)
+                                    state.status = AppStatus.workspaceCreated
                                 }.onFailure {
-                                    status = it.message ?: AppStatus.workspaceCreateFailed
+                                    state.status = it.message ?: AppStatus.workspaceCreateFailed
                                 }
                             }
                         }
                     )
 
                     AppScreen.JOIN_WORKSPACE -> JoinWorkspaceScreen(
-                        workspace = workspace,
-                        existingMembers = workspaceMembers,
-                        status = status,
-                        userId = joinUserId,
-                        displayName = joinDisplayName,
-                        onUserIdChange = { joinUserId = it },
-                        onDisplayNameChange = { joinDisplayName = it },
+                        workspace = state.workspace,
+                        existingMembers = state.workspaceMembers,
+                        status = state.status,
+                        userId = state.joinUserId,
+                        displayName = state.joinDisplayName,
+                        onUserIdChange = { state.joinUserId = it },
+                        onDisplayNameChange = { state.joinDisplayName = it },
                         onBack = {
-                            scope.launch {
-                                workspace = null
-                                currentMember = null
-                                workspaceMembers.clear()
-                                workspaceChannels.clear()
-                                screen = AppScreen.LANDING
-                                status = AppDefaults.initialStatus
-                            }
+                            state.workspace = null
+                            state.currentMember = null
+                            state.workspaceMembers.clear()
+                            state.workspaceChannels.clear()
+                            state.screen = AppScreen.LANDING
+                            state.status = AppDefaults.initialStatus
                         },
                         onJoin = {
-                            val targetWorkspace = workspace ?: return@JoinWorkspaceScreen
+                            val targetWorkspace = state.workspace ?: return@JoinWorkspaceScreen
                             scope.launch {
-                                val joinPlan = planWorkspaceJoin(workspaceMembers, joinUserId, joinDisplayName) ?: return@launch
+                                val joinPlan = planWorkspaceJoin(state.workspaceMembers, state.joinUserId, state.joinDisplayName) ?: return@launch
                                 joinPlan.existingMember?.let { member ->
-                                    currentMember = member
-                                    profileDisplayName = member.displayName
-                                    screen = AppScreen.WORKSPACE
-                                    status = AppStatus.signedInAs(member.displayName)
-                                    workspaceChannels.firstOrNull()?.let { connectChannel(it) }
+                                    state.currentMember = member
+                                    state.profileDisplayName = member.displayName
+                                    state.screen = AppScreen.WORKSPACE
+                                    state.status = AppStatus.signedInAs(member.displayName)
+                                    state.workspaceChannels.firstOrNull()?.let { state.connectChannel(it) }
                                     return@launch
                                 }
-                                status = AppStatus.creatingMemberProfile
+                                state.status = AppStatus.creatingMemberProfile
                                 runCatching {
-                                    client.addWorkspaceMember(targetWorkspace.id, requireNotNull(joinPlan.createRequest))
+                                    state.client.addWorkspaceMember(targetWorkspace.id, requireNotNull(joinPlan.createRequest))
                                 }.onSuccess { member ->
-                                    currentMember = member
-                                    profileDisplayName = member.displayName
-                                    refreshWorkspaceContext(targetWorkspace)
-                                    screen = AppScreen.WORKSPACE
-                                    status = AppStatus.joinedAs(member.displayName)
-                                    workspaceChannels.firstOrNull()?.let { connectChannel(it) }
+                                    state.currentMember = member
+                                    state.profileDisplayName = member.displayName
+                                    state.refreshWorkspaceContext(targetWorkspace)
+                                    state.screen = AppScreen.WORKSPACE
+                                    state.status = AppStatus.joinedAs(member.displayName)
+                                    state.workspaceChannels.firstOrNull()?.let { state.connectChannel(it) }
                                 }.onFailure {
-                                    status = it.message ?: AppStatus.joinFailed
+                                    state.status = it.message ?: AppStatus.joinFailed
                                 }
                             }
                         },
                         onContinueAsMember = { member ->
                             scope.launch {
-                                currentMember = member
-                                profileDisplayName = member.displayName
-                                screen = AppScreen.WORKSPACE
-                                status = AppStatus.signedInAs(member.displayName)
-                                workspaceChannels.firstOrNull()?.let { connectChannel(it) }
+                                state.currentMember = member
+                                state.profileDisplayName = member.displayName
+                                state.screen = AppScreen.WORKSPACE
+                                state.status = AppStatus.signedInAs(member.displayName)
+                                state.workspaceChannels.firstOrNull()?.let { state.connectChannel(it) }
                             }
                         }
                     )
 
                     AppScreen.WORKSPACE -> WorkspaceScreen(
-                        workspace = workspace,
-                        currentMember = currentMember,
-                        workspaceMembers = workspaceMembers,
-                        status = status,
-                        workspaceChannels = workspaceChannels,
-                        channelMentionCounts = unreadNotifications.filter { it.kind == NotificationKind.MENTION }.groupingBy { it.channelId }.eachCount(),
-                        notificationCount = unreadNotifications.size,
-                        centerView = centerView,
-                        allNotifications = allNotifications,
-                        channel = channel,
-                        messages = messages,
-                        threadMessages = threadMessages,
-                        selectedRootId = selectedRootId,
-                        focusedMessageId = focusedMessageId,
-                        focusedThreadMessageId = focusedThreadMessageId,
-                        channelSlug = channelSlug,
-                        channelName = channelName,
-                        channelTopic = channelTopic,
-                        hasOlderMessages = hasOlderMessages,
-                        loadingOlderMessages = loadingOlderMessages,
-                        messageBody = messageBody,
-                        messageLinkPreview = messageLinkPreview,
-                        threadMessageBody = threadMessageBody,
-                        threadLinkPreview = threadLinkPreview,
-                        profileDisplayName = profileDisplayName,
-                        onChannelSlugChange = { channelSlug = it },
-                        onChannelNameChange = { channelName = it },
-                        onChannelTopicChange = { channelTopic = it },
-                        onMessageBodyChange = {
-                            messageBody = it
-                            scope.launch {
-                                resolvePreviewForBody(
-                                    body = it,
-                                    currentPreview = messageLinkPreview,
-                                    dismissedUrl = dismissedMessagePreviewUrl,
-                                    onPreviewResolved = { preview -> messageLinkPreview = preview },
-                                    onDismissedUrlChange = { dismissedMessagePreviewUrl = it }
-                                )
-                            }
-                        },
-                        onDismissMessagePreview = {
-                            dismissedMessagePreviewUrl = messageLinkPreview?.url ?: extractFirstUrl(messageBody)
-                            messageLinkPreview = null
-                        },
-                        onThreadMessageBodyChange = {
-                            threadMessageBody = it
-                            scope.launch {
-                                resolvePreviewForBody(
-                                    body = it,
-                                    currentPreview = threadLinkPreview,
-                                    dismissedUrl = dismissedThreadPreviewUrl,
-                                    onPreviewResolved = { preview -> threadLinkPreview = preview },
-                                    onDismissedUrlChange = { dismissedThreadPreviewUrl = it }
-                                )
-                            }
-                        },
-                        onDismissThreadPreview = {
-                            dismissedThreadPreviewUrl = threadLinkPreview?.url ?: extractFirstUrl(threadMessageBody)
-                            threadLinkPreview = null
-                        },
+                        workspace = state.workspace,
+                        currentMember = state.currentMember,
+                        workspaceMembers = state.workspaceMembers,
+                        status = state.status,
+                        workspaceChannels = state.workspaceChannels,
+                        channelMentionCounts = state.unreadNotifications.filter { it.kind == NotificationKind.MENTION }.groupingBy { it.channelId }.eachCount(),
+                        notificationCount = state.unreadNotifications.size,
+                        centerView = state.centerView,
+                        allNotifications = state.allNotifications,
+                        channel = state.channel,
+                        messages = state.messages,
+                        threadMessages = state.threadMessages,
+                        selectedRootId = state.selectedRootId,
+                        focusedMessageId = state.focusedMessageId,
+                        focusedThreadMessageId = state.focusedThreadMessageId,
+                        channelSlug = state.channelSlug,
+                        channelName = state.channelName,
+                        channelTopic = state.channelTopic,
+                        hasOlderMessages = state.hasOlderMessages,
+                        loadingOlderMessages = state.loadingOlderMessages,
+                        messageBody = state.messageBody,
+                        messageLinkPreview = state.messageLinkPreview,
+                        threadMessageBody = state.threadMessageBody,
+                        threadLinkPreview = state.threadLinkPreview,
+                        profileDisplayName = state.profileDisplayName,
+                        onChannelSlugChange = { state.channelSlug = it },
+                        onChannelNameChange = { state.channelName = it },
+                        onChannelTopicChange = { state.channelTopic = it },
+                        onMessageBodyChange = { value -> scope.launch { state.updateMessageBody(value) } },
+                        onDismissMessagePreview = { state.dismissMessagePreview() },
+                        onThreadMessageBodyChange = { value -> scope.launch { state.updateMessageBody(value, thread = true) } },
+                        onDismissThreadPreview = { state.dismissMessagePreview(thread = true) },
                         onSwitchWorkspace = {
-                            resetWorkspaceSession()
-                            scope.launch { runCatching { disconnectChat() } }
+                            state.resetWorkspaceSession()
                             scope.launch {
-                                runCatching { refreshWorkspaceList() }
-                                    .onFailure { status = it.message ?: AppStatus.failedLoadWorkspaces }
+                                runCatching { state.refreshWorkspaceList() }
+                                    .onFailure { state.status = it.message ?: AppStatus.failedLoadWorkspaces }
                             }
                         },
-                        onOpenChannel = { target -> scope.launch { connectChannel(target) } },
+                        onOpenChannel = { target -> scope.launch { state.connectChannel(target) } },
                         onOpenNotifications = {
                             scope.launch {
-                                refreshNotifications(showToast = false)
-                                centerView = WorkspaceCenterView.NOTIFICATIONS
+                                state.refreshNotifications(showToast = false)
+                                state.centerView = WorkspaceCenterView.NOTIFICATIONS
                             }
                         },
                         onOpenNotificationItem = { notification ->
                             scope.launch {
-                                navigateToNotification(
+                                state.navigateToNotification(
                                     ToastNotification(
                                         id = notification.id,
                                         title = notificationTitle(notification),
@@ -680,117 +251,101 @@ fun MessagingApp(
                             }
                         },
                         onCreateChannel = {
-                            val targetWorkspace = workspace ?: return@WorkspaceScreen
-                            val member = currentMember ?: return@WorkspaceScreen
+                            val targetWorkspace = state.workspace ?: return@WorkspaceScreen
+                            val member = state.currentMember ?: return@WorkspaceScreen
                             scope.launch {
-                                status = AppStatus.creatingChannel
+                                state.status = AppStatus.creatingChannel
                                 runCatching {
-                                    client.createChannel(
+                                    state.client.createChannel(
                                         targetWorkspace.id,
                                         CreateChannelRequest(
-                                            slug = channelSlug,
-                                            name = channelName,
-                                            topic = channelTopic,
+                                            slug = state.channelSlug,
+                                            name = state.channelName,
+                                            topic = state.channelTopic,
                                             visibility = ChannelVisibility.PUBLIC,
                                             createdByMemberId = member.id
                                         )
                                     )
                                 }.onSuccess {
-                                    refreshWorkspaceContext(targetWorkspace)
-                                    connectChannel(it)
+                                    state.refreshWorkspaceContext(targetWorkspace)
+                                    state.connectChannel(it)
                                 }.onFailure {
-                                    status = it.message ?: AppStatus.channelCreateFailed
+                                    state.status = it.message ?: AppStatus.channelCreateFailed
                                 }
                             }
                         },
                         onOpenThread = { message ->
-                            selectedRootId = message.id
-                            threadMessageBody = ""
-                            focusedMessageId = message.id
-                            focusedThreadMessageId = null
+                            state.selectedRootId = message.id
+                            state.threadMessageBody = ""
+                            state.focusedMessageId = message.id
+                            state.focusedThreadMessageId = null
                             scope.launch {
-                                loadThread(client, message.id, threadMessages) { status = it }
-                                markNotificationsRead(threadNotificationIdsToMarkRead(unreadNotifications, message.id))
+                                loadThread(state.client, message.id, state.threadMessages) { state.status = it }
+                                state.markNotificationsRead(threadNotificationIdsToMarkRead(state.unreadNotifications, message.id))
                             }
                         },
                         onCloseThread = {
-                            selectedRootId = null
-                            threadMessages.clear()
-                            threadMessageBody = ""
-                            focusedThreadMessageId = null
+                            state.selectedRootId = null
+                            state.threadMessages.clear()
+                            state.threadMessageBody = ""
+                            state.focusedThreadMessageId = null
                         },
-                        onLoadOlderMessages = { scope.launch { loadOlderMessages() } },
-                        onToggleReaction = { message, emoji ->
-                            val runtime = chatRuntime ?: return@WorkspaceScreen
-                            val member = currentMember ?: return@WorkspaceScreen
-                            scope.launch {
-                                runCatching {
-                                    client.sendCommand(
-                                        runtime.session,
-                                        ChatCommand(
-                                            type = ChatCommandType.TOGGLE_REACTION,
-                                            authorMemberId = member.id,
-                                            messageId = message.id,
-                                            emoji = emoji
-                                        )
-                                    )
-                                }.onFailure { status = it.message ?: AppStatus.reactionFailed }
-                            }
-                        },
+                        onLoadOlderMessages = { scope.launch { state.loadOlderMessages() } },
+                        onToggleReaction = { message, emoji -> scope.launch { state.toggleReaction(message, emoji) } },
                         onSendChannelMessage = {
-                            val runtime = chatRuntime ?: return@WorkspaceScreen
-                            val member = currentMember ?: return@WorkspaceScreen
+                            val runtime = state.chatRuntime ?: return@WorkspaceScreen
+                            val member = state.currentMember ?: return@WorkspaceScreen
                             scope.launch {
                                 val command = buildOutgoingChatCommand(
                                     primaryAuthorId = member.id,
-                                    body = messageBody,
+                                    body = state.messageBody,
                                     replyParentMessageId = "",
-                                    linkPreview = messageLinkPreview
+                                    linkPreview = state.messageLinkPreview
                                 ) ?: return@launch
-                                runCatching { client.sendCommand(runtime.session, command) }
+                                runCatching { state.client.sendCommand(runtime.session, command) }
                                     .onSuccess {
-                                        messageBody = ""
-                                        messageLinkPreview = null
-                                        dismissedMessagePreviewUrl = null
-                                        status = AppStatus.messageSent
-                                    }.onFailure { status = it.message ?: AppStatus.sendFailed }
+                                        state.messageBody = ""
+                                        state.messageLinkPreview = null
+                                        state.dismissedMessagePreviewUrl = null
+                                        state.status = AppStatus.messageSent
+                                    }.onFailure { state.status = it.message ?: AppStatus.sendFailed }
                             }
                         },
                         onSendThreadMessage = {
-                            val runtime = chatRuntime ?: return@WorkspaceScreen
-                            val member = currentMember ?: return@WorkspaceScreen
-                            val rootId = selectedRootId ?: return@WorkspaceScreen
+                            val runtime = state.chatRuntime ?: return@WorkspaceScreen
+                            val member = state.currentMember ?: return@WorkspaceScreen
+                            val rootId = state.selectedRootId ?: return@WorkspaceScreen
                             scope.launch {
                                 val command = buildOutgoingChatCommand(
                                     primaryAuthorId = member.id,
-                                    body = threadMessageBody,
+                                    body = state.threadMessageBody,
                                     replyParentMessageId = rootId,
-                                    linkPreview = threadLinkPreview
+                                    linkPreview = state.threadLinkPreview
                                 ) ?: return@launch
-                                runCatching { client.sendCommand(runtime.session, command) }
+                                runCatching { state.client.sendCommand(runtime.session, command) }
                                     .onSuccess {
-                                        threadMessageBody = ""
-                                        threadLinkPreview = null
-                                        dismissedThreadPreviewUrl = null
-                                        status = AppStatus.replySent
-                                    }.onFailure { status = it.message ?: AppStatus.replyFailed }
+                                        state.threadMessageBody = ""
+                                        state.threadLinkPreview = null
+                                        state.dismissedThreadPreviewUrl = null
+                                        state.status = AppStatus.replySent
+                                    }.onFailure { state.status = it.message ?: AppStatus.replyFailed }
                             }
                         },
-                        onProfileDisplayNameChange = { profileDisplayName = it },
+                        onProfileDisplayNameChange = { state.profileDisplayName = it },
                         onSaveProfile = {
                             scope.launch {
-                                runCatching { updateCurrentMemberDisplayName(profileDisplayName) }
-                                    .onFailure { status = it.message ?: AppStatus.profileUpdateFailed }
+                                runCatching { state.updateCurrentMemberDisplayName(state.profileDisplayName) }
+                                    .onFailure { state.status = it.message ?: AppStatus.profileUpdateFailed }
                             }
                         }
                     )
                 }
 
-                if (screen == AppScreen.WORKSPACE && toastNotifications.isNotEmpty()) {
+                if (state.screen == AppScreen.WORKSPACE && state.toastNotifications.isNotEmpty()) {
                     NotificationOverlay(
-                        notifications = toastNotifications,
-                        onOpenNotification = { notification -> scope.launch { navigateToNotification(notification) } },
-                        onDismiss = { notificationId -> toastNotifications.removeAll { it.id == notificationId } }
+                        notifications = state.toastNotifications,
+                        onOpenNotification = { notification -> scope.launch { state.navigateToNotification(notification) } },
+                        onDismiss = { notificationId -> state.toastNotifications.removeAll { it.id == notificationId } }
                     )
                 }
             }
