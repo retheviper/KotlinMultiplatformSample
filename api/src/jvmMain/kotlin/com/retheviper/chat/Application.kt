@@ -9,11 +9,13 @@ import com.retheviper.chat.plugins.configureStatusPages
 import com.retheviper.chat.plugins.configureValidation
 import com.retheviper.chat.config.ApiConfig
 import com.retheviper.chat.infrastructure.database.Database
+import com.retheviper.chat.messaging.application.MessagingSampleDataBootstrapper
 import com.retheviper.chat.messaging.presentation.configureMessagingRouting
 import com.retheviper.chat.wiring.ApplicationDependencies
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.netty.EngineMain
+import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
     EngineMain.main(args)
@@ -29,6 +31,14 @@ fun Application.module() {
     }
 
     val dependencies = ApplicationDependencies.create()
+    if (config.bootstrap.sampleDataEnabled) {
+        runBlocking {
+            MessagingSampleDataBootstrapper(
+                commandService = dependencies.commandService,
+                queryService = dependencies.queryService
+            ).seedIfNeeded()
+        }
+    }
 
     configureMonitoring()
     configureSerialization()
