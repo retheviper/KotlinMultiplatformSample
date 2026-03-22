@@ -34,3 +34,23 @@ At startup the API:
 - serves the OpenAPI document and Swagger UI
 - serves the Wasm web client from `/`
 - exposes WebSocket chat transport and notification SSE streams
+- exposes an MCP Streamable HTTP endpoint at `/mcp`
+
+Current MCP tools:
+
+- `get_health`
+- `list_workspaces`
+- `create_workspace`
+- `get_workspace_by_slug`
+- `list_workspace_channels`
+- `create_channel`
+- `list_members`
+- `add_member`
+- `update_member`
+- `list_channel_messages`
+- `get_thread`
+- `post_message`
+- `reply_message`
+- `toggle_reaction`
+- `list_notifications`
+- `mark_notifications_read`

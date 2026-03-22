@@ -182,6 +182,59 @@ Default endpoints:
 - Swagger UI: [http://localhost:8080/docs](http://localhost:8080/docs)
 - OpenAPI: [http://localhost:8080/openapi.yaml](http://localhost:8080/openapi.yaml)
 - Health: [http://localhost:8080/health](http://localhost:8080/health)
+- MCP Streamable HTTP: [http://localhost:8080/mcp](http://localhost:8080/mcp)
+
+Current MCP tools:
+
+- `get_health`
+- `list_workspaces`
+- `create_workspace`
+- `get_workspace_by_slug`
+- `list_workspace_channels`
+- `create_channel`
+- `list_members`
+- `add_member`
+- `update_member`
+- `list_channel_messages`
+- `get_thread`
+- `post_message`
+- `reply_message`
+- `toggle_reaction`
+- `list_notifications`
+- `mark_notifications_read`
+
+### MCP client examples
+
+MCP Inspector:
+
+```bash
+npx -y @modelcontextprotocol/inspector
+```
+
+Then select `Streamable HTTP` and connect to `http://localhost:8080/mcp`.
+
+Quick initialization check with `curl`:
+
+```bash
+curl -i http://localhost:8080/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "manual-check",
+        "version": "1.0.0"
+      }
+    }
+  }'
+```
+
+The response may include an `Mcp-Session-Id` header. Reuse that header on subsequent MCP requests when the client keeps a stateful session.
 
 ## Frontend Development Notes
 

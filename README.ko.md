@@ -182,6 +182,59 @@ export CHAT_DB_PASSWORD=postgres
 - Swagger UI: [http://localhost:8080/docs](http://localhost:8080/docs)
 - OpenAPI: [http://localhost:8080/openapi.yaml](http://localhost:8080/openapi.yaml)
 - Health: [http://localhost:8080/health](http://localhost:8080/health)
+- MCP Streamable HTTP: [http://localhost:8080/mcp](http://localhost:8080/mcp)
+
+현재 MCP 도구:
+
+- `get_health`
+- `list_workspaces`
+- `create_workspace`
+- `get_workspace_by_slug`
+- `list_workspace_channels`
+- `create_channel`
+- `list_members`
+- `add_member`
+- `update_member`
+- `list_channel_messages`
+- `get_thread`
+- `post_message`
+- `reply_message`
+- `toggle_reaction`
+- `list_notifications`
+- `mark_notifications_read`
+
+### MCP 클라이언트 예시
+
+MCP Inspector:
+
+```bash
+npx -y @modelcontextprotocol/inspector
+```
+
+실행 후 `Streamable HTTP`를 선택하고 `http://localhost:8080/mcp`에 연결하면 됩니다.
+
+`curl`로 초기화 요청만 빠르게 확인하려면:
+
+```bash
+curl -i http://localhost:8080/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "manual-check",
+        "version": "1.0.0"
+      }
+    }
+  }'
+```
+
+응답에 `Mcp-Session-Id` 헤더가 포함될 수 있습니다. 세션을 유지하는 MCP 클라이언트라면 이후 요청에서 이 헤더를 재사용해야 합니다.
 
 ## 프런트엔드 개발 메모
 

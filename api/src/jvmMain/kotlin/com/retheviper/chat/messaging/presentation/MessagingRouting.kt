@@ -21,6 +21,7 @@ fun Application.configureMessagingRouting(dependencies: ApplicationDependencies)
         }
         configureChatSocketRoutes(dependencies, sessions)
     }
+    configureMessagingMcpRouting(dependencies)
 }
 
 internal class ChannelSessions {

@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.websockets)
     implementation(libs.logback.classic)
+    implementation(libs.mcp.sdk.server)
 
     implementation(libs.exposed.core)
     implementation(libs.exposed.r2dbc)

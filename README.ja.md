@@ -182,6 +182,59 @@ export CHAT_DB_PASSWORD=postgres
 - Swagger UI: [http://localhost:8080/docs](http://localhost:8080/docs)
 - OpenAPI: [http://localhost:8080/openapi.yaml](http://localhost:8080/openapi.yaml)
 - Health: [http://localhost:8080/health](http://localhost:8080/health)
+- MCP Streamable HTTP: [http://localhost:8080/mcp](http://localhost:8080/mcp)
+
+現在の MCP ツール:
+
+- `get_health`
+- `list_workspaces`
+- `create_workspace`
+- `get_workspace_by_slug`
+- `list_workspace_channels`
+- `create_channel`
+- `list_members`
+- `add_member`
+- `update_member`
+- `list_channel_messages`
+- `get_thread`
+- `post_message`
+- `reply_message`
+- `toggle_reaction`
+- `list_notifications`
+- `mark_notifications_read`
+
+### MCP クライアント例
+
+MCP Inspector:
+
+```bash
+npx -y @modelcontextprotocol/inspector
+```
+
+起動後に `Streamable HTTP` を選び、`http://localhost:8080/mcp` に接続します。
+
+`curl` で初期化リクエストだけを手早く確認する場合:
+
+```bash
+curl -i http://localhost:8080/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "manual-check",
+        "version": "1.0.0"
+      }
+    }
+  }'
+```
+
+レスポンスには `Mcp-Session-Id` ヘッダーが含まれる場合があります。ステートフルなセッションを維持する MCP クライアントでは、その後のリクエストでもこのヘッダーを再利用してください。
 
 ## フロントエンド開発メモ
 

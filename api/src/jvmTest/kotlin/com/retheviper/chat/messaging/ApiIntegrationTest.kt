@@ -22,6 +22,7 @@ import com.retheviper.chat.contract.UpdateWorkspaceMemberRequest
 import com.retheviper.chat.contract.WorkspaceMemberResponse
 import com.retheviper.chat.contract.WorkspaceResponse
 import io.ktor.client.call.body
+import io.ktor.client.statement.bodyAsText
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
@@ -40,6 +41,12 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -325,6 +332,575 @@ class ApiIntegrationTest {
     }
 
     @Test
+    fun `mcp streamable http endpoint exposes messaging tools`() = testApplication {
+        environment {
+            config = MapApplicationConfig(
+                "messaging.database.jdbcUrl" to container.jdbcUrl,
+                "messaging.database.r2dbcUrl" to container.r2dbcUrl(),
+                "messaging.database.username" to container.username,
+                "messaging.database.password" to container.password
+            )
+        }
+        application {
+            module()
+        }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(testJson)
+            }
+        }
+
+        val initializeResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 1,
+                  "method": "initialize",
+                  "params": {
+                    "protocolVersion": "2025-03-26",
+                    "capabilities": {},
+                    "clientInfo": {
+                      "name": "api-integration-test",
+                      "version": "1.0.0"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val initializePayload = testJson.parseToJsonElement(initializeResponse.bodyAsText()).jsonObject
+        val protocolVersion = initializePayload.resultField("protocolVersion")
+        val sessionId = initializeResponse.headers["MCP-Session-Id"] ?: initializeResponse.headers["Mcp-Session-Id"]
+
+        client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "method": "notifications/initialized"
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.Accepted, it.status) }
+
+        val toolListResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 2,
+                  "method": "tools/list",
+                  "params": {}
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val toolNames = testJson.parseToJsonElement(toolListResponse.bodyAsText())
+            .jsonObject
+            .resultArray("tools")
+            .map { it.jsonObject["name"]!!.jsonPrimitive.content }
+
+        assertEquals(
+            setOf(
+                "get_health",
+                "list_workspaces",
+                "create_workspace",
+                "get_workspace_by_slug",
+                "list_workspace_channels",
+                "create_channel",
+                "list_members",
+                "add_member",
+                "update_member",
+                "list_channel_messages",
+                "get_thread",
+                "post_message",
+                "reply_message",
+                "toggle_reaction",
+                "list_notifications",
+                "mark_notifications_read"
+            ),
+            toolNames.toSet()
+        )
+
+        val createWorkspaceResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 3,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "create_workspace",
+                    "arguments": {
+                      "slug": "acme",
+                      "name": "Acme",
+                      "ownerUserId": "u-alice",
+                      "ownerDisplayName": "Alice"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val createdWorkspace = testJson.decodeFromJsonElement<WorkspaceResponse>(
+            extractToolPayload(testJson.parseToJsonElement(createWorkspaceResponse.bodyAsText()).jsonObject)
+        )
+
+        val listWorkspacesResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 4,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "list_workspaces",
+                    "arguments": {}
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val listedWorkspaces = testJson.decodeFromJsonElement<List<WorkspaceResponse>>(
+            extractToolPayload(testJson.parseToJsonElement(listWorkspacesResponse.bodyAsText()).jsonObject)
+        )
+
+        val createChannelResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 5,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "create_channel",
+                    "arguments": {
+                      "workspaceSlug": "acme",
+                      "slug": "design",
+                      "name": "design",
+                      "topic": "team updates",
+                      "createdByMemberId": "${createdWorkspace.ownerMemberId}"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val createdChannel = testJson.decodeFromJsonElement<ChannelResponse>(
+            extractToolPayload(testJson.parseToJsonElement(createChannelResponse.bodyAsText()).jsonObject)
+        )
+
+        val addMemberResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 6,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "add_member",
+                    "arguments": {
+                      "workspaceSlug": "acme",
+                      "userId": "u-bob",
+                      "displayName": "Bob"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val bob = testJson.decodeFromJsonElement<WorkspaceMemberResponse>(
+            extractToolPayload(testJson.parseToJsonElement(addMemberResponse.bodyAsText()).jsonObject)
+        )
+
+        val listMembersResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 7,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "list_members",
+                    "arguments": {
+                      "workspaceSlug": "acme"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val listedMembers = testJson.decodeFromJsonElement<List<WorkspaceMemberResponse>>(
+            extractToolPayload(testJson.parseToJsonElement(listMembersResponse.bodyAsText()).jsonObject)
+        )
+
+        val postMessageResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 8,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "post_message",
+                    "arguments": {
+                      "channelId": "${createdChannel.id}",
+                      "authorMemberId": "${createdWorkspace.ownerMemberId}",
+                      "body": "hello from mcp @u-bob"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val rootMessage = testJson.decodeFromJsonElement<MessageResponse>(
+            extractToolPayload(testJson.parseToJsonElement(postMessageResponse.bodyAsText()).jsonObject)
+        )
+
+        val replyMessageResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 9,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "reply_message",
+                    "arguments": {
+                      "messageId": "${rootMessage.id}",
+                      "authorMemberId": "${bob.id}",
+                      "body": "roger that"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val replyMessage = testJson.decodeFromJsonElement<MessageResponse>(
+            extractToolPayload(testJson.parseToJsonElement(replyMessageResponse.bodyAsText()).jsonObject)
+        )
+
+        val toggleReactionResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 10,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "toggle_reaction",
+                    "arguments": {
+                      "messageId": "${rootMessage.id}",
+                      "memberId": "${bob.id}",
+                      "emoji": "👍"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val reactedMessage = testJson.decodeFromJsonElement<MessageResponse>(
+            extractToolPayload(testJson.parseToJsonElement(toggleReactionResponse.bodyAsText()).jsonObject)
+        )
+
+        val updateMemberResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 11,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "update_member",
+                    "arguments": {
+                      "memberId": "${bob.id}",
+                      "displayName": "Bobby"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val updatedBob = testJson.decodeFromJsonElement<WorkspaceMemberResponse>(
+            extractToolPayload(testJson.parseToJsonElement(updateMemberResponse.bodyAsText()).jsonObject)
+        )
+
+        val listChannelsResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 12,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "list_workspace_channels",
+                    "arguments": {
+                      "workspaceSlug": "acme"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val listedChannels = testJson.decodeFromJsonElement<List<ChannelResponse>>(
+            extractToolPayload(testJson.parseToJsonElement(listChannelsResponse.bodyAsText()).jsonObject)
+        )
+
+        val listMessagesResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 13,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "list_channel_messages",
+                    "arguments": {
+                      "channelId": "${createdChannel.id}",
+                      "limit": 20
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val messagePage = testJson.decodeFromJsonElement<MessagePageResponse>(
+            extractToolPayload(testJson.parseToJsonElement(listMessagesResponse.bodyAsText()).jsonObject)
+        )
+
+        val getThreadResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 14,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "get_thread",
+                    "arguments": {
+                      "messageId": "${replyMessage.id}"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val thread = testJson.decodeFromJsonElement<ThreadResponse>(
+            extractToolPayload(testJson.parseToJsonElement(getThreadResponse.bodyAsText()).jsonObject)
+        )
+
+        val listNotificationsResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 15,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "list_notifications",
+                    "arguments": {
+                      "memberId": "${bob.id}",
+                      "unreadOnly": true
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val notifications = testJson.decodeFromJsonElement<List<MentionNotificationResponse>>(
+            extractToolPayload(testJson.parseToJsonElement(listNotificationsResponse.bodyAsText()).jsonObject)
+        )
+
+        val markNotificationsReadResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 16,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "mark_notifications_read",
+                    "arguments": {
+                      "memberId": "${bob.id}",
+                      "notificationIds": ["${notifications.single().id}"]
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val readAck = extractToolPayload(testJson.parseToJsonElement(markNotificationsReadResponse.bodyAsText()).jsonObject).jsonObject
+
+        val notificationsAfterReadResponse = client.post("/mcp") {
+            contentType(ContentType.Application.Json)
+            headers.append("Accept", "application/json, text/event-stream")
+            headers.append("MCP-Protocol-Version", protocolVersion)
+            if (sessionId != null) {
+                headers.append("MCP-Session-Id", sessionId)
+            }
+            setBody(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": 17,
+                  "method": "tools/call",
+                  "params": {
+                    "name": "list_notifications",
+                    "arguments": {
+                      "memberId": "${bob.id}",
+                      "unreadOnly": true
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+
+        val notificationsAfterRead = testJson.decodeFromJsonElement<List<MentionNotificationResponse>>(
+            extractToolPayload(testJson.parseToJsonElement(notificationsAfterReadResponse.bodyAsText()).jsonObject)
+        )
+
+        assertEquals(1, listedWorkspaces.size)
+        assertEquals("acme", listedWorkspaces.single().slug)
+        assertEquals("acme", createdWorkspace.slug)
+        assertEquals("design", createdChannel.slug)
+        assertEquals(2, listedMembers.size)
+        assertEquals("Bob", bob.displayName)
+        assertEquals("Bobby", updatedBob.displayName)
+        assertEquals(setOf("general", "design"), listedChannels.map { it.slug }.toSet())
+        assertEquals("hello from mcp @u-bob", rootMessage.body)
+        assertEquals(rootMessage.id, replyMessage.threadRootMessageId)
+        assertEquals("👍", reactedMessage.reactions.single().emoji)
+        assertEquals(1, reactedMessage.reactions.single().count)
+        assertEquals(1, messagePage.messages.size)
+        assertEquals(rootMessage.id, messagePage.messages.single().id)
+        assertEquals(1, messagePage.messages.single().threadReplyCount)
+        assertEquals(1, messagePage.messages.single().reactions.single().count)
+        assertEquals(rootMessage.id, thread.root.id)
+        assertEquals(replyMessage.id, thread.replies.single().id)
+        assertEquals(1, notifications.size)
+        assertEquals(NotificationKind.MENTION, notifications.single().kind)
+        assertEquals("ok", readAck["status"]!!.jsonPrimitive.content)
+        assertEquals(0, notificationsAfterRead.size)
+    }
+
+    @Test
     fun `openapi and swagger endpoints are exposed`() = testApplication {
         environment {
             config = MapApplicationConfig(
@@ -395,3 +971,20 @@ private suspend fun DefaultClientWebSocketSession.receiveEvent(): ChatEvent {
     val frame = incoming.receiveCatching().getOrNull() as? Frame.Text ?: error("expected text frame")
     return testJson.decodeFromString(frame.readText())
 }
+
+private fun JsonObject.resultField(fieldName: String): String =
+    this["result"]!!.jsonObject[fieldName]!!.jsonPrimitive.content
+
+private fun JsonObject.resultArray(fieldName: String) =
+    this["result"]!!.jsonObject[fieldName]!!.jsonArray
+
+private fun extractToolPayload(response: JsonObject): JsonElement =
+    Json.parseToJsonElement(
+        response["result"]!!
+            .jsonObject["content"]!!
+            .jsonArray
+            .first()
+            .jsonObject["text"]!!
+            .jsonPrimitive
+            .content
+    )
