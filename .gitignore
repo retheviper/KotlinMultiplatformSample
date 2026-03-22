@@ -5,6 +5,7 @@
 # Gradle files
 .gradle/
 build/
+.mcp-cli/
 
 # Local configuration file (sdk path, etc)
 local.properties
