@@ -54,3 +54,11 @@ Current MCP tools:
 - `toggle_reaction`
 - `list_notifications`
 - `mark_notifications_read`
+
+Manual CLI test helper:
+
+```bash
+./scripts/mcp_cli.py init
+./scripts/mcp_cli.py tools
+./scripts/mcp_cli.py call list_workspaces
+```

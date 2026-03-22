@@ -236,6 +236,21 @@ curl -i http://localhost:8080/mcp \
 
 The response may include an `Mcp-Session-Id` header. Reuse that header on subsequent MCP requests when the client keeps a stateful session.
 
+CLI helper in this repository:
+
+```bash
+./scripts/mcp_cli.py init
+./scripts/mcp_cli.py tools
+./scripts/mcp_cli.py call list_workspaces
+./scripts/mcp_cli.py call create_workspace \
+  --arg slug=acme \
+  --arg name=Acme \
+  --arg ownerUserId=u-alice \
+  --arg ownerDisplayName=Alice
+```
+
+The CLI stores the MCP session locally in `.mcp-cli/` and reuses it for later tool calls.
+
 ## Frontend Development Notes
 
 The API serves the web frontend directly. You do not need a separate frontend dev server.

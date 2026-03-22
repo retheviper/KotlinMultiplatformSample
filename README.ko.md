@@ -236,6 +236,21 @@ curl -i http://localhost:8080/mcp \
 
 응답에 `Mcp-Session-Id` 헤더가 포함될 수 있습니다. 세션을 유지하는 MCP 클라이언트라면 이후 요청에서 이 헤더를 재사용해야 합니다.
 
+저장소에 포함된 CLI 도구:
+
+```bash
+./scripts/mcp_cli.py init
+./scripts/mcp_cli.py tools
+./scripts/mcp_cli.py call list_workspaces
+./scripts/mcp_cli.py call create_workspace \
+  --arg slug=acme \
+  --arg name=Acme \
+  --arg ownerUserId=u-alice \
+  --arg ownerDisplayName=Alice
+```
+
+이 CLI는 `.mcp-cli/`에 MCP 세션을 저장하고 이후 툴 호출에서 재사용합니다.
+
 ## 프런트엔드 개발 메모
 
 웹 프런트는 API 서버가 직접 서빙하므로 별도 프런트 dev server는 필요하지 않습니다.
