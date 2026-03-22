@@ -624,6 +624,41 @@ class MessagingServicesTest : FunSpec({
         updatedTwice.reactions.single().count shouldBe 1
         updatedTwice.reactions.single().memberIds shouldContainExactly listOf(workspace.ownerMemberId)
     }
+
+    test("sample data bootstrap seeds workspace, channel, member, and message fixtures only once") {
+        val fixture = messagingFixture()
+        val bootstrapper = MessagingSampleDataBootstrapper(
+            commandService = fixture.commandService,
+            queryService = fixture.queryService
+        )
+
+        runBlocking {
+            bootstrapper.seedIfNeeded()
+            bootstrapper.seedIfNeeded()
+        }
+
+        val workspaces = runBlocking { fixture.queryService.listWorkspaces() }
+        workspaces.map { it.slug } shouldContainExactly listOf("acme", "globex")
+
+        val acme = runBlocking { fixture.queryService.getWorkspaceBySlug("acme") }
+        val acmeMembers = runBlocking { fixture.queryService.listMembers(acme.id) }
+        val acmeChannels = runBlocking { fixture.queryService.listChannels(acme.id) }
+        val general = acmeChannels.single { it.slug == "general" }
+        val design = acmeChannels.single { it.slug == "design" }
+        val generalMessages = runBlocking { fixture.queryService.listChannelMessages(general.id, beforeMessageId = null, limit = 20) }
+        val designMessages = runBlocking { fixture.queryService.listChannelMessages(design.id, beforeMessageId = null, limit = 20) }
+        val generalRoot = generalMessages.single { it.body.contains("Morning sync is live.") }
+        val designRoot = designMessages.single { it.body == "Latest mock exported. @u-alice can you confirm the navigation states?" }
+        val generalThread = runBlocking { fixture.queryService.getThread(generalRoot.id) }
+
+        acmeMembers.map { it.userId } shouldContainExactly listOf("u-alice", "u-bob", "u-carol")
+        acmeChannels.map { it.slug } shouldContainExactly listOf("general", "design", "support-desk")
+        generalMessages.any { it.body.contains("Morning sync is live.") } shouldBe true
+        generalThread.second.size shouldBe 2
+        generalRoot.reactions.map { it.emoji }.contains("👍") shouldBe true
+        generalRoot.reactions.map { it.emoji }.contains("🚀") shouldBe true
+        designRoot.body shouldBe "Latest mock exported. @u-alice can you confirm the navigation states?"
+    }
 })
 
 @OptIn(ExperimentalUuidApi::class)

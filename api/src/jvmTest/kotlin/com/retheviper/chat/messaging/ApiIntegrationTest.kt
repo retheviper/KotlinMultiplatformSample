@@ -40,6 +40,8 @@ import io.ktor.server.testing.testApplication
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -47,19 +49,22 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
 import java.sql.DriverManager
-import kotlin.test.assertEquals
 
 private val testJson = Json { ignoreUnknownKeys = false }
+private val container = PostgreSQLContainer("postgres:17-alpine")
 
-class ApiIntegrationTest {
-    @BeforeEach
-    fun resetDatabase() {
+class ApiIntegrationTest : FunSpec({
+    beforeSpec {
+        container.start()
+    }
+
+    afterSpec {
+        container.stop()
+    }
+
+    beforeTest {
         DriverManager.getConnection(container.jdbcUrl, container.username, container.password).use { connection ->
             connection.createStatement().use { statement ->
                 statement.execute("DROP SCHEMA public CASCADE")
@@ -68,15 +73,10 @@ class ApiIntegrationTest {
         }
     }
 
-    @Test
-    fun `workspace, channel, message, and thread flows work end to end`() = testApplication {
+    test("workspace, channel, message, and thread flows work end to end") {
+        testApplication {
         environment {
-            config = MapApplicationConfig(
-                "messaging.database.jdbcUrl" to container.jdbcUrl,
-                "messaging.database.r2dbcUrl" to container.r2dbcUrl(),
-                "messaging.database.username" to container.username,
-                "messaging.database.password" to container.password
-            )
+            config = testConfig()
         }
         application {
             module()
@@ -99,14 +99,14 @@ class ApiIntegrationTest {
                     ownerDisplayName = "Alice"
                 )
             )
-        }.also { assertEquals(HttpStatusCode.Created, it.status) }.body<WorkspaceResponse>()
+        }.also { it.status shouldBe HttpStatusCode.Created }.body<WorkspaceResponse>()
 
         val listedWorkspaces = client.get("/api/v1/workspaces")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<List<WorkspaceResponse>>()
 
         val workspaceBySlug = client.get("/api/v1/workspaces/by-slug/acme")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<WorkspaceResponse>()
 
         val bob = client.post("/api/v1/workspaces/${workspace.id}/members") {
@@ -117,7 +117,7 @@ class ApiIntegrationTest {
                     displayName = "Bob"
                 )
             )
-        }.also { assertEquals(HttpStatusCode.Created, it.status) }.body<WorkspaceMemberResponse>()
+        }.also { it.status shouldBe HttpStatusCode.Created }.body<WorkspaceMemberResponse>()
 
         val channel = client.post("/api/v1/workspaces/${workspace.id}/channels") {
             contentType(ContentType.Application.Json)
@@ -130,14 +130,14 @@ class ApiIntegrationTest {
                     createdByMemberId = workspace.ownerMemberId
                 )
             )
-        }.also { assertEquals(HttpStatusCode.Created, it.status) }.body<ChannelResponse>()
+        }.also { it.status shouldBe HttpStatusCode.Created }.body<ChannelResponse>()
 
         val socket = client.webSocketSession("/ws/channels/${channel.id}")
 
         socket.sendCommand(ChatCommand(type = ChatCommandType.LOAD_RECENT, limit = 20))
         val snapshot = socket.receiveEvent()
-        assertEquals(ChatEventType.SNAPSHOT, snapshot.type)
-        assertEquals(0, snapshot.messages.size)
+        snapshot.type shouldBe ChatEventType.SNAPSHOT
+        snapshot.messages.size shouldBe 0
 
         socket.sendCommand(
             ChatCommand(
@@ -178,78 +178,74 @@ class ApiIntegrationTest {
         val reactedRoot = client.post("/api/v1/messages/${rootMessage.id}/reactions/toggle") {
             contentType(ContentType.Application.Json)
             setBody(ToggleReactionRequest(memberId = workspace.ownerMemberId, emoji = "👍"))
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }.body<MessageResponse>()
+        }.also { it.status shouldBe HttpStatusCode.OK }.body<MessageResponse>()
 
         val messages = client.get("/api/v1/channels/${channel.id}/messages?limit=20")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<MessagePageResponse>()
 
         val thread = client.get("/api/v1/messages/${rootMessage.id}/thread")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<ThreadResponse>()
 
         val channels = client.get("/api/v1/workspaces/${workspace.id}/channels")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<List<ChannelResponse>>()
 
         val members = client.get("/api/v1/workspaces/${workspace.id}/members")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<List<WorkspaceMemberResponse>>()
 
         val updatedBob = client.put("/api/v1/members/${bob.id}") {
             contentType(ContentType.Application.Json)
             setBody(UpdateWorkspaceMemberRequest(displayName = "Bobby"))
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }.body<WorkspaceMemberResponse>()
+        }.also { it.status shouldBe HttpStatusCode.OK }.body<WorkspaceMemberResponse>()
 
         val notifications = client.get("/api/v1/members/${bob.id}/notifications?unreadOnly=true")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<List<MentionNotificationResponse>>()
 
         client.post("/api/v1/members/${bob.id}/notifications/read") {
             contentType(ContentType.Application.Json)
             setBody(MarkNotificationsReadRequest(notificationIds = notifications.map { it.id }))
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val notificationsAfterRead = client.get("/api/v1/members/${bob.id}/notifications?unreadOnly=true")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<List<MentionNotificationResponse>>()
 
-        assertEquals(workspace.id, workspaceBySlug.id)
-        assertEquals(1, listedWorkspaces.size)
-        assertEquals(workspace.id, listedWorkspaces.single().id)
-        assertEquals(2, channels.size)
-        assertEquals("general", channels.first().slug)
-        assertEquals(channel.id, channels.last().id)
-        assertEquals(2, members.size)
-        assertEquals("Bobby", updatedBob.displayName)
-        assertEquals(1, messages.messages.size)
-        assertEquals(rootMessage.id, messages.messages.single().id)
-        assertEquals("https://example.com/article", messages.messages.single().linkPreview?.url)
-        assertEquals(1, messages.messages.single().threadReplyCount)
-        assertEquals(ChatEventType.REACTION_UPDATED, reactionEvent.type)
-        assertEquals(1, reactionEvent.message!!.reactions.single().count)
-        assertEquals(2, reactedRoot.reactions.single().count)
-        assertEquals("👍", reactedRoot.reactions.single().emoji)
-        assertEquals(2, messages.messages.single().reactions.single().count)
-        assertEquals(rootMessage.id, thread.root.id)
-        assertEquals(1, thread.replies.size)
-        assertEquals(reply.id, thread.replies.single().id)
-        assertEquals(rootMessage.id, thread.replies.single().threadRootMessageId)
-        assertEquals(1, notifications.size)
-        assertEquals(NotificationKind.MENTION, notifications.single().kind)
-        assertEquals(rootMessage.id, notifications.single().messageId)
-        assertEquals(0, notificationsAfterRead.size)
+        workspaceBySlug.id shouldBe workspace.id
+        listedWorkspaces.size shouldBe 1
+        listedWorkspaces.single().id shouldBe workspace.id
+        channels.size shouldBe 2
+        channels.first().slug shouldBe "general"
+        channels.last().id shouldBe channel.id
+        members.size shouldBe 2
+        updatedBob.displayName shouldBe "Bobby"
+        messages.messages.size shouldBe 1
+        messages.messages.single().id shouldBe rootMessage.id
+        messages.messages.single().linkPreview?.url shouldBe "https://example.com/article"
+        messages.messages.single().threadReplyCount shouldBe 1
+        reactionEvent.type shouldBe ChatEventType.REACTION_UPDATED
+        reactionEvent.message!!.reactions.single().count shouldBe 1
+        reactedRoot.reactions.single().count shouldBe 2
+        reactedRoot.reactions.single().emoji shouldBe "👍"
+        messages.messages.single().reactions.single().count shouldBe 2
+        thread.root.id shouldBe rootMessage.id
+        thread.replies.size shouldBe 1
+        thread.replies.single().id shouldBe reply.id
+        thread.replies.single().threadRootMessageId shouldBe rootMessage.id
+        notifications.size shouldBe 1
+        notifications.single().kind shouldBe NotificationKind.MENTION
+        notifications.single().messageId shouldBe rootMessage.id
+        notificationsAfterRead.size shouldBe 0
+        }
     }
 
-    @Test
-    fun `thread participants receive notifications when others reply later`() = testApplication {
+    test("thread participants receive notifications when others reply later") {
+        testApplication {
         environment {
-            config = MapApplicationConfig(
-                "messaging.database.jdbcUrl" to container.jdbcUrl,
-                "messaging.database.r2dbcUrl" to container.r2dbcUrl(),
-                "messaging.database.username" to container.username,
-                "messaging.database.password" to container.password
-            )
+            config = testConfig()
         }
         application {
             module()
@@ -272,7 +268,7 @@ class ApiIntegrationTest {
                     ownerDisplayName = "Alice"
                 )
             )
-        }.also { assertEquals(HttpStatusCode.Created, it.status) }.body<WorkspaceResponse>()
+        }.also { it.status shouldBe HttpStatusCode.Created }.body<WorkspaceResponse>()
 
         val bob = client.post("/api/v1/workspaces/${workspace.id}/members") {
             contentType(ContentType.Application.Json)
@@ -282,10 +278,10 @@ class ApiIntegrationTest {
                     displayName = "Bob"
                 )
             )
-        }.also { assertEquals(HttpStatusCode.Created, it.status) }.body<WorkspaceMemberResponse>()
+        }.also { it.status shouldBe HttpStatusCode.Created }.body<WorkspaceMemberResponse>()
 
         val generalChannel = client.get("/api/v1/workspaces/${workspace.id}/channels")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<List<ChannelResponse>>()
             .first { it.slug == "general" }
 
@@ -322,24 +318,20 @@ class ApiIntegrationTest {
         socket.close()
 
         val notifications = client.get("/api/v1/members/${bob.id}/notifications?unreadOnly=true")
-            .also { assertEquals(HttpStatusCode.OK, it.status) }
+            .also { it.status shouldBe HttpStatusCode.OK }
             .body<List<MentionNotificationResponse>>()
 
-        assertEquals(1, notifications.size)
-        assertEquals(NotificationKind.THREAD_ACTIVITY, notifications.single().kind)
-        assertEquals(root.id, notifications.single().threadRootMessageId)
-        assertEquals(followUp.id, notifications.single().messageId)
+        notifications.size shouldBe 1
+        notifications.single().kind shouldBe NotificationKind.THREAD_ACTIVITY
+        notifications.single().threadRootMessageId shouldBe root.id
+        notifications.single().messageId shouldBe followUp.id
+        }
     }
 
-    @Test
-    fun `mcp streamable http endpoint exposes messaging tools`() = testApplication {
+    test("mcp streamable http endpoint exposes messaging tools") {
+        testApplication {
         environment {
-            config = MapApplicationConfig(
-                "messaging.database.jdbcUrl" to container.jdbcUrl,
-                "messaging.database.r2dbcUrl" to container.r2dbcUrl(),
-                "messaging.database.username" to container.username,
-                "messaging.database.password" to container.password
-            )
+            config = testConfig()
         }
         application {
             module()
@@ -371,7 +363,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val initializePayload = testJson.parseToJsonElement(initializeResponse.bodyAsText()).jsonObject
         val protocolVersion = initializePayload.resultField("protocolVersion")
@@ -392,7 +384,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.Accepted, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.Accepted }
 
         val toolListResponse = client.post("/mcp") {
             contentType(ContentType.Application.Json)
@@ -411,33 +403,30 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val toolNames = testJson.parseToJsonElement(toolListResponse.bodyAsText())
             .jsonObject
             .resultArray("tools")
             .map { it.jsonObject["name"]!!.jsonPrimitive.content }
 
-        assertEquals(
-            setOf(
-                "get_health",
-                "list_workspaces",
-                "create_workspace",
-                "get_workspace_by_slug",
-                "list_workspace_channels",
-                "create_channel",
-                "list_members",
-                "add_member",
-                "update_member",
-                "list_channel_messages",
-                "get_thread",
-                "post_message",
-                "reply_message",
-                "toggle_reaction",
-                "list_notifications",
-                "mark_notifications_read"
-            ),
-            toolNames.toSet()
+        toolNames.toSet() shouldBe setOf(
+            "get_health",
+            "list_workspaces",
+            "create_workspace",
+            "get_workspace_by_slug",
+            "list_workspace_channels",
+            "create_channel",
+            "list_members",
+            "add_member",
+            "update_member",
+            "list_channel_messages",
+            "get_thread",
+            "post_message",
+            "reply_message",
+            "toggle_reaction",
+            "list_notifications",
+            "mark_notifications_read"
         )
 
         val createWorkspaceResponse = client.post("/mcp") {
@@ -465,7 +454,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val createdWorkspace = testJson.decodeFromJsonElement<WorkspaceResponse>(
             extractToolPayload(testJson.parseToJsonElement(createWorkspaceResponse.bodyAsText()).jsonObject)
@@ -491,7 +480,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val listedWorkspaces = testJson.decodeFromJsonElement<List<WorkspaceResponse>>(
             extractToolPayload(testJson.parseToJsonElement(listWorkspacesResponse.bodyAsText()).jsonObject)
@@ -523,7 +512,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val createdChannel = testJson.decodeFromJsonElement<ChannelResponse>(
             extractToolPayload(testJson.parseToJsonElement(createChannelResponse.bodyAsText()).jsonObject)
@@ -553,7 +542,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val bob = testJson.decodeFromJsonElement<WorkspaceMemberResponse>(
             extractToolPayload(testJson.parseToJsonElement(addMemberResponse.bodyAsText()).jsonObject)
@@ -581,7 +570,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val listedMembers = testJson.decodeFromJsonElement<List<WorkspaceMemberResponse>>(
             extractToolPayload(testJson.parseToJsonElement(listMembersResponse.bodyAsText()).jsonObject)
@@ -611,7 +600,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val rootMessage = testJson.decodeFromJsonElement<MessageResponse>(
             extractToolPayload(testJson.parseToJsonElement(postMessageResponse.bodyAsText()).jsonObject)
@@ -641,7 +630,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val replyMessage = testJson.decodeFromJsonElement<MessageResponse>(
             extractToolPayload(testJson.parseToJsonElement(replyMessageResponse.bodyAsText()).jsonObject)
@@ -671,7 +660,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val reactedMessage = testJson.decodeFromJsonElement<MessageResponse>(
             extractToolPayload(testJson.parseToJsonElement(toggleReactionResponse.bodyAsText()).jsonObject)
@@ -700,7 +689,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val updatedBob = testJson.decodeFromJsonElement<WorkspaceMemberResponse>(
             extractToolPayload(testJson.parseToJsonElement(updateMemberResponse.bodyAsText()).jsonObject)
@@ -728,7 +717,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val listedChannels = testJson.decodeFromJsonElement<List<ChannelResponse>>(
             extractToolPayload(testJson.parseToJsonElement(listChannelsResponse.bodyAsText()).jsonObject)
@@ -757,7 +746,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val messagePage = testJson.decodeFromJsonElement<MessagePageResponse>(
             extractToolPayload(testJson.parseToJsonElement(listMessagesResponse.bodyAsText()).jsonObject)
@@ -785,7 +774,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val thread = testJson.decodeFromJsonElement<ThreadResponse>(
             extractToolPayload(testJson.parseToJsonElement(getThreadResponse.bodyAsText()).jsonObject)
@@ -814,7 +803,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val notifications = testJson.decodeFromJsonElement<List<MentionNotificationResponse>>(
             extractToolPayload(testJson.parseToJsonElement(listNotificationsResponse.bodyAsText()).jsonObject)
@@ -843,7 +832,7 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val readAck = extractToolPayload(testJson.parseToJsonElement(markNotificationsReadResponse.bodyAsText()).jsonObject).jsonObject
 
@@ -870,45 +859,41 @@ class ApiIntegrationTest {
                 }
                 """.trimIndent()
             )
-        }.also { assertEquals(HttpStatusCode.OK, it.status) }
+        }.also { it.status shouldBe HttpStatusCode.OK }
 
         val notificationsAfterRead = testJson.decodeFromJsonElement<List<MentionNotificationResponse>>(
             extractToolPayload(testJson.parseToJsonElement(notificationsAfterReadResponse.bodyAsText()).jsonObject)
         )
 
-        assertEquals(1, listedWorkspaces.size)
-        assertEquals("acme", listedWorkspaces.single().slug)
-        assertEquals("acme", createdWorkspace.slug)
-        assertEquals("design", createdChannel.slug)
-        assertEquals(2, listedMembers.size)
-        assertEquals("Bob", bob.displayName)
-        assertEquals("Bobby", updatedBob.displayName)
-        assertEquals(setOf("general", "design"), listedChannels.map { it.slug }.toSet())
-        assertEquals("hello from mcp @u-bob", rootMessage.body)
-        assertEquals(rootMessage.id, replyMessage.threadRootMessageId)
-        assertEquals("👍", reactedMessage.reactions.single().emoji)
-        assertEquals(1, reactedMessage.reactions.single().count)
-        assertEquals(1, messagePage.messages.size)
-        assertEquals(rootMessage.id, messagePage.messages.single().id)
-        assertEquals(1, messagePage.messages.single().threadReplyCount)
-        assertEquals(1, messagePage.messages.single().reactions.single().count)
-        assertEquals(rootMessage.id, thread.root.id)
-        assertEquals(replyMessage.id, thread.replies.single().id)
-        assertEquals(1, notifications.size)
-        assertEquals(NotificationKind.MENTION, notifications.single().kind)
-        assertEquals("ok", readAck["status"]!!.jsonPrimitive.content)
-        assertEquals(0, notificationsAfterRead.size)
+        listedWorkspaces.size shouldBe 1
+        listedWorkspaces.single().slug shouldBe "acme"
+        createdWorkspace.slug shouldBe "acme"
+        createdChannel.slug shouldBe "design"
+        listedMembers.size shouldBe 2
+        bob.displayName shouldBe "Bob"
+        updatedBob.displayName shouldBe "Bobby"
+        listedChannels.map { it.slug }.toSet() shouldBe setOf("general", "design")
+        rootMessage.body shouldBe "hello from mcp @u-bob"
+        replyMessage.threadRootMessageId shouldBe rootMessage.id
+        reactedMessage.reactions.single().emoji shouldBe "👍"
+        reactedMessage.reactions.single().count shouldBe 1
+        messagePage.messages.size shouldBe 1
+        messagePage.messages.single().id shouldBe rootMessage.id
+        messagePage.messages.single().threadReplyCount shouldBe 1
+        messagePage.messages.single().reactions.single().count shouldBe 1
+        thread.root.id shouldBe rootMessage.id
+        thread.replies.single().id shouldBe replyMessage.id
+        notifications.size shouldBe 1
+        notifications.single().kind shouldBe NotificationKind.MENTION
+        readAck["status"]!!.jsonPrimitive.content shouldBe "ok"
+        notificationsAfterRead.size shouldBe 0
+        }
     }
 
-    @Test
-    fun `openapi and swagger endpoints are exposed`() = testApplication {
+    test("openapi and swagger endpoints are exposed") {
+        testApplication {
         environment {
-            config = MapApplicationConfig(
-                "messaging.database.jdbcUrl" to container.jdbcUrl,
-                "messaging.database.r2dbcUrl" to container.r2dbcUrl(),
-                "messaging.database.username" to container.username,
-                "messaging.database.password" to container.password
-            )
+            config = testConfig()
         }
         application {
             module()
@@ -917,20 +902,16 @@ class ApiIntegrationTest {
         val yaml = client.get("/openapi.yaml")
         val docs = client.get("/docs")
 
-        assertEquals(HttpStatusCode.OK, yaml.status)
-        assertEquals(HttpStatusCode.OK, docs.status)
-        assertEquals(true, yaml.body<String>().contains("openapi: 3.1.0"))
+        yaml.status shouldBe HttpStatusCode.OK
+        docs.status shouldBe HttpStatusCode.OK
+        yaml.body<String>().contains("openapi: 3.1.0") shouldBe true
+        }
     }
 
-    @Test
-    fun `root serves the compose web frontend`() = testApplication {
+    test("root serves the compose web frontend") {
+        testApplication {
         environment {
-            config = MapApplicationConfig(
-                "messaging.database.jdbcUrl" to container.jdbcUrl,
-                "messaging.database.r2dbcUrl" to container.r2dbcUrl(),
-                "messaging.database.username" to container.username,
-                "messaging.database.password" to container.password
-            )
+            config = testConfig()
         }
         application {
             module()
@@ -938,26 +919,19 @@ class ApiIntegrationTest {
 
         val index = client.get("/")
 
-        assertEquals(HttpStatusCode.OK, index.status)
-        assertEquals(true, index.body<String>().contains("shared.js"))
-    }
-
-    companion object {
-        private val container = PostgreSQLContainer("postgres:17-alpine")
-
-        @JvmStatic
-        @BeforeAll
-        fun startContainer() {
-            container.start()
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun stopContainer() {
-            container.stop()
+        index.status shouldBe HttpStatusCode.OK
+        index.body<String>().contains("shared.js") shouldBe true
         }
     }
-}
+})
+
+private fun testConfig() = MapApplicationConfig(
+    "messaging.database.jdbcUrl" to container.jdbcUrl,
+    "messaging.database.r2dbcUrl" to container.r2dbcUrl(),
+    "messaging.database.username" to container.username,
+    "messaging.database.password" to container.password,
+    "messaging.bootstrap.sampleDataEnabled" to "false"
+)
 
 private fun PostgreSQLContainer<*>.r2dbcUrl(): String {
     return "r2dbc:postgresql://${host}:${getMappedPort(5432)}/${databaseName}"
